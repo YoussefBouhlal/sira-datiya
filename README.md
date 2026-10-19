@@ -2,6 +2,8 @@
 
 A local-first CV builder made with React, TypeScript, and Vite. No login, backend, analytics, or remote font requests. Create a CV through six sections, switch between independently registered templates, and export a PDF.
 
+**Live app:** [Open Sira Datiya](https://youssefbouhlal.github.io/sira-datiya/)
+
 ## Get started
 
 Use Node.js 22.22 or newer and npm 10 or newer.
