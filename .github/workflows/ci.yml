@@ -1,0 +1,59 @@
+name: Quality
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: read
+    env:
+      VITE_BASE_PATH: /__pages-e2e__/
+      PAGES_PUBLISH: ${{ vars.PAGES_DEPLOY_ENABLED == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Read GitHub Pages configuration
+        if: env.PAGES_PUBLISH == 'true'
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: false
+      - name: Use the configured Pages base path
+        if: env.PAGES_PUBLISH == 'true'
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: printf 'VITE_BASE_PATH=%s/\n' "$PAGES_BASE_PATH" >> "$GITHUB_ENV"
+      - run: npm run format:check
+      - run: npm run check
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Upload the verified production build
+        if: env.PAGES_PUBLISH == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./dist
+  deploy:
+    if: vars.PAGES_DEPLOY_ENABLED == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
