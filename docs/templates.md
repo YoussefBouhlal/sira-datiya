@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Classic, Studio, and Sidebar are registered; Studio remains the default.
 
 ## Add a template
 
@@ -24,6 +24,8 @@ export const editorialTemplate = {
 ```
 
 Keep IDs stable: they are persisted. `typography` is metadata for the picker illustration, not a renderer branch. The picker, preview, and download flow consume definitions automatically.
+
+Optional `layout` metadata (`single-column` or `two-column`) changes the picker illustration only. Sidebar uses `two-column`; its renderer owns the actual column layout. Its sidebar background repeats on every PDF page, while identity and contact content flow once. Both columns may continue onto later pages. It renders skill proficiency as bars with named levels; Classic and Studio use named text levels. All templates render portraits and references when supplied.
 
 ## Boundaries
 

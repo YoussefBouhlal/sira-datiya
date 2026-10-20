@@ -31,6 +31,21 @@ export const projectSchema = z.object({
   description: longText,
 })
 
+export const skillSchema = z.object({
+  id: z.string().min(1),
+  name: shortText,
+  level: z.number().int().min(1).max(5).nullable(),
+})
+
+export const referenceSchema = z.object({
+  id: z.string().min(1),
+  name: shortText,
+  jobTitle: shortText,
+  organization: shortText,
+  email: shortText,
+  phone: shortText,
+})
+
 export const cvSchema = z.object({
   personal: z.object({
     fullName: shortText,
@@ -40,14 +55,29 @@ export const cvSchema = z.object({
     location: shortText,
     website: shortText,
     linkedin: shortText,
+    portrait: z
+      .string()
+      .max(300_000)
+      .regex(/^(?:data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2})?$/)
+      .default(''),
   }),
   summary: longText,
   experience: z.array(experienceSchema).max(100),
   education: z.array(educationSchema).max(100),
-  skills: z.array(shortText).max(200),
+  skills: z
+    .array(z.union([shortText, skillSchema]))
+    .max(200)
+    .transform((skills) =>
+      skills.map((skill, index) =>
+        typeof skill === 'string'
+          ? { id: `legacy-skill-${index}`, name: skill, level: null }
+          : skill,
+      ),
+    ),
   languages: z.array(shortText).max(100),
   certifications: z.array(shortText).max(100),
   projects: z.array(projectSchema).max(100),
+  references: z.array(referenceSchema).max(100).default([]),
 })
 
 export const appearanceSchema = z.object({

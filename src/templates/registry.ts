@@ -1,5 +1,6 @@
 import { classicTemplate } from './classic'
 import { modernTemplate } from './modern'
+import { sidebarTemplate } from './sidebar'
 import type { TemplateDefinition } from './types'
 
 export function createTemplateRegistry(
@@ -26,6 +27,6 @@ export function createTemplateRegistry(
 }
 
 export const templateRegistry = createTemplateRegistry(
-  [classicTemplate, modernTemplate],
+  [classicTemplate, modernTemplate, sidebarTemplate],
   'modern',
 )

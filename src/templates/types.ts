@@ -11,6 +11,7 @@ export type TemplateDefinition = {
   readonly id: string
   readonly name: string
   readonly typography: 'serif' | 'sans'
+  readonly layout?: 'single-column' | 'two-column'
   readonly load: () => Promise<
     (props: TemplateProps) => ReactElement<DocumentProps>
   >
@@ -18,5 +19,5 @@ export type TemplateDefinition = {
 
 export type TemplateOption = Pick<
   TemplateDefinition,
-  'id' | 'name' | 'typography'
+  'id' | 'name' | 'typography' | 'layout'
 >

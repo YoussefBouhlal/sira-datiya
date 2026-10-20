@@ -1,0 +1,55 @@
+import { StyleSheet } from '@react-pdf/renderer'
+
+export const styles = StyleSheet.create({
+  page: {
+    fontFamily: 'Helvetica',
+    color: '#202020',
+    paddingTop: 36,
+    paddingBottom: 40,
+    lineHeight: 1.45,
+  },
+  background: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: '32%',
+  },
+  columns: { flexDirection: 'row', alignItems: 'flex-start' },
+  sidebar: {
+    width: '32%',
+    paddingHorizontal: 26,
+    color: '#ffffff',
+    fontSize: 9,
+  },
+  identity: { marginBottom: 24 },
+  name: {
+    fontFamily: 'Times-Bold',
+    fontSize: 20,
+    textAlign: 'center',
+    lineHeight: 1.15,
+    marginBottom: 10,
+  },
+  title: {
+    fontSize: 8,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    lineHeight: 1.6,
+  },
+  separator: {
+    width: 14,
+    height: 1,
+    backgroundColor: '#ffffff',
+    opacity: 0.55,
+    alignSelf: 'center',
+    marginBottom: 11,
+  },
+  section: { marginBottom: 23 },
+  heading: { fontFamily: 'Times-Bold', fontSize: 13, marginBottom: 8 },
+  contact: { marginBottom: 5, lineHeight: 1.5 },
+  skill: { marginBottom: 10 },
+  level: { fontSize: 7, marginTop: 2, opacity: 0.85 },
+  track: { height: 3, backgroundColor: '#ffffff', opacity: 0.3, marginTop: 4 },
+  fill: { height: 3, backgroundColor: '#ffffff', marginTop: -3 },
+  main: { width: '68%', paddingLeft: 32, paddingRight: 30 },
+})

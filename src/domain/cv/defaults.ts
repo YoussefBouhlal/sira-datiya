@@ -4,6 +4,8 @@ import type {
   Education,
   Experience,
   Project,
+  Reference,
+  Skill,
 } from './types'
 
 export function createEmptyCv(): CvData {
@@ -16,6 +18,7 @@ export function createEmptyCv(): CvData {
       location: '',
       website: '',
       linkedin: '',
+      portrait: '',
     },
     summary: '',
     experience: [],
@@ -24,6 +27,7 @@ export function createEmptyCv(): CvData {
     languages: [],
     certifications: [],
     projects: [],
+    references: [],
   }
 }
 
@@ -61,3 +65,19 @@ export function createEducation(id: string): Education {
 export function createProject(id: string): Project {
   return { id, name: '', url: '', description: '' }
 }
+
+export function createSkill(id: string): Skill {
+  return { id, name: '', level: null }
+}
+
+export function createReference(id: string): Reference {
+  return { id, name: '', jobTitle: '', organization: '', email: '', phone: '' }
+}
+
+export const proficiencyLevels = [
+  'Beginner',
+  'Elementary',
+  'Intermediate',
+  'Advanced',
+  'Expert',
+] as const

@@ -4,7 +4,7 @@ import type { CvDocument } from '../../domain/cv/types'
 
 export const STORAGE_KEY = 'sira-datiya.cv.v1'
 const savedDocumentSchema = z.object({
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
   cv: cvSchema,
   appearance: appearanceSchema,
 })
@@ -46,7 +46,7 @@ export function saveDocument(
   document: CvDocument,
 ): WriteResult {
   try {
-    const value = savedDocumentSchema.parse({ version: 1, ...document })
+    const value = savedDocumentSchema.parse({ version: 2, ...document })
     storage.setItem(STORAGE_KEY, JSON.stringify(value))
     return { ok: true }
   } catch {
@@ -73,7 +73,7 @@ export function clearDocument(storage: StoragePort): WriteResult {
 
 export function serializeBackup(document: CvDocument): string {
   return JSON.stringify(
-    savedDocumentSchema.parse({ version: 1, ...document }),
+    savedDocumentSchema.parse({ version: 2, ...document }),
     null,
     2,
   )

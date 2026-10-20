@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from '@react-pdf/renderer'
+import { Image, StyleSheet, View } from '@react-pdf/renderer'
+import { Text } from './Text'
+import { proficiencyLevels } from '../../domain/cv/defaults'
 import type { TemplateProps } from '../types'
 
 const styles = StyleSheet.create({
@@ -53,13 +55,19 @@ function dateRange(start: string, end: string, current = false): string {
     .join(' - ')
 }
 
-function Description({ text }: { text: string }) {
+function Description({
+  text,
+  bullets = false,
+}: {
+  text: string
+  bullets?: boolean
+}) {
   return text
     .split('\n')
     .filter((line) => line.trim())
     .map((line, index) => (
       <Text key={index} style={styles.bullet} orphans={2} widows={2}>
-        {line}
+        {bullets ? `\u2022  ${line}` : line}
       </Text>
     ))
 }
@@ -75,12 +83,40 @@ export function ContactLine({ cv }: Pick<TemplateProps, 'cv'>) {
   )
 }
 
-export function CvSections({ cv, appearance }: TemplateProps) {
-  const headingStyle = {
-    ...styles.heading,
-    color: appearance.accent,
-    borderBottomColor: appearance.accent,
-  }
+export function Portrait({ cv }: Pick<TemplateProps, 'cv'>) {
+  return cv.personal.portrait ? (
+    <Image
+      src={cv.personal.portrait}
+      style={{
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        objectFit: 'cover',
+        alignSelf: 'center',
+        marginBottom: 12,
+      }}
+    />
+  ) : null
+}
+
+export function CvSections({
+  cv,
+  appearance,
+  variant = 'standard',
+}: TemplateProps & { variant?: 'standard' | 'sidebar' }) {
+  const sidebar = variant === 'sidebar'
+  const headingStyle = sidebar
+    ? {
+        fontFamily: 'Times-Bold',
+        fontSize: 15,
+        marginBottom: 7,
+      }
+    : {
+        ...styles.heading,
+        color: appearance.accent,
+        borderBottomColor: appearance.accent,
+      }
+  const sectionStyle = sidebar ? { marginTop: 16 } : styles.section
   const experience = cv.experience.filter(
     (entry) => entry.role || entry.employer || entry.description,
   )
@@ -90,10 +126,20 @@ export function CvSections({ cv, appearance }: TemplateProps) {
   const projects = cv.projects.filter(
     (entry) => entry.name || entry.description || entry.url,
   )
+  const skills = cv.skills.filter((skill) => skill.name.trim())
+  const references = cv.references.filter((entry) =>
+    [
+      entry.name,
+      entry.jobTitle,
+      entry.organization,
+      entry.email,
+      entry.phone,
+    ].some((value) => value.trim()),
+  )
   return (
     <>
       {cv.summary.trim() && (
-        <View style={styles.section}>
+        <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={35}>
             Profile
           </Text>
@@ -103,9 +149,9 @@ export function CvSections({ cv, appearance }: TemplateProps) {
         </View>
       )}
       {experience.length > 0 && (
-        <View style={styles.section}>
+        <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={65}>
-            Experience
+            {sidebar ? 'Employment History' : 'Experience'}
           </Text>
           {experience.map((entry) => (
             <View key={entry.id} style={styles.entry}>
@@ -121,13 +167,13 @@ export function CvSections({ cv, appearance }: TemplateProps) {
                   .filter(Boolean)
                   .join('  |  ')}
               </Text>
-              <Description text={entry.description} />
+              <Description text={entry.description} bullets={sidebar} />
             </View>
           ))}
         </View>
       )}
       {education.length > 0 && (
-        <View style={styles.section}>
+        <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={55}>
             Education
           </Text>
@@ -144,21 +190,29 @@ export function CvSections({ cv, appearance }: TemplateProps) {
                   .filter(Boolean)
                   .join('  |  ')}
               </Text>
-              <Description text={entry.description} />
+              <Description text={entry.description} bullets={sidebar} />
             </View>
           ))}
         </View>
       )}
-      {cv.skills.length > 0 && (
+      {!sidebar && skills.length > 0 && (
         <View style={styles.section}>
           <Text style={headingStyle} minPresenceAhead={30}>
             Skills
           </Text>
-          <Text style={styles.body}>{cv.skills.join('  /  ')}</Text>
+          <Text style={styles.body}>
+            {skills
+              .map((skill) =>
+                skill.level === null
+                  ? skill.name
+                  : `${skill.name} (${proficiencyLevels[skill.level - 1]})`,
+              )
+              .join('  /  ')}
+          </Text>
         </View>
       )}
       {projects.length > 0 && (
-        <View style={styles.section}>
+        <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={55}>
             Projects
           </Text>
@@ -173,7 +227,7 @@ export function CvSections({ cv, appearance }: TemplateProps) {
           ))}
         </View>
       )}
-      {cv.languages.length > 0 && (
+      {!sidebar && cv.languages.some((language) => language.trim()) && (
         <View style={styles.section}>
           <Text style={headingStyle} minPresenceAhead={30}>
             Languages
@@ -181,12 +235,31 @@ export function CvSections({ cv, appearance }: TemplateProps) {
           <Text style={styles.body}>{cv.languages.join('  /  ')}</Text>
         </View>
       )}
-      {cv.certifications.length > 0 && (
-        <View style={styles.section}>
+      {cv.certifications.some((certification) => certification.trim()) && (
+        <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={30}>
             Certifications
           </Text>
           <Description text={cv.certifications.join('\n')} />
+        </View>
+      )}
+      {references.length > 0 && (
+        <View style={sectionStyle}>
+          <Text style={headingStyle} minPresenceAhead={45}>
+            References
+          </Text>
+          {references.map((entry) => (
+            <View key={entry.id} style={styles.entry}>
+              <Text style={styles.entryTitle} minPresenceAhead={20}>
+                {[entry.name, entry.jobTitle, entry.organization]
+                  .filter(Boolean)
+                  .join(' - ')}
+              </Text>
+              <Text style={styles.body}>
+                {[entry.email, entry.phone].filter(Boolean).join('  |  ')}
+              </Text>
+            </View>
+          ))}
         </View>
       )}
     </>

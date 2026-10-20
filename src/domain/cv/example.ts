@@ -10,6 +10,7 @@ export function createExampleCv(): CvData {
       location: 'San Francisco, CA',
       website: 'alexmorgan.example',
       linkedin: 'linkedin.com/in/alex-example',
+      portrait: '',
     },
     summary:
       'Product designer turning complex problems into thoughtful, useful digital experiences. Six years of experience bringing clarity to ambitious products, from early research to the details that make them feel right.',
@@ -54,9 +55,14 @@ export function createExampleCv(): CvData {
       'Design systems',
       'Figma',
       'Prototyping',
-    ],
+    ].map((name, index) => ({
+      id: `example-skill-${index}`,
+      name,
+      level: null,
+    })),
     languages: ['English (native)', 'French (conversational)'],
     certifications: [],
     projects: [],
+    references: [],
   }
 }
