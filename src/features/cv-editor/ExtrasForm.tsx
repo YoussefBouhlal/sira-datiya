@@ -1,6 +1,11 @@
-import { Plus } from 'lucide-react'
+import { ArrowDown, ArrowUp, Plus } from 'lucide-react'
 import { Field, TextArea } from '../../components/ui/Field'
-import { createProject } from '../../domain/cv/defaults'
+import {
+  createProject,
+  createReference,
+  createSkill,
+  proficiencyLevels,
+} from '../../domain/cv/defaults'
 import type { CvData, Project } from '../../domain/cv/types'
 import { EntryGroup } from './EntryGroup'
 
@@ -21,19 +26,78 @@ export function ExtrasForm({
   }
   return (
     <div className="extras-form">
-      <TextArea
-        label="Skills"
-        rows={5}
-        value={cv.skills.join('\n')}
-        maxLength={10_000}
-        onChange={(event) =>
+      <h2 className="subsection-title">Skills</h2>
+      {cv.skills.map((skill, index) => (
+        <EntryGroup
+          key={skill.id}
+          title="Skill"
+          index={index}
+          onRemove={() =>
+            onChange({
+              ...cv,
+              skills: cv.skills.filter((entry) => entry.id !== skill.id),
+            })
+          }
+        >
+          <Field
+            label="Skill name"
+            value={skill.name}
+            onChange={(event) =>
+              onChange({
+                ...cv,
+                skills: cv.skills.map((entry) =>
+                  entry.id === skill.id
+                    ? { ...entry, name: event.target.value }
+                    : entry,
+                ),
+              })
+            }
+          />
+          <div className="form-field">
+            <label htmlFor={`level-${skill.id}`}>Proficiency</label>
+            <select
+              id={`level-${skill.id}`}
+              value={skill.level ?? ''}
+              onChange={(event) =>
+                onChange({
+                  ...cv,
+                  skills: cv.skills.map((entry) =>
+                    entry.id === skill.id
+                      ? {
+                          ...entry,
+                          level: event.target.value
+                            ? Number(event.target.value)
+                            : null,
+                        }
+                      : entry,
+                  ),
+                })
+              }
+            >
+              <option value="">Unrated</option>
+              {proficiencyLevels.map((label, position) => (
+                <option key={label} value={position + 1}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </EntryGroup>
+      ))}
+      <button
+        type="button"
+        className="add-button"
+        disabled={cv.skills.length >= 200}
+        onClick={() =>
           onChange({
             ...cv,
-            skills: event.target.value.split('\n').slice(0, 200),
+            skills: [...cv.skills, createSkill(crypto.randomUUID())],
           })
         }
-        placeholder={'Product strategy\nUser research\nInteraction design'}
-      />
+      >
+        <Plus size={17} />
+        Add skill
+      </button>
       <TextArea
         label="Languages"
         rows={3}
@@ -112,6 +176,101 @@ export function ExtrasForm({
       >
         <Plus size={17} />
         Add project
+      </button>
+      <h2 className="subsection-title">References</h2>
+      {cv.references.map((reference, index) => (
+        <EntryGroup
+          key={reference.id}
+          title="Reference"
+          index={index}
+          onRemove={() =>
+            onChange({
+              ...cv,
+              references: cv.references.filter(
+                (entry) => entry.id !== reference.id,
+              ),
+            })
+          }
+        >
+          {(
+            ['name', 'jobTitle', 'organization', 'email', 'phone'] as const
+          ).map((field) => (
+            <Field
+              key={field}
+              label={
+                {
+                  name: 'Reference name',
+                  jobTitle: 'Reference job title',
+                  organization: 'Reference organization',
+                  email: 'Reference email',
+                  phone: 'Reference phone',
+                }[field]
+              }
+              className={field === 'name' ? 'full-width' : ''}
+              type={
+                field === 'email' ? 'email' : field === 'phone' ? 'tel' : 'text'
+              }
+              value={reference[field]}
+              onChange={(event) =>
+                onChange({
+                  ...cv,
+                  references: cv.references.map((entry) =>
+                    entry.id === reference.id
+                      ? { ...entry, [field]: event.target.value }
+                      : entry,
+                  ),
+                })
+              }
+            />
+          ))}
+          <div className="entry-order full-width">
+            {([-1, 1] as const).map((direction) => (
+              <button
+                key={direction}
+                type="button"
+                className="icon-button"
+                title={`Move reference ${direction === -1 ? 'up' : 'down'}`}
+                aria-label={`Move reference ${index + 1} ${direction === -1 ? 'up' : 'down'}`}
+                disabled={
+                  index + direction < 0 ||
+                  index + direction >= cv.references.length
+                }
+                onClick={() => {
+                  const references = [...cv.references]
+                  const target = index + direction
+                  const neighbor = references[target]
+                  if (!neighbor) return
+                  references[index] = neighbor
+                  references[target] = reference
+                  onChange({ ...cv, references })
+                }}
+              >
+                {direction === -1 ? (
+                  <ArrowUp size={16} />
+                ) : (
+                  <ArrowDown size={16} />
+                )}
+              </button>
+            ))}
+          </div>
+        </EntryGroup>
+      ))}
+      <button
+        type="button"
+        className="add-button"
+        disabled={cv.references.length >= 100}
+        onClick={() =>
+          onChange({
+            ...cv,
+            references: [
+              ...cv.references,
+              createReference(crypto.randomUUID()),
+            ],
+          })
+        }
+      >
+        <Plus size={17} />
+        Add reference
       </button>
     </div>
   )

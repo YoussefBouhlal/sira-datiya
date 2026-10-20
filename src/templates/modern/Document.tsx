@@ -1,6 +1,12 @@
-import { Document, Page, Text, View } from '@react-pdf/renderer'
+import { Document, Page, View } from '@react-pdf/renderer'
+import { Text } from '../shared/Text'
 import type { TemplateProps } from '../types'
-import { ContactLine, CvSections, PageNumber } from '../shared/content'
+import {
+  ContactLine,
+  CvSections,
+  PageNumber,
+  Portrait,
+} from '../shared/content'
 import { styles } from './styles'
 
 export function ModernDocument({ cv, appearance }: TemplateProps) {
@@ -15,6 +21,7 @@ export function ModernDocument({ cv, appearance }: TemplateProps) {
         style={[styles.page, { fontSize: appearance.fontSize }]}
       >
         <View style={[styles.header, { borderLeftColor: appearance.accent }]}>
+          <Portrait cv={cv} />
           <Text style={styles.name}>{cv.personal.fullName || 'Your name'}</Text>
           <Text style={[styles.title, { color: appearance.accent }]}>
             {cv.personal.jobTitle || 'Professional title'}

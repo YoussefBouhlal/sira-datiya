@@ -17,13 +17,13 @@ Open the local address printed by Vite. For an example document, choose **Load e
 
 ## Available workflows
 
-- Personal details, summary, experience, education, skills, languages, certifications, and projects.
-- Classic and Studio templates; accent, text size, and A4/US Letter settings.
+- Personal details, optional local portrait, summary, experience, education, skills with optional proficiency ratings, languages, certifications, projects, and ordered references.
+- Classic, Studio, and Sidebar templates; accent, text size, and A4/US Letter settings.
 - Preview generated PDF pages and download the exact PDF being previewed.
 - Browser autosave and JSON backup/restore under the document actions menu.
 - Confirmed reset and replacement actions.
 
-Drafts can be incomplete. A name is needed to enable PDF download. Browser storage is not encrypted or a permanent backup; clearing site data or private browsing may remove the CV. Unreadable saved data blocks autosave rather than being overwritten. Explicit restore/reset actions can replace it.
+Drafts can be incomplete. A name is needed to enable PDF download. Portraits are processed entirely on-device and included in JSON backups. Browser storage is not encrypted or a permanent backup; clearing site data or private browsing may remove the CV. Unreadable saved data blocks autosave rather than being overwritten. Explicit restore/reset actions can replace it. Existing version 1 drafts and backups are upgraded without dropping skill names; new saves use version 2.
 
 ## Quality checks
 
@@ -67,7 +67,7 @@ Start with [the architecture](docs/architecture.md), [the template guide](docs/t
 
 ## Current limits
 
-One CV per browser profile. No cloud sync, account recovery, rich text, photos, or DOCX export. Built-in PDF fonts target Latin-script CVs; broader script coverage requires bundled font registration and dedicated layout tests. Standard PDF fonts can produce a preview font warning in PDF.js on platforms without equivalent system fonts. The PDF renderer and worker are lazy-loaded but are relatively large dependencies. PDF text is selectable, but tagged-PDF/PDF-UA and universal ATS compatibility are not claimed.
+One CV per browser profile. No cloud sync, account recovery, rich text, portrait crop editor, or DOCX export. Portrait uploads accept PNG/JPEG files up to 10 MB and are center-cropped, resized, and compressed locally. Built-in PDF fonts target Latin-script CVs; broader script coverage requires bundled font registration and dedicated layout tests. Standard PDF fonts can produce a preview font warning in PDF.js on platforms without equivalent system fonts. The PDF renderer and worker are lazy-loaded but are relatively large dependencies. PDF text is selectable, but tagged-PDF/PDF-UA and universal ATS compatibility are not claimed.
 
 ## Publishing and licensing
 

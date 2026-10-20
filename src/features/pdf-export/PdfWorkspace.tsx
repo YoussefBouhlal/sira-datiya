@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import type { Appearance, CvData } from '../../domain/cv/types'
+import { proficiencyLevels } from '../../domain/cv/defaults'
 import { documentFilename, downloadBlob } from '../../lib/download'
 import type { TemplateDefinition, TemplateOption } from '../../templates/types'
 import { PdfCanvas } from './PdfCanvas'
@@ -135,7 +136,7 @@ export function PdfWorkspace({
       <section className="sr-only" aria-label="CV preview text">
         <h2>{cv.personal.fullName || 'Your name'}</h2>
         {Object.entries(cv.personal)
-          .filter(([key]) => key !== 'fullName')
+          .filter(([key]) => key !== 'fullName' && key !== 'portrait')
           .map(([key, value]) => (
             <p key={key}>{value}</p>
           ))}
@@ -167,12 +168,42 @@ export function PdfWorkspace({
               .join('. ')}
           </p>
         ))}
-        <p>{cv.skills.join(', ')}</p>
+        {cv.personal.portrait && (
+          <img
+            src={cv.personal.portrait}
+            alt={`${cv.personal.fullName || 'CV owner'} portrait`}
+            width={64}
+            height={64}
+          />
+        )}
+        <p>
+          {cv.skills
+            .map((skill) =>
+              skill.level === null
+                ? skill.name
+                : `${skill.name}: ${proficiencyLevels[skill.level - 1]}`,
+            )
+            .join(', ')}
+        </p>
         <p>{cv.languages.join(', ')}</p>
         <p>{cv.certifications.join(', ')}</p>
         {cv.projects.map((entry) => (
           <p key={entry.id}>
             {entry.name}. {entry.url}. {entry.description}
+          </p>
+        ))}
+        {cv.references.length > 0 && <h3>References</h3>}
+        {cv.references.map((entry) => (
+          <p key={entry.id}>
+            {[
+              entry.name,
+              entry.jobTitle,
+              entry.organization,
+              entry.email,
+              entry.phone,
+            ]
+              .filter(Boolean)
+              .join('. ')}
           </p>
         ))}
       </section>

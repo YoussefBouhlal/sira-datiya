@@ -16,7 +16,7 @@ export function StepNavigation({
     Boolean(cv.summary.trim()),
     cv.experience.some((entry) => entry.role.trim() && entry.employer.trim()),
     cv.education.some((entry) => entry.degree.trim() && entry.school.trim()),
-    cv.skills.some((skill) => skill.trim()),
+    cv.skills.some((skill) => skill.name.trim()),
   ]
   const count = completed.filter(Boolean).length
   return (

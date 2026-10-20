@@ -15,6 +15,7 @@ src/
     registry.ts              Registration, default, fallback
     classic/                 Definition, document and styles
     modern/                  Studio definition, document and styles
+    sidebar/                 Two-column Sidebar definition, document and styles
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing
@@ -39,7 +40,9 @@ Each template and feature exposes one public entry. Internal files use direct re
 
 The hook debounces saves by 350 ms and flushes the latest rendered document on `pagehide` or when hidden. Storage operations return explicit results. Failed saves retain the in-memory draft. Corrupt or unsupported saved data blocks automatic writing; only a confirmed reset or restore replaces it. State is private to one browser profile, not synchronized across tabs or devices. Simultaneous tabs are last-write-wins.
 
-Saved JSON has version `1`, `cv`, and `appearance`. Content and appearance are separate; the domain accepts unknown template IDs. The app resolves a missing ID to the registry default before the next save. Add explicit migrations and tests when the saved shape actually changes; never silently reinterpret future versions.
+Saved JSON has version `2`, `cv`, and `appearance`. Version `1` documents and backups remain readable: skill-name strings become unrated skill entries with deterministic, position-based IDs, and absent portrait/reference fields receive empty defaults. Reading never writes the migration back; the next successful save or backup emits version `2`. The storage key remains unchanged so existing drafts are discovered. Unsupported versions still block automatic writing. Content and appearance are separate; the domain accepts unknown template IDs. The app resolves a missing ID to the registry default before the next save.
+
+Skills have stable IDs and optional five-level proficiency ratings. References have stable IDs and an explicit user-controlled order. Portraits are optional local PNG/JPEG uploads, center-cropped and resized to 512 square pixels and re-encoded as JPEG data URLs of at most 270,000 characters before entering the canonical draft. No remote image sources are accepted. Portraits and references are CV content, so backups and all templates preserve them.
 
 ## PDF pipeline
 

@@ -5,12 +5,16 @@ import type {
   educationSchema,
   experienceSchema,
   projectSchema,
+  referenceSchema,
+  skillSchema,
 } from './schema'
 
 export type CvData = z.infer<typeof cvSchema>
 export type Experience = z.infer<typeof experienceSchema>
 export type Education = z.infer<typeof educationSchema>
 export type Project = z.infer<typeof projectSchema>
+export type Skill = z.infer<typeof skillSchema>
+export type Reference = z.infer<typeof referenceSchema>
 export type Appearance = z.infer<typeof appearanceSchema>
 export type CvDocument = { cv: CvData; appearance: Appearance }
 export type DeepReadonly<Value> = {

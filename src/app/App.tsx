@@ -49,7 +49,8 @@ export default function App() {
     document.cv.skills.length ||
     document.cv.languages.length ||
     document.cv.certifications.length ||
-    document.cv.projects.length
+    document.cv.projects.length ||
+    document.cv.references.length
 
   useEffect(() => {
     heading.current?.focus({ preventScroll: true })

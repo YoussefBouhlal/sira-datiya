@@ -43,7 +43,14 @@ export function TemplatePicker({
                 value={template.id}
               />
               <span
-                className={`template-miniature miniature-${template.typography}`}
+                className={`template-miniature miniature-${template.typography} miniature-${template.layout ?? 'single-column'}`}
+                style={
+                  template.layout === 'two-column'
+                    ? {
+                        backgroundImage: `linear-gradient(to right, ${appearance.accent} 32%, white 32%)`,
+                      }
+                    : undefined
+                }
                 aria-hidden="true"
               >
                 <span

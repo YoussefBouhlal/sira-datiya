@@ -3,6 +3,7 @@ import type { CvData } from '../../domain/cv/types'
 import { EducationForm } from './EducationForm'
 import { ExperienceForm } from './ExperienceForm'
 import { ExtrasForm } from './ExtrasForm'
+import { PortraitField } from './PortraitField'
 import type { EditorStep } from './steps'
 
 export function CvEditor({
@@ -105,6 +106,10 @@ export function CvEditor({
         placeholder="linkedin.com/in/alex-example"
         value={cv.personal.linkedin}
         onChange={(event) => update('linkedin', event.target.value)}
+      />
+      <PortraitField
+        value={cv.personal.portrait}
+        onChange={(value) => update('portrait', value)}
       />
     </div>
   )

@@ -662,6 +662,32 @@ button {
   display: grid;
   gap: 24px;
 }
+.portrait-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.portrait-field .form-field {
+  flex: 1 1 180px;
+}
+.portrait-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.field-error {
+  width: 100%;
+  color: #913629;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.entry-order {
+  display: flex;
+  gap: 6px;
+}
 .subsection-title {
   margin: 8px 0;
   font-family: 'Newsreader', serif;
@@ -767,6 +793,7 @@ button {
 }
 .quick-templates {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 7px;
@@ -858,6 +885,13 @@ button {
 }
 .miniature-serif .miniature-heading {
   font-family: 'Newsreader', serif;
+}
+.miniature-two-column {
+  padding-left: 39%;
+  text-align: left;
+}
+.miniature-two-column .miniature-heading {
+  font-size: 11px;
 }
 .miniature-rule {
   height: 2px;
