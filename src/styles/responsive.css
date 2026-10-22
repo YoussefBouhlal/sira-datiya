@@ -115,12 +115,8 @@
   .app-shell .step-arrow {
     display: none;
   }
-  .app-shell .workspace-heading {
-    height: 100px;
-    padding: 24px 28px;
-  }
   .app-shell .builder-grid {
-    min-height: calc(100svh - 232px);
+    min-height: calc(100svh - 132px);
   }
   .app-shell .section-heading h1 {
     font-size: 29px;
@@ -153,19 +149,6 @@
   }
   .app-shell .sidebar {
     padding: 8px;
-  }
-  .app-shell .workspace-heading {
-    height: 100px;
-    padding: 22px;
-  }
-  .app-shell .workspace-heading p {
-    font-size: 27px;
-  }
-  .app-shell .eyebrow {
-    font-size: 7px;
-  }
-  .app-shell .document-tag {
-    display: none;
   }
   .app-shell .builder-grid {
     display: block;
@@ -245,11 +228,5 @@
   .app-shell .editor-pane {
     padding-left: 18px;
     padding-right: 18px;
-  }
-  .app-shell .workspace-heading {
-    padding-left: 18px;
-  }
-  .app-shell .workspace-heading p {
-    font-size: 24px;
   }
 }

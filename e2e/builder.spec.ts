@@ -16,6 +16,9 @@ async function preview(page: Page) {
   })
   const canvas = page.getByRole('img', { name: /CV preview, page/ })
   await expect(canvas).toBeVisible()
+  await expect(
+    page.getByRole('group', { name: 'Preview template' }),
+  ).toHaveCount(0)
   await expect
     .poll(() =>
       canvas.evaluate((element) => {
@@ -77,6 +80,8 @@ test('edit, reload, choose a template, and download a real text PDF', async ({
   })
   await page.goto('./')
   await expect(page).toHaveURL(baseURL)
+  await expect(page.locator('.workspace-heading')).toHaveCount(0)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await page.getByLabel('Full name', { exact: true }).fill('Taylor Example')
   await page
     .getByLabel('Professional title', { exact: true })
@@ -298,11 +303,15 @@ test('portrait, rated skills and ordered references persist and render in every 
     .click()
   await page.getByLabel('Paper size').selectOption('LETTER')
   for (const template of ['Sidebar', 'Classic', 'Studio']) {
-    if (template !== 'Sidebar')
+    if (template !== 'Sidebar') {
+      await page.getByRole('button', { name: /06 Template & style/ }).click()
       await page
-        .getByRole('group', { name: 'Preview template' })
-        .getByRole('button', { name: template, exact: true })
+        .locator('.template-option')
+        .filter({
+          has: page.getByRole('radio', { name: template, exact: true }),
+        })
         .click()
+    }
     await preview(page)
     await expect(page.locator('.preview-status')).toHaveText(
       `${template} / US Letter`,
@@ -398,12 +407,12 @@ test('removed template IDs fall back without discarding content', async ({
   await expect(page.getByLabel('Full name', { exact: true })).toHaveValue(
     'Alex Morgan',
   )
-  await preview(page)
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
   await expect(
-    page
-      .getByRole('group', { name: 'Preview template' })
-      .getByRole('button', { name: 'Studio', exact: true }),
-  ).toHaveAttribute('aria-pressed', 'true')
+    page.getByRole('radio', { name: 'Studio', exact: true }),
+  ).toBeChecked()
+  await preview(page)
+  await expect(page.locator('.preview-status')).toHaveText('Studio / A4')
 })
 
 test('storage write failure is actionable and does not prevent PDF export', async ({
