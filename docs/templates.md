@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Classic, Studio, and Sidebar are registered; Studio remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Classic, Studio, Sidebar, and Traditional are registered; Studio remains the default.
 
 ## Add a template
 
@@ -28,6 +28,8 @@ Keep IDs stable: they are persisted. `typography` is metadata for the picker ill
 Optional `layout` metadata (`single-column` or `two-column`) changes the picker illustration only. Sidebar uses `two-column`; its renderer owns the actual column layout. Its sidebar background repeats on every PDF page, while identity and contact content flow once. Both columns may continue onto later pages. It renders skill proficiency as bars with named levels; Classic and Studio use named text levels. All templates render portraits and references when supplied.
 
 Classic uses a compact centered serif identity header, separate contact and website lines, accent-colored horizontal rules, and a narrow date rail beside experience and education. Profile text sits beside its section label; languages use two columns without interpreting supplied language strings. Description lines become bullets, preserving existing bullet markers. Skills retain their flat list and named proficiency; projects, certifications, and references follow the main sections. Optional portraits, text and paper sizes, page numbers, and flowing multi-page content remain supported. No personal-detail fields or skill categories are inferred from existing content.
+
+Traditional uses a centered serif name, job title, and location, with phone left and email right on a separate contact row. Double rules and underlined uppercase headings use the selected accent; section bands remain light gray. The profile is centered and italic. Experience and education titles have diamond markers and dotted leaders to right-aligned dates. Ordinary description lines are italic paragraphs; explicit bullet and numbered-list markers are preserved without adding bullets to prose. Skills, languages, projects, certifications, and professional references follow education when populated. Websites, LinkedIn, named skill proficiency, optional square portraits, page numbers, text sizes, both paper sizes, and flowing multi-page content remain supported. The Ink accent gives the closest monochrome presentation.
 
 ## Boundaries
 

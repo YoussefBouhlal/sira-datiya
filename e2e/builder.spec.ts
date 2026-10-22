@@ -302,7 +302,7 @@ test('portrait, rated skills and ordered references persist and render in every 
     .filter({ has: page.getByRole('radio', { name: 'Sidebar', exact: true }) })
     .click()
   await page.getByLabel('Paper size').selectOption('LETTER')
-  for (const template of ['Sidebar', 'Classic', 'Studio']) {
+  for (const template of ['Sidebar', 'Classic', 'Studio', 'Traditional']) {
     if (template !== 'Sidebar') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
       await page
@@ -327,11 +327,20 @@ test('portrait, rated skills and ordered references persist and render in every 
     try {
       const text = (
         await Promise.all(
-          Array.from({ length: pdf.numPages }, async (_, index) =>
-            (await (await pdf.getPage(index + 1)).getTextContent()).items
-              .map((item) => ('str' in item ? item.str : ''))
-              .join(' '),
-          ),
+          Array.from({ length: pdf.numPages }, async (_, index) => {
+            const items = (
+              await (await pdf.getPage(index + 1)).getTextContent()
+            ).items.filter((item) => 'str' in item)
+            if (template === 'Traditional') {
+              const body = items.filter(
+                (item) => item.str.trim() && item.transform[5] > 40,
+              )
+              expect(body.at(-1)?.str).not.toMatch(
+                /^(PROFILE|EXPERIENCE|EDUCATION|SKILLS|LANGUAGES|PROJECTS|CERTIFICATIONS|REFERENCES)$/,
+              )
+            }
+            return items.map((item) => item.str).join(' ')
+          }),
         )
       ).join(' ')
       for (const value of [
@@ -349,6 +358,12 @@ test('portrait, rated skills and ordered references persist and render in every 
       ).toContain(OPS.paintImageXObject)
     } finally {
       await task.destroy()
+    }
+    if (template === 'Traditional') {
+      await page.screenshot({
+        path: test.info().outputPath('traditional-portrait-preview.png'),
+        fullPage: true,
+      })
     }
     if (template === 'Sidebar') {
       const samples = await page

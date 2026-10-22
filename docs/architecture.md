@@ -16,6 +16,7 @@ src/
     classic/                 Definition, document and styles
     modern/                  Studio definition, document and styles
     sidebar/                 Two-column Sidebar definition, document and styles
+    traditional/             Traditional definition, document and styles
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing
