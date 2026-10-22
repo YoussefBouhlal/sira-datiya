@@ -171,18 +171,6 @@ export default function App() {
             <span>{message}</span>
           </div>
         )}
-        <div className="workspace-heading">
-          <div>
-            <span className="eyebrow">
-              A LITTLE ABOUT YOU, A LOT OF POSSIBILITY
-            </span>
-            <p>Your story. Well presented.</p>
-          </div>
-          <span className="document-tag">
-            <FileText size={14} />
-            YOUR CV
-          </span>
-        </div>
         <div
           className="mobile-view-switch"
           role="group"
@@ -289,13 +277,6 @@ export default function App() {
                 cv={document.cv}
                 appearance={document.appearance}
                 template={template}
-                options={templateRegistry.templates}
-                onTemplateChange={(templateId) =>
-                  update({
-                    ...document,
-                    appearance: { ...document.appearance, templateId },
-                  })
-                }
               />
             </Suspense>
           </section>

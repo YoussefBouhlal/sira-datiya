@@ -25,6 +25,134 @@ describe('template registry', () => {
     expect(document.cv).toEqual(original)
   })
 
+  for (const pageSize of ['A4', 'LETTER'] as const) {
+    it(`classic aligns its header, date rail and language columns on ${pageSize}`, async () => {
+      const cv = createExampleCv()
+      cv.experience[0]!.description =
+        'Plain achievement\n\u2022 Existing bullet\n- Existing dash'
+      const appearance = {
+        ...createDocument('classic').appearance,
+        pageSize,
+        fontSize: pageSize === 'A4' ? (10 as const) : (12 as const),
+      }
+      const render = await templateRegistry.resolve('classic').load()
+      const buffer = await renderToBuffer(render({ cv, appearance }))
+      const task = getDocument({
+        data: new Uint8Array(buffer),
+        useSystemFonts: true,
+      })
+      const pdf = await task.promise
+      try {
+        expect(pdf.numPages).toBe(1)
+        const page = await pdf.getPage(1)
+        const items = (await page.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const title = find('Alex Morgan, Product Designer')
+        expect(title.transform[4] + title.width / 2).toBeCloseTo(
+          page.view[2]! / 2,
+          0,
+        )
+        const profile = find('PROFILE')
+        const summary = find('Product designer turning')
+        expect(profile.transform[4]).toBeCloseTo(60, 0)
+        expect(summary.transform[4]).toBeCloseTo(
+          60 + (page.view[2]! - 120) * 0.235,
+          0,
+        )
+        expect(
+          Math.abs(profile.transform[5] - summary.transform[5]),
+        ).toBeLessThan(3)
+        const date = find('Mar 2022 - Present')
+        const role = find('Senior Product Designer')
+        expect(date.transform[4]).toBeCloseTo(profile.transform[4], 0)
+        expect(role.transform[4]).toBeCloseTo(summary.transform[4], 0)
+        expect(date.transform[4] + date.width).toBeLessThan(role.transform[4])
+        expect(find('English (native)').transform[4]).toBeLessThan(
+          find('French (conversational)').transform[4],
+        )
+        const text = items.map((item) => item.str).join(' ')
+        expect(text).toContain('\u2022 Plain achievement')
+        expect(text).not.toContain('\u2022 \u2022')
+        expect(text).not.toContain('\u2022 -')
+        expect(text).toContain('1 / 1')
+      } finally {
+        await task.destroy()
+      }
+    })
+  }
+
+  it('classic preserves long profile and a single experience across page breaks', async () => {
+    const cv = createEmptyCv()
+    cv.personal.fullName = 'Avery Example'
+    cv.summary = Array.from(
+      { length: 80 },
+      (_, index) => `Profile passage ${index} describes thoughtful work.`,
+    ).join(' ')
+    cv.experience = [
+      {
+        id: 'long-entry',
+        role: 'Engineer',
+        employer: 'Example Works',
+        location: 'Remote',
+        startDate: '2020-01',
+        endDate: '',
+        current: true,
+        description: Array.from(
+          { length: 100 },
+          (_, index) => `Achievement ${index} improved a useful service.`,
+        ).join('\n'),
+      },
+    ]
+    const appearance = {
+      ...createDocument('classic').appearance,
+      fontSize: 12 as const,
+    }
+    const render = await templateRegistry.resolve('classic').load()
+    const buffer = await renderToBuffer(render({ cv, appearance }))
+    const task = getDocument({
+      data: new Uint8Array(buffer),
+      useSystemFonts: true,
+    })
+    const pdf = await task.promise
+    try {
+      expect(pdf.numPages).toBeGreaterThan(2)
+      const pages = await Promise.all(
+        Array.from({ length: pdf.numPages }, async (_, index) => {
+          const page = await pdf.getPage(index + 1)
+          const items = (await page.getTextContent()).items
+            .filter((item) => 'str' in item)
+            .filter((item) => item.str.trim())
+          for (const item of items) {
+            expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+            expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+              page.view[2]! + 1,
+            )
+            expect(item.transform[5]).toBeGreaterThan(15)
+            expect(item.transform[5]).toBeLessThan(page.view[3]!)
+          }
+          return items
+            .filter((item) => item.transform[5] > 40)
+            .map((item) => item.str)
+            .join(' ')
+        }),
+      )
+      const text = pages.join(' ').replace(/\s+/g, ' ')
+      for (let index = 0; index < 80; index++)
+        expect(text).toContain(`Profile passage ${index}`)
+      for (let index = 0; index < 100; index++)
+        expect(text).toContain(`Achievement ${index}`)
+      expect(text.match(/Avery Example/g)).toHaveLength(1)
+    } finally {
+      await task.destroy()
+    }
+  })
+
   for (const template of templateRegistry.templates) {
     it(`${template.id} preserves structured skills, references and overflowing sidebar content`, async () => {
       const cv = createExampleCv()

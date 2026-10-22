@@ -9,7 +9,7 @@ import { useState } from 'react'
 import type { Appearance, CvData } from '../../domain/cv/types'
 import { proficiencyLevels } from '../../domain/cv/defaults'
 import { documentFilename, downloadBlob } from '../../lib/download'
-import type { TemplateDefinition, TemplateOption } from '../../templates/types'
+import type { TemplateDefinition } from '../../templates/types'
 import { PdfCanvas } from './PdfCanvas'
 import { usePdfDocument } from './use-pdf-document'
 
@@ -17,14 +17,10 @@ export function PdfWorkspace({
   cv,
   appearance,
   template,
-  options,
-  onTemplateChange,
 }: {
   cv: CvData
   appearance: Appearance
   template: TemplateDefinition
-  options: readonly TemplateOption[]
-  onTemplateChange: (id: string) => void
 }) {
   const { blob, loading, error } = usePdfDocument(cv, appearance, template)
   const [page, setPage] = useState(1)
@@ -115,23 +111,6 @@ export function PdfWorkspace({
             <ChevronRight size={16} />
           </button>
         </div>
-      </div>
-      <div
-        className="quick-templates"
-        role="group"
-        aria-label="Preview template"
-      >
-        <span>TEMPLATE</span>
-        {options.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={appearance.templateId === option.id}
-            onClick={() => onTemplateChange(option.id)}
-          >
-            {option.name}
-          </button>
-        ))}
       </div>
       <section className="sr-only" aria-label="CV preview text">
         <h2>{cv.personal.fullName || 'Your name'}</h2>
