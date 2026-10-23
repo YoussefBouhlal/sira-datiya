@@ -13,6 +13,9 @@ A visual presentation of CV content. Choosing a different template does not chan
 **Appearance**:
 The chosen template, accent color, text size, and paper size of a CV.
 
+**ATS-oriented template**:
+A template that prioritizes readable CV text for applicant-tracking systems. The label expresses a design goal, not guaranteed compatibility with every system.
+
 **Portrait**:
 An optional image of the person whose CV is being prepared.
 

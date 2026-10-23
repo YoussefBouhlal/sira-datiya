@@ -158,7 +158,186 @@ describe('template registry', () => {
     })
   }
 
-  it.each(['classic', 'traditional'])(
+  for (const pageSize of ['A4', 'LETTER'] as const) {
+    it(`prime-ats preserves reading order and four-column geometry on ${pageSize}`, async () => {
+      const cv = createExampleCv()
+      cv.experience[0]!.description =
+        'Plain achievement\n\u2022 Existing bullet\n- Existing dash\n1. Numbered achievement'
+      cv.skills = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'].map(
+        (name, index) => ({
+          id: `skill-${index}`,
+          name: `${name} capability`,
+          level: index === 0 ? 5 : null,
+        }),
+      )
+      cv.projects = [
+        {
+          id: 'project',
+          name: 'Community Toolkit',
+          url: 'toolkit.example',
+          description: 'Built public resources.',
+        },
+      ]
+      cv.certifications = ['Accessibility Practitioner']
+      cv.references = [
+        {
+          id: 'reference',
+          name: 'Jordan Example',
+          jobTitle: 'Team Lead',
+          organization: 'Example Studio',
+          email: 'jordan@example.com',
+          phone: '',
+        },
+      ]
+      const appearance = {
+        ...createDocument('prime-ats').appearance,
+        pageSize,
+        fontSize: pageSize === 'A4' ? (10 as const) : (12 as const),
+        accent: '#3456a0' as const,
+      }
+      const render = await templateRegistry.resolve('prime-ats').load()
+      const buffer = await renderToBuffer(render({ cv, appearance }))
+      const task = getDocument({
+        data: new Uint8Array(buffer),
+        useSystemFonts: true,
+      })
+      const pdf = await task.promise
+      try {
+        const pages = await Promise.all(
+          Array.from({ length: pdf.numPages }, async (_, index) => {
+            const page = await pdf.getPage(index + 1)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            const body = items.filter(
+              (item) => item.str.trim() && item.transform[5] > 40,
+            )
+            expect(body.at(-1)?.str).not.toMatch(
+              /^(SUMMARY|PROFESSIONAL EXPERIENCE|EDUCATION|TECHNICAL SKILLS|PROJECTS|ADDITIONAL INFORMATION|REFERENCES)$/,
+            )
+            return items
+          }),
+        )
+        const items = pages.flat()
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const firstPage = await pdf.getPage(1)
+        expect(find('ALEX MORGAN').transform[4]).toBeCloseTo(40, 0)
+        expect(find('ALEX MORGAN').height).toBeCloseTo(
+          appearance.fontSize * 2.3,
+          0,
+        )
+        const role = find('Senior Product Designer')
+        const date = find('Mar 2022 - Present')
+        expect(role.transform[4] + role.width).toBeLessThan(date.transform[4])
+        expect(date.transform[4] + date.width).toBeCloseTo(
+          firstPage.view[2]! - 40,
+          0,
+        )
+        expect(Math.abs(role.transform[5] - date.transform[5])).toBeLessThan(3)
+        const alpha = find('Alpha capability')
+        for (const [index, name] of [
+          'Alpha',
+          'Bravo',
+          'Charlie',
+          'Delta',
+        ].entries()) {
+          const skill = find(`${name} capability`)
+          expect(skill.transform[4]).toBeCloseTo(
+            40 + (index * (firstPage.view[2]! - 80)) / 4,
+            0,
+          )
+          expect(skill.transform[5]).toBeCloseTo(alpha.transform[5], 0)
+        }
+        expect(find('Echo capability').transform[4]).toBeCloseTo(40, 0)
+        expect(find('Echo capability').transform[5]).toBeLessThan(
+          alpha.transform[5],
+        )
+        const text = items
+          .filter((item) => item.transform[5] > 40)
+          .map((item) => item.str)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+        const sequence = [
+          'ALEX MORGAN',
+          'PRODUCT DESIGNER',
+          'San Francisco, CA',
+          '+1 415 555 0142',
+          'alex@example.com',
+          'alexmorgan.example',
+          'linkedin.com/in/alex-example',
+          'SUMMARY',
+          'Product designer turning',
+          'PROFESSIONAL EXPERIENCE',
+          'Senior Product Designer',
+          'Mar 2022 - Present',
+          'EDUCATION',
+          'TECHNICAL SKILLS',
+          'Alpha capability',
+          'Expert',
+          'Bravo capability',
+          'Charlie capability',
+          'Delta capability',
+          'Echo capability',
+          'PROJECTS',
+          'Community Toolkit',
+          'ADDITIONAL INFORMATION',
+          'Languages:',
+          'French (conversational)',
+          'Certifications:',
+          'Accessibility Practitioner',
+          'REFERENCES',
+          'Jordan Example',
+          'jordan@example.com',
+        ]
+        let position = -1
+        for (const value of sequence) {
+          const next = text.indexOf(value, position + 1)
+          expect(next, value).toBeGreaterThan(position)
+          position = next
+        }
+        expect(text).toContain('\u2022 Plain achievement')
+        expect(text).toContain('1. Numbered achievement')
+        expect(text).not.toContain('\u2022 \u2022')
+        expect(text).not.toContain('\u2022 -')
+        expect(text).not.toContain('AWARDS')
+      } finally {
+        await task.destroy()
+      }
+    })
+  }
+
+  it('prime-ats omits blank optional sections', async () => {
+    const cv = createEmptyCv()
+    cv.summary = '   '
+    cv.languages = ['   ']
+    cv.certifications = ['   ']
+    const appearance = createDocument('prime-ats').appearance
+    const render = await templateRegistry.resolve('prime-ats').load()
+    const buffer = await renderToBuffer(render({ cv, appearance }))
+    const task = getDocument({
+      data: new Uint8Array(buffer),
+      useSystemFonts: true,
+    })
+    const pdf = await task.promise
+    try {
+      const items = (
+        await (await pdf.getPage(1)).getTextContent()
+      ).items.filter((item) => 'str' in item)
+      const text = items.map((item) => item.str).join(' ')
+      expect(text).toContain('YOUR NAME')
+      expect(text).not.toMatch(
+        /SUMMARY|PROFESSIONAL EXPERIENCE|EDUCATION|TECHNICAL SKILLS|PROJECTS|ADDITIONAL INFORMATION|REFERENCES/,
+      )
+    } finally {
+      await task.destroy()
+    }
+  })
+
+  it.each(['classic', 'traditional', 'prime-ats'])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
       const cv = createEmptyCv()
@@ -220,7 +399,7 @@ describe('template registry', () => {
           expect(text).toContain(`Profile passage ${index}`)
         for (let index = 0; index < 100; index++)
           expect(text).toContain(`Achievement ${index}`)
-        expect(text.match(/Avery Example/g)).toHaveLength(1)
+        expect(text.match(/Avery Example/gi)).toHaveLength(1)
       } finally {
         await task.destroy()
       }
@@ -308,7 +487,7 @@ describe('template registry', () => {
           'Advanced',
         ])
           expect(text).toContain(value)
-        expect(text.match(/Alex Morgan/g)).toHaveLength(1)
+        expect(text.match(/Alex Morgan/gi)).toHaveLength(1)
       } finally {
         await task.destroy()
       }
