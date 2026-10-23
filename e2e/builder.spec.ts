@@ -302,7 +302,13 @@ test('portrait, rated skills and ordered references persist and render in every 
     .filter({ has: page.getByRole('radio', { name: 'Sidebar', exact: true }) })
     .click()
   await page.getByLabel('Paper size').selectOption('LETTER')
-  for (const template of ['Sidebar', 'Classic', 'Studio', 'Traditional']) {
+  for (const template of [
+    'Sidebar',
+    'Classic',
+    'Studio',
+    'Traditional',
+    'Prime ATS',
+  ]) {
     if (template !== 'Sidebar') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
       await page
@@ -331,12 +337,24 @@ test('portrait, rated skills and ordered references persist and render in every 
             const items = (
               await (await pdf.getPage(index + 1)).getTextContent()
             ).items.filter((item) => 'str' in item)
-            if (template === 'Traditional') {
+            if (template === 'Prime ATS' && index === 0) {
+              const summary = items.find((item) => item.str === 'SUMMARY')!
+              const header = items.filter(
+                (item) =>
+                  item.str.trim() && item.transform[5] > summary.transform[5],
+              )
+              const firstPage = await pdf.getPage(1)
+              for (const item of header)
+                expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                  firstPage.view[2]! - 134 + 1,
+                )
+            }
+            if (template === 'Traditional' || template === 'Prime ATS') {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
               )
               expect(body.at(-1)?.str).not.toMatch(
-                /^(PROFILE|EXPERIENCE|EDUCATION|SKILLS|LANGUAGES|PROJECTS|CERTIFICATIONS|REFERENCES)$/,
+                /^(PROFILE|SUMMARY|EXPERIENCE|PROFESSIONAL EXPERIENCE|EDUCATION|SKILLS|TECHNICAL SKILLS|LANGUAGES|PROJECTS|CERTIFICATIONS|ADDITIONAL INFORMATION|REFERENCES)$/,
               )
             }
             return items.map((item) => item.str).join(' ')
@@ -351,7 +369,7 @@ test('portrait, rated skills and ordered references persist and render in every 
         'casey@example.com',
         'Jordan Example',
       ])
-        expect(text).toContain(value)
+        expect(text.toLowerCase()).toContain(value.toLowerCase())
       expect(text).not.toContain('[object Object]')
       expect(
         (await (await pdf.getPage(1)).getOperatorList()).fnArray,
@@ -362,6 +380,12 @@ test('portrait, rated skills and ordered references persist and render in every 
     if (template === 'Traditional') {
       await page.screenshot({
         path: test.info().outputPath('traditional-portrait-preview.png'),
+        fullPage: true,
+      })
+    }
+    if (template === 'Prime ATS') {
+      await page.screenshot({
+        path: test.info().outputPath('prime-ats-portrait-preview.png'),
         fullPage: true,
       })
     }

@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Classic, Studio, Sidebar, and Traditional are registered; Studio remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Classic, Studio, Sidebar, Traditional, and Prime ATS are registered; Studio remains the default.
 
 ## Add a template
 
@@ -30,6 +30,8 @@ Optional `layout` metadata (`single-column` or `two-column`) changes the picker 
 Classic uses a compact centered serif identity header, separate contact and website lines, accent-colored horizontal rules, and a narrow date rail beside experience and education. Profile text sits beside its section label; languages use two columns without interpreting supplied language strings. Description lines become bullets, preserving existing bullet markers. Skills retain their flat list and named proficiency; projects, certifications, and references follow the main sections. Optional portraits, text and paper sizes, page numbers, and flowing multi-page content remain supported. No personal-detail fields or skill categories are inferred from existing content.
 
 Traditional uses a centered serif name, job title, and location, with phone left and email right on a separate contact row. Double rules and underlined uppercase headings use the selected accent; section bands remain light gray. The profile is centered and italic. Experience and education titles have diamond markers and dotted leaders to right-aligned dates. Ordinary description lines are italic paragraphs; explicit bullet and numbered-list markers are preserved without adding bullets to prose. Skills, languages, projects, certifications, and professional references follow education when populated. Websites, LinkedIn, named skill proficiency, optional square portraits, page numbers, text sizes, both paper sizes, and flowing multi-page content remain supported. The Ink accent gives the closest monochrome presentation.
+
+Prime ATS uses a compact single-column sans-serif layout, uppercase accent-colored identity, an optional square portrait at the top right, a horizontal contact line, and uppercase headings framed by thin accent rules. Experience and education have right-aligned dates and bulleted description lines, preserving existing bullet and numbered-list markers. Technical skills use four columns in row-major reading order with named proficiency labels. Projects follow skills; Additional Information groups existing languages and certifications, followed by References. Empty sections are omitted. The selected accent, font size, A4/Letter paper size, page numbers, and flowing multi-page content remain supported; Cobalt gives the closest match to the visual reference. ATS-oriented means a text-first design with selectable PDF text and tested extraction order, not guaranteed compatibility with every applicant-tracking system. No awards field or sample identity is inferred from the reference.
 
 ## Boundaries
 

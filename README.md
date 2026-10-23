@@ -18,7 +18,7 @@ Open the local address printed by Vite. For an example document, choose **Load e
 ## Available workflows
 
 - Personal details, optional local portrait, summary, experience, education, skills with optional proficiency ratings, languages, certifications, projects, and ordered references.
-- Classic, Studio, and Sidebar templates; accent, text size, and A4/US Letter settings.
+- Classic, Studio, Sidebar, Traditional, and Prime ATS templates; accent, text size, and A4/US Letter settings.
 - Preview generated PDF pages and download the exact PDF being previewed.
 - Browser autosave and JSON backup/restore under the document actions menu.
 - Confirmed reset and replacement actions.
