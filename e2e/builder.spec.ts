@@ -308,6 +308,7 @@ test('portrait, rated skills and ordered references persist and render in every 
     'Studio',
     'Traditional',
     'Prime ATS',
+    'Pure ATS',
   ]) {
     if (template !== 'Sidebar') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
@@ -337,8 +338,15 @@ test('portrait, rated skills and ordered references persist and render in every 
             const items = (
               await (await pdf.getPage(index + 1)).getTextContent()
             ).items.filter((item) => 'str' in item)
-            if (template === 'Prime ATS' && index === 0) {
-              const summary = items.find((item) => item.str === 'SUMMARY')!
+            if (
+              (template === 'Prime ATS' || template === 'Pure ATS') &&
+              index === 0
+            ) {
+              const summary = items.find(
+                (item) =>
+                  item.str ===
+                  (template === 'Pure ATS' ? 'Profile' : 'SUMMARY'),
+              )!
               const header = items.filter(
                 (item) =>
                   item.str.trim() && item.transform[5] > summary.transform[5],
@@ -346,15 +354,21 @@ test('portrait, rated skills and ordered references persist and render in every 
               const firstPage = await pdf.getPage(1)
               for (const item of header)
                 expect(item.transform[4] + item.width).toBeLessThanOrEqual(
-                  firstPage.view[2]! - 134 + 1,
+                  firstPage.view[2]! -
+                    (template === 'Pure ATS' ? 113 : 134) +
+                    1,
                 )
             }
-            if (template === 'Traditional' || template === 'Prime ATS') {
+            if (
+              template === 'Traditional' ||
+              template === 'Prime ATS' ||
+              template === 'Pure ATS'
+            ) {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
               )
               expect(body.at(-1)?.str).not.toMatch(
-                /^(PROFILE|SUMMARY|EXPERIENCE|PROFESSIONAL EXPERIENCE|EDUCATION|SKILLS|TECHNICAL SKILLS|LANGUAGES|PROJECTS|CERTIFICATIONS|ADDITIONAL INFORMATION|REFERENCES)$/,
+                /^(PROFILE|SUMMARY|EXPERIENCE|PROFESSIONAL EXPERIENCE|EDUCATION|SKILLS|TECHNICAL SKILLS|AREAS OF EXPERTISE|LANGUAGES|PROJECTS|CERTIFICATIONS|ADDITIONAL INFORMATION|REFERENCES)$/i,
               )
             }
             return items.map((item) => item.str).join(' ')
@@ -386,6 +400,35 @@ test('portrait, rated skills and ordered references persist and render in every 
     if (template === 'Prime ATS') {
       await page.screenshot({
         path: test.info().outputPath('prime-ats-portrait-preview.png'),
+        fullPage: true,
+      })
+    }
+    if (template === 'Pure ATS') {
+      const samples = await page
+        .getByRole('img', { name: /CV preview, page/ })
+        .evaluate((element) => {
+          const canvas = element as HTMLCanvasElement
+          const context = canvas.getContext('2d')!
+          const pixels = context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          ).data
+          let ink = 0
+          for (let index = 0; index < pixels.length; index += 4) {
+            if (
+              pixels[index]! < 180 &&
+              pixels[index + 1]! < 180 &&
+              pixels[index + 2]! < 180
+            )
+              ink++
+          }
+          return ink
+        })
+      expect(samples).toBeGreaterThan(500)
+      await page.screenshot({
+        path: test.info().outputPath('pure-ats-portrait-preview.png'),
         fullPage: true,
       })
     }
