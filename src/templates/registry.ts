@@ -1,6 +1,7 @@
 import { classicTemplate } from './classic'
 import { modernTemplate } from './modern'
 import { primeAtsTemplate } from './prime-ats'
+import { pureAtsTemplate } from './pure-ats'
 import { sidebarTemplate } from './sidebar'
 import { traditionalTemplate } from './traditional'
 import type { TemplateDefinition } from './types'
@@ -35,6 +36,7 @@ export const templateRegistry = createTemplateRegistry(
     sidebarTemplate,
     traditionalTemplate,
     primeAtsTemplate,
+    pureAtsTemplate,
   ],
   'modern',
 )
