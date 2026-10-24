@@ -50,12 +50,15 @@ export function CvEditor({
   return (
     <div className="field-grid">
       <Field
-        className="full-width"
         label="Full name"
         autoComplete="name"
         placeholder="Alex Morgan"
         value={cv.personal.fullName}
         onChange={(event) => update('fullName', event.target.value)}
+      />
+      <PortraitField
+        value={cv.personal.portrait}
+        onChange={(value) => update('portrait', value)}
       />
       <Field
         className="full-width"
@@ -106,10 +109,6 @@ export function CvEditor({
         placeholder="linkedin.com/in/alex-example"
         value={cv.personal.linkedin}
         onChange={(event) => update('linkedin', event.target.value)}
-      />
-      <PortraitField
-        value={cv.personal.portrait}
-        onChange={(value) => update('portrait', value)}
       />
     </div>
   )

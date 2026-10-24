@@ -1,3 +1,14 @@
+@media (min-width: 700px) {
+  .app-shell .preview-pane {
+    position: sticky;
+    top: var(--header-height);
+    height: calc(100svh - var(--header-height));
+    align-self: start;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+  }
+}
+
 @media (min-width: 1600px) {
   .app-shell .builder-grid {
     grid-template-columns: minmax(450px, 1fr) minmax(500px, 1fr);
@@ -15,6 +26,9 @@
 }
 
 @media (max-width: 1199px) {
+  .template-gallery .template-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .app-shell {
     grid-template-columns: 190px minmax(0, 1fr);
   }
@@ -60,6 +74,7 @@
 
 @media (max-width: 959px) {
   .app-shell {
+    --header-height: 68px;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 68px auto 1fr;
   }
@@ -124,6 +139,56 @@
 }
 
 @media (max-width: 699px) {
+  .template-gallery {
+    width: 100%;
+    height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+  }
+  .gallery-header {
+    padding: 14px 18px;
+  }
+  .gallery-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gallery-browser {
+    padding: 20px 18px;
+  }
+  .gallery-filters {
+    grid-template-columns: minmax(0, 1fr) 132px;
+    gap: 10px;
+  }
+  .gallery-filters input,
+  .gallery-filters select {
+    font-size: 16px;
+  }
+  .gallery-inspection {
+    display: none;
+    border-left: 0;
+  }
+  .is-inspecting .gallery-browser {
+    display: none;
+  }
+  .is-inspecting .gallery-inspection {
+    display: grid;
+  }
+  .gallery-back {
+    display: grid;
+  }
+  .gallery-preview-heading {
+    padding: 12px 18px;
+  }
+  .gallery-document {
+    padding-inline: 18px;
+  }
+  .gallery-apply {
+    padding: 14px 18px max(14px, env(safe-area-inset-bottom));
+  }
+  .gallery-apply .button {
+    width: 100%;
+    justify-content: center;
+  }
   .app-shell .app-header {
     padding-right: 12px;
   }
@@ -219,6 +284,18 @@
 }
 
 @media (max-width: 359px) {
+  .app-shell .app-header {
+    padding-right: 8px;
+  }
+  .app-shell .brand {
+    padding-left: 8px;
+  }
+  .app-shell .header-actions {
+    gap: 4px;
+  }
+  .app-shell .example-button {
+    padding-inline: 3px;
+  }
   .app-shell .save-status {
     display: none;
   }

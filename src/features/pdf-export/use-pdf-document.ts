@@ -3,6 +3,24 @@ import { pdf } from '@react-pdf/renderer'
 import type { Appearance, CvData } from '../../domain/cv/types'
 import type { TemplateDefinition } from '../../templates/types'
 
+let renderQueue = Promise.resolve()
+
+export function generatePdfDocument(
+  cv: CvData,
+  appearance: Appearance,
+  template: TemplateDefinition,
+) {
+  const result = renderQueue.then(async () => {
+    const render = await template.load()
+    return pdf(render({ cv, appearance })).toBlob()
+  })
+  renderQueue = result.then(
+    () => {},
+    () => {},
+  )
+  return result
+}
+
 export function usePdfDocument(
   cv: CvData,
   appearance: Appearance,
@@ -23,9 +41,7 @@ export function usePdfDocument(
       queue.current = queue.current.then(async () => {
         if (cancelled) return
         try {
-          const render = await template.load()
-          if (cancelled) return
-          const next = await pdf(render({ cv, appearance })).toBlob()
+          const next = await generatePdfDocument(cv, appearance, template)
           if (!cancelled)
             setResult({ cv, appearance, template, blob: next, error: '' })
         } catch {

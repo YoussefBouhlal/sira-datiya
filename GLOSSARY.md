@@ -13,6 +13,15 @@ A visual presentation of CV content. Choosing a different template does not chan
 **Appearance**:
 The chosen template, accent color, text size, and paper size of a CV.
 
+**CV preview**:
+The on-screen representation of the CV with its current content and appearance.
+
+**Template gallery**:
+The collection of available templates presented for browsing and comparison.
+
+**Template thumbnail**:
+A small representation of a template using fictional CV content, rather than the person's own content.
+
 **ATS-oriented template**:
 A template that prioritizes readable CV text for applicant-tracking systems. The label expresses a design goal, not guaranteed compatibility with every system.
 
