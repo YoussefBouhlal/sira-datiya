@@ -27,6 +27,11 @@ import { DocumentActions } from './DocumentActions'
 import { useCvDocument } from './use-cv-document'
 
 const PdfWorkspace = lazy(() => import('../features/pdf-export'))
+const TemplateThumbnail = lazy(() =>
+  import('../features/pdf-export').then((module) => ({
+    default: module.TemplateThumbnail,
+  })),
+)
 type Confirmation =
   { kind: 'example' | 'reset' } | { kind: 'restore'; document: CvDocument }
 
@@ -90,15 +95,6 @@ export default function App() {
           </span>
           Sira Datiya
         </a>
-        <div className="document-path">
-          <span>Workspace</span>
-          <span className="path-slash">/</span>
-          <span className="document-name">
-            {document.cv.personal.fullName
-              ? `${document.cv.personal.fullName}'s CV`
-              : 'Untitled CV'}
-          </span>
-        </div>
         <div className="header-actions">
           <span
             className={`save-status ${saveStatus === 'error' ? 'has-error' : ''}`}
@@ -140,13 +136,6 @@ export default function App() {
         </div>
       </header>
       <aside className="sidebar">
-        <div className="sidebar-top">
-          <span className="workspace-icon">
-            <PencilLine size={16} />
-          </span>
-          <span>CV builder</span>
-          <span className="draft-badge">DRAFT</span>
-        </div>
         <StepNavigation step={step} cv={document.cv} onSelect={chooseStep} />
         <div className="sidebar-footer">
           <ShieldCheck size={21} strokeWidth={1.5} aria-hidden="true" />
@@ -211,6 +200,35 @@ export default function App() {
                   options={templateRegistry.templates}
                   appearance={document.appearance}
                   onChange={(appearance) => update({ ...document, appearance })}
+                  renderThumbnail={(option) => (
+                    <Suspense
+                      fallback={
+                        <span className="thumbnail-placeholder">
+                          <LoaderCircle size={18} className="spin" />
+                        </span>
+                      }
+                    >
+                      <TemplateThumbnail
+                        template={templateRegistry.resolve(option.id)}
+                      />
+                    </Suspense>
+                  )}
+                  renderPreview={(option) => (
+                    <Suspense
+                      fallback={
+                        <div className="preview-placeholder">
+                          <LoaderCircle size={24} className="spin" />
+                        </div>
+                      }
+                    >
+                      <PdfWorkspace
+                        cv={document.cv}
+                        appearance={document.appearance}
+                        template={templateRegistry.resolve(option.id)}
+                        downloadable={false}
+                      />
+                    </Suspense>
+                  )}
                 />
               ) : (
                 <CvEditor
@@ -259,12 +277,12 @@ export default function App() {
                 </button>
               )}
             </footer>
-            <p className="editor-footnote">
-              <LockKeyhole size={12} />
-              Private by default. Saved in your browser.
-            </p>
           </section>
-          <section className="preview-pane" aria-label="Document preview">
+          <section
+            className="preview-pane"
+            aria-label="Document preview"
+            tabIndex={0}
+          >
             <Suspense
               fallback={
                 <div className="preview-placeholder">

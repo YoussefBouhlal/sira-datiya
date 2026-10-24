@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Trash2 } from 'lucide-react'
-import { Field } from '../../components/ui/Field'
+import { useEffect, useId, useRef, useState } from 'react'
+import { Trash2, Upload } from 'lucide-react'
 
 async function preparePortrait(file: File): Promise<string> {
   if (!['image/png', 'image/jpeg'].includes(file.type))
@@ -52,6 +51,7 @@ export function PortraitField({
   value: string
   onChange: (value: string) => void
 }) {
+  const inputId = useId()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const request = useRef(0)
@@ -66,58 +66,82 @@ export function PortraitField({
     [],
   )
   return (
-    <div className="portrait-field full-width">
-      {value && (
-        <img
-          className="portrait-preview"
-          src={value}
-          alt="Your portrait"
-          width={64}
-          height={64}
-        />
+    <div className="form-field portrait-field">
+      <label htmlFor={inputId}>Portrait</label>
+      <div className="portrait-controls">
+        <div className="portrait-upload">
+          <input
+            id={inputId}
+            className="portrait-input"
+            type="file"
+            accept="image/png,image/jpeg"
+            title={value ? 'Replace portrait' : 'Upload portrait'}
+            disabled={busy}
+            aria-invalid={Boolean(error)}
+            aria-describedby={
+              error
+                ? `${inputId}-error`
+                : busy
+                  ? `${inputId}-status`
+                  : undefined
+            }
+            onChange={async (event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ''
+              if (!file) return
+              const current = ++request.current
+              setError('')
+              setBusy(true)
+              try {
+                const portrait = await preparePortrait(file)
+                if (request.current === current) latestChange.current(portrait)
+              } catch (failure) {
+                if (request.current === current)
+                  setError(
+                    failure instanceof Error
+                      ? failure.message
+                      : 'The portrait could not be opened. Choose another PNG or JPEG.',
+                  )
+              } finally {
+                if (request.current === current) setBusy(false)
+              }
+            }}
+          />
+          {value ? (
+            <img
+              className="portrait-preview"
+              src={value}
+              alt="Your portrait"
+              width={42}
+              height={42}
+            />
+          ) : (
+            <Upload size={18} aria-hidden="true" />
+          )}
+        </div>
+        {value && (
+          <button
+            type="button"
+            className="icon-button"
+            title="Remove portrait"
+            aria-label="Remove portrait"
+            disabled={busy}
+            onClick={() => {
+              setError('')
+              onChange('')
+            }}
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
+      {busy && (
+        <span id={`${inputId}-status`} role="status">
+          Preparing portrait...
+        </span>
       )}
-      <Field
-        label="Portrait"
-        type="file"
-        accept="image/png,image/jpeg"
-        disabled={busy}
-        onChange={async (event) => {
-          const file = event.target.files?.[0]
-          event.target.value = ''
-          if (!file) return
-          const current = ++request.current
-          setError('')
-          setBusy(true)
-          try {
-            const portrait = await preparePortrait(file)
-            if (request.current === current) latestChange.current(portrait)
-          } catch (failure) {
-            if (request.current === current)
-              setError(
-                failure instanceof Error
-                  ? failure.message
-                  : 'The portrait could not be opened. Choose another PNG or JPEG.',
-              )
-          } finally {
-            if (request.current === current) setBusy(false)
-          }
-        }}
-      />
-      {value && (
-        <button
-          type="button"
-          className="icon-button"
-          title="Remove portrait"
-          aria-label="Remove portrait"
-          disabled={busy}
-          onClick={() => onChange('')}
-        >
-          <Trash2 size={16} />
-        </button>
-      )}
-      {busy && <span role="status">Preparing portrait...</span>}
       {error && (
-        <p className="field-error" role="alert">
+        <p id={`${inputId}-error`} className="field-error" role="alert">
           {error}
         </p>
       )}

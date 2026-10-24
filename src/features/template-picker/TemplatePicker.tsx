@@ -1,5 +1,5 @@
-import { Check } from 'lucide-react'
-import { useId } from 'react'
+import { ArrowLeft, Check, LayoutGrid, Search, X } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { Appearance } from '../../domain/cv/types'
 import type { TemplateOption } from '../../templates/types'
 
@@ -14,74 +14,45 @@ export function TemplatePicker({
   options,
   appearance,
   onChange,
+  renderThumbnail,
+  renderPreview,
 }: {
   options: readonly TemplateOption[]
   appearance: Appearance
   onChange: (appearance: Appearance) => void
+  renderThumbnail: (template: TemplateOption) => ReactNode
+  renderPreview: (template: TemplateOption) => ReactNode
 }) {
   const groupId = useId()
+  const [galleryOpen, setGalleryOpen] = useState(false)
+  const selected = options.find(
+    (option) => option.id === appearance.templateId,
+  )!
   return (
     <div className="design-settings">
       <fieldset className="plain-fieldset">
         <legend className="setting-label">
           Template <span>{String(options.length).padStart(2, '0')}</span>
         </legend>
-        <div className="template-options">
-          {options.map((template) => (
-            <label
-              className={`template-option ${appearance.templateId === template.id ? 'is-selected' : ''}`}
-              key={template.id}
+        <div className="selected-template">
+          <div className="selected-template-thumbnail" aria-hidden="true">
+            {renderThumbnail(selected)}
+          </div>
+          <div className="selected-template-details">
+            <strong>{selected.name}</strong>
+            <span>
+              {selected.layout === 'two-column'
+                ? 'Two columns'
+                : 'Single column'}
+            </span>
+            <button
+              type="button"
+              className="button button-quiet"
+              onClick={() => setGalleryOpen(true)}
             >
-              <input
-                type="radio"
-                className="sr-only"
-                name={`${groupId}-template`}
-                checked={appearance.templateId === template.id}
-                onChange={() =>
-                  onChange({ ...appearance, templateId: template.id })
-                }
-                value={template.id}
-              />
-              <span
-                className={`template-miniature miniature-${template.typography} miniature-${template.layout ?? 'single-column'}`}
-                style={
-                  template.layout === 'two-column'
-                    ? {
-                        backgroundImage: `linear-gradient(to right, ${appearance.accent} 32%, white 32%)`,
-                      }
-                    : undefined
-                }
-                aria-hidden="true"
-              >
-                <span
-                  className="miniature-heading"
-                  style={{ color: appearance.accent }}
-                >
-                  Alex Morgan
-                </span>
-                <span className="miniature-subtitle">PRODUCT DESIGNER</span>
-                <span
-                  className="miniature-rule"
-                  style={{ background: appearance.accent }}
-                />
-                <span className="miniature-lines" />
-                <span className="miniature-lines short" />
-                <span
-                  className="miniature-rule"
-                  style={{ background: appearance.accent }}
-                />
-                <span className="miniature-lines" />
-                <span className="miniature-lines" />
-                <span className="miniature-lines short" />
-              </span>
-              <span className="template-option-label">
-                {template.name}
-                <span className="selection-indicator">
-                  {appearance.templateId === template.id && <Check size={12} />}
-                </span>
-              </span>
-            </label>
-          ))}
+              <LayoutGrid size={15} /> Browse templates
+            </button>
+          </div>
         </div>
       </fieldset>
       <fieldset className="plain-fieldset">
@@ -146,6 +117,237 @@ export function TemplatePicker({
           <option value="LETTER">US Letter (8.5 x 11 in)</option>
         </select>
       </div>
+      {galleryOpen && (
+        <TemplateGallery
+          options={options}
+          selectedId={selected.id}
+          renderThumbnail={renderThumbnail}
+          renderPreview={renderPreview}
+          onClose={() => setGalleryOpen(false)}
+          onApply={(templateId) => {
+            onChange({ ...appearance, templateId })
+            setGalleryOpen(false)
+          }}
+        />
+      )}
     </div>
+  )
+}
+
+function TemplateGallery({
+  options,
+  selectedId,
+  renderThumbnail,
+  renderPreview,
+  onClose,
+  onApply,
+}: {
+  options: readonly TemplateOption[]
+  selectedId: string
+  renderThumbnail: (template: TemplateOption) => ReactNode
+  renderPreview: (template: TemplateOption) => ReactNode
+  onClose: () => void
+  onApply: (id: string) => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const searchInput = useRef<HTMLInputElement>(null)
+  const previewHeading = useRef<HTMLHeadingElement>(null)
+  const titleId = useId()
+  const searchId = useId()
+  const layoutId = useId()
+  const [query, setQuery] = useState('')
+  const [layout, setLayout] = useState('all')
+  const [candidateId, setCandidateId] = useState(selectedId)
+  const [inspecting, setInspecting] = useState(false)
+  const candidate = options.find((option) => option.id === candidateId)!
+  const filtered = options.filter(
+    (option) =>
+      option.name.toLowerCase().includes(query.trim().toLowerCase()) &&
+      (layout === 'all' || (option.layout ?? 'single-column') === layout),
+  )
+
+  useEffect(() => {
+    const element = dialog.current
+    const opener = document.activeElement
+    element?.showModal()
+    searchInput.current?.focus()
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      element?.close()
+      document.body.style.overflow = previous
+      if (opener instanceof HTMLElement) opener.focus({ preventScroll: true })
+    }
+  }, [])
+
+  useEffect(() => {
+    if (inspecting && window.innerWidth < 700)
+      previewHeading.current?.focus({ preventScroll: true })
+  }, [inspecting, candidateId])
+
+  return (
+    <dialog
+      ref={dialog}
+      className={`template-gallery ${inspecting ? 'is-inspecting' : ''}`}
+      aria-labelledby={titleId}
+      onCancel={onClose}
+      onKeyDown={(event) => {
+        if (event.key !== 'Tab') return
+        const controls = Array.from(
+          event.currentTarget.querySelectorAll<HTMLElement>(
+            'button:not(:disabled), input, select, [tabindex="0"]',
+          ),
+        ).filter((control) => control.getClientRects().length > 0)
+        const first = controls[0]
+        const last = controls.at(-1)
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last?.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first?.focus()
+        }
+      }}
+    >
+      <header className="gallery-header">
+        <h2 id={titleId}>
+          Templates <span>{options.length}</span>
+        </h2>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Close template gallery"
+          title="Close template gallery"
+          onClick={onClose}
+        >
+          <X size={20} />
+        </button>
+      </header>
+      <div className="gallery-body">
+        <section className="gallery-browser" aria-label="Template collection">
+          <div className="gallery-filters">
+            <div className="form-field">
+              <label htmlFor={searchId}>Search templates</label>
+              <div className="gallery-search">
+                <Search size={16} aria-hidden="true" />
+                <input
+                  ref={searchInput}
+                  autoFocus
+                  id={searchId}
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </div>
+            </div>
+            <div className="form-field">
+              <label htmlFor={layoutId}>Layout</label>
+              <select
+                id={layoutId}
+                value={layout}
+                onChange={(event) => setLayout(event.target.value)}
+              >
+                <option value="all">All layouts</option>
+                <option value="single-column">Single column</option>
+                <option value="two-column">Two columns</option>
+              </select>
+            </div>
+          </div>
+          <p className="gallery-count" role="status">
+            {filtered.length} {filtered.length === 1 ? 'template' : 'templates'}
+          </p>
+          <div className="template-options">
+            {filtered.map((option) => (
+              <button
+                type="button"
+                key={option.id}
+                className={`template-option ${candidateId === option.id ? 'is-selected' : ''}`}
+                aria-label={`Inspect ${option.name}`}
+                aria-pressed={candidateId === option.id}
+                onClick={() => {
+                  setCandidateId(option.id)
+                  setInspecting(true)
+                }}
+              >
+                <span className="template-miniature" aria-hidden="true">
+                  {renderThumbnail(option)}
+                </span>
+                <span className="template-option-label">
+                  <span>
+                    {option.name}
+                    {selectedId === option.id && <small>Current</small>}
+                  </span>
+                  <span className="selection-indicator">
+                    {candidateId === option.id && <Check size={12} />}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          {filtered.length === 0 && (
+            <div className="gallery-empty">
+              <p>No templates found.</p>
+              <button
+                type="button"
+                className="button button-quiet"
+                onClick={() => {
+                  setQuery('')
+                  setLayout('all')
+                }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+        </section>
+        <section
+          className="gallery-inspection"
+          aria-labelledby={`${titleId}-preview`}
+        >
+          <div className="gallery-preview-heading">
+            <button
+              type="button"
+              className="icon-button gallery-back"
+              aria-label="Back to templates"
+              title="Back to templates"
+              onClick={() => {
+                setInspecting(false)
+                window.requestAnimationFrame(() =>
+                  dialog.current
+                    ?.querySelector<HTMLButtonElement>(
+                      `button[aria-pressed="true"]`,
+                    )
+                    ?.focus(),
+                )
+              }}
+            >
+              <ArrowLeft size={18} />
+            </button>
+            <h3 id={`${titleId}-preview`} ref={previewHeading} tabIndex={-1}>
+              {candidate.name}
+            </h3>
+          </div>
+          <div
+            className="gallery-document"
+            key={candidate.id}
+            tabIndex={0}
+            role="region"
+            aria-label="Template CV preview"
+          >
+            {renderPreview(candidate)}
+          </div>
+          <footer className="gallery-apply">
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => onApply(candidate.id)}
+            >
+              <Check size={16} />
+              Use template
+            </button>
+          </footer>
+        </section>
+      </div>
+    </dialog>
   )
 }

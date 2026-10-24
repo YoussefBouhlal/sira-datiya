@@ -17,10 +17,12 @@ export function PdfWorkspace({
   cv,
   appearance,
   template,
+  downloadable = true,
 }: {
   cv: CvData
   appearance: Appearance
   template: TemplateDefinition
+  downloadable?: boolean
 }) {
   const { blob, loading, error } = usePdfDocument(cv, appearance, template)
   const [page, setPage] = useState(1)
@@ -36,27 +38,32 @@ export function PdfWorkspace({
           <span className="live-dot" />
           PREVIEW
         </span>
-        <button
-          type="button"
-          className="button button-primary download-button"
-          disabled={!canDownload}
-          title={
-            !cv.personal.fullName.trim()
-              ? 'Add your name to download'
-              : 'Download PDF'
-          }
-          onClick={() => {
-            if (blob)
-              downloadBlob(blob, documentFilename(cv.personal.fullName, 'pdf'))
-          }}
-        >
-          {loading ? (
-            <LoaderCircle size={16} className="spin" />
-          ) : (
-            <ArrowDownToLine size={16} />
-          )}
-          <span>Download PDF</span>
-        </button>
+        {downloadable && (
+          <button
+            type="button"
+            className="button button-primary download-button"
+            disabled={!canDownload}
+            title={
+              !cv.personal.fullName.trim()
+                ? 'Add your name to download'
+                : 'Download PDF'
+            }
+            onClick={() => {
+              if (blob)
+                downloadBlob(
+                  blob,
+                  documentFilename(cv.personal.fullName, 'pdf'),
+                )
+            }}
+          >
+            {loading ? (
+              <LoaderCircle size={16} className="spin" />
+            ) : (
+              <ArrowDownToLine size={16} />
+            )}
+            <span>Download PDF</span>
+          </button>
+        )}
       </div>
       <div className="preview-stage">
         <div

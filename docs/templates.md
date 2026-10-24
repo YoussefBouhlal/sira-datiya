@@ -23,9 +23,9 @@ export const editorialTemplate = {
 } satisfies TemplateDefinition
 ```
 
-Keep IDs stable: they are persisted. `typography` is metadata for the picker illustration, not a renderer branch. The picker, preview, and download flow consume definitions automatically.
+Keep IDs stable: they are persisted. `typography` describes the design, not a renderer branch. The gallery, preview, and download flow consume definitions automatically. Gallery thumbnails are generated locally from each actual renderer using consistent fictional content; no separate illustration or thumbnail asset needs to be maintained.
 
-Optional `layout` metadata (`single-column` or `two-column`) changes the picker illustration only. Sidebar uses `two-column`; its renderer owns the actual column layout. Its sidebar background repeats on every PDF page, while identity and contact content flow once. Both columns may continue onto later pages. It renders skill proficiency as bars with named levels; Classic and Studio use named text levels. All templates render portraits and references when supplied.
+Optional `layout` metadata (`single-column` or `two-column`) drives the gallery layout filter and selected-template label. Omitted layout means single-column. Keep this metadata consistent with the actual design; the renderer still owns the column layout. Sidebar uses `two-column`. Its sidebar background repeats on every PDF page, while identity and contact content flow once. Both columns may continue onto later pages. It renders skill proficiency as bars with named levels; Classic and Studio use named text levels. All templates render portraits and references when supplied.
 
 Classic uses a compact centered serif identity header, separate contact and website lines, accent-colored horizontal rules, and a narrow date rail beside experience and education. Profile text sits beside its section label; languages use two columns without interpreting supplied language strings. Description lines become bullets, preserving existing bullet markers. Skills retain their flat list and named proficiency; projects, certifications, and references follow the main sections. Optional portraits, text and paper sizes, page numbers, and flowing multi-page content remain supported. No personal-detail fields or skill categories are inferred from existing content.
 

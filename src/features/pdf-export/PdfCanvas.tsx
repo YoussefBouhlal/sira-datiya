@@ -13,10 +13,12 @@ export function PdfCanvas({
   blob,
   page,
   onPageCount,
+  scale = 1.7,
 }: {
   blob: Blob
   page: number
   onPageCount: (count: number) => void
+  scale?: number
 }) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const [failure, setFailure] = useState<{
@@ -41,7 +43,7 @@ export function PdfCanvas({
       const pdfPage = await document.getPage(Math.min(page, document.numPages))
       if (cancelled || !canvas.current) return
       const target = canvas.current
-      const viewport = pdfPage.getViewport({ scale: 1.7 })
+      const viewport = pdfPage.getViewport({ scale })
       const context = target.getContext('2d')
       if (!context) throw new Error('Canvas unavailable')
       target.width = viewport.width
@@ -66,7 +68,7 @@ export function PdfCanvas({
       renderer?.cancel()
       void loader?.destroy().catch(() => {})
     }
-  }, [blob, page, onPageCount])
+  }, [blob, page, onPageCount, scale])
 
   const error =
     failure?.blob === blob && failure.page === page ? failure.message : ''

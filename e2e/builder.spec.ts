@@ -1,4 +1,10 @@
-import { expect, test, type Download, type Page } from '@playwright/test'
+import {
+  expect,
+  test,
+  type Download,
+  type Locator,
+  type Page,
+} from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { PDFDocument } from 'pdf-lib'
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
@@ -6,6 +12,42 @@ import { createDocument } from '../src/domain/cv/defaults'
 import { createExampleCv } from '../src/domain/cv/example'
 
 const storageKey = 'sira-datiya.cv.v1'
+
+async function expectThumbnailInk(canvas: Locator) {
+  await expect(canvas).toBeVisible({ timeout: 20_000 })
+  await expect
+    .poll(() =>
+      canvas.evaluate((element) => {
+        if (!(element instanceof HTMLCanvasElement)) return 0
+        const { data } = element
+          .getContext('2d')!
+          .getImageData(0, 0, element.width, element.height)
+        let ink = 0
+        for (let offset = 0; offset < data.length; offset += 4)
+          if (
+            data[offset + 3]! &&
+            data[offset]! < 200 &&
+            data[offset + 1]! < 200 &&
+            data[offset + 2]! < 200
+          )
+            ink++
+        return ink
+      }),
+    )
+    .toBeGreaterThan(100)
+}
+
+async function chooseTemplate(page: Page, name: string) {
+  await page.getByRole('button', { name: 'Browse templates' }).click()
+  const gallery = page.getByRole('dialog', { name: /Templates/ })
+  await gallery
+    .getByRole('button', { name: `Inspect ${name}`, exact: true })
+    .click()
+  await gallery
+    .getByRole('button', { name: 'Use template', exact: true })
+    .click()
+  await expect(gallery).toHaveCount(0)
+}
 
 async function preview(page: Page) {
   const switcher = page.getByRole('group', { name: 'Workspace view' })
@@ -49,6 +91,283 @@ async function downloadBytes(download: Download): Promise<Buffer> {
   for await (const chunk of stream) chunks.push(Buffer.from(chunk))
   return Buffer.concat(chunks)
 }
+
+test('brand stays on one line without crowding header actions', async ({
+  page,
+}) => {
+  await page.goto('./')
+  await page.evaluate(() => document.fonts.ready)
+  const brand = page.getByRole('link', { name: 'Sira Datiya home' })
+  const actions = page.locator('.header-actions')
+
+  for (const width of [
+    1440, 1200, 1199, 960, 959, 800, 700, 699, 390, 360, 359, 320,
+  ]) {
+    await page.setViewportSize({ width, height: 1000 })
+    const textBounds = await brand.evaluate((element) => {
+      const text = Array.from(element.childNodes).find(
+        (node) =>
+          node.nodeType === Node.TEXT_NODE &&
+          node.textContent?.includes('Sira'),
+      )
+      if (!text) throw new Error('Brand text must be present')
+      const range = document.createRange()
+      range.selectNodeContents(text)
+      const lines = Array.from(range.getClientRects()).filter(
+        (rect) => rect.width > 0,
+      )
+      return {
+        lineCount: lines.length,
+        right: range.getBoundingClientRect().right,
+      }
+    })
+    expect(textBounds.lineCount, `Brand line count at ${width}px`).toBe(1)
+    const brandBox = await brand.boundingBox()
+    const actionsBox = await actions.boundingBox()
+    if (!brandBox || !actionsBox) throw new Error('Header must be visible')
+    expect(
+      textBounds.right,
+      `Brand text bounds at ${width}px`,
+    ).toBeLessThanOrEqual(brandBox.x + brandBox.width + 1)
+    expect(
+      brandBox.x + brandBox.width,
+      `Header spacing at ${width}px`,
+    ).toBeLessThanOrEqual(actionsBox.x)
+    expect(
+      actionsBox.x + actionsBox.width,
+      `Header width at ${width}px`,
+    ).toBeLessThanOrEqual(width)
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+      `Page width at ${width}px`,
+    ).toBeLessThanOrEqual(width)
+  }
+})
+
+test('preview stays anchored while the editor scrolls and overflows independently', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Side-by-side layout is checked with desktop wheel input')
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example' }).click()
+  await page.getByRole('button', { name: /Experience$/ }).click()
+  await preview(page)
+
+  const pane = page.getByRole('region', {
+    name: 'Document preview',
+    exact: true,
+  })
+  const editor = page.locator('.editor-pane')
+  for (const width of [1440, 800, 700]) {
+    await page.setViewportSize({ width, height: 1100 })
+    await page.evaluate(() => window.scrollTo(0, 0))
+    const editorBox = await editor.boundingBox()
+    if (!editorBox) throw new Error('Editor must be visible')
+    const headerBox = await page.getByRole('banner').boundingBox()
+    if (!headerBox) throw new Error('Header must be visible')
+    const headerBottom = headerBox.y + headerBox.height
+    await expect
+      .poll(() =>
+        pane.evaluate((element) => element.scrollHeight - element.clientHeight),
+      )
+      .toBeLessThanOrEqual(1)
+    await page.mouse.move(editorBox.x + 50, editorBox.y + 100)
+    await page.mouse.wheel(0, 350)
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(100)
+    await expect
+      .poll(async () => (await pane.boundingBox())?.y)
+      .toBeCloseTo(headerBottom, 0)
+    expect((await editor.boundingBox())!.y).toBeLessThan(editorBox.y - 100)
+    expect(await pane.evaluate((element) => element.scrollTop)).toBe(0)
+
+    await page.setViewportSize({ width, height: 500 })
+    await expect
+      .poll(() =>
+        pane.evaluate((element) => element.scrollHeight - element.clientHeight),
+      )
+      .toBeGreaterThan(100)
+    const paneBox = await pane.boundingBox()
+    if (!paneBox) throw new Error('Preview must be visible')
+    expect(paneBox.y).toBeCloseTo(headerBottom, 0)
+    expect(paneBox.y + paneBox.height).toBeLessThanOrEqual(500)
+    const documentScroll = await page.evaluate(() => window.scrollY)
+    await page.mouse.move(paneBox.x + paneBox.width / 2, paneBox.y + 100)
+    await page.mouse.wheel(0, 300)
+    await expect
+      .poll(() => pane.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0)
+    expect(await page.evaluate(() => window.scrollY)).toBe(documentScroll)
+    await page.mouse.wheel(0, 2000)
+    await expect
+      .poll(() =>
+        pane.evaluate(
+          (element) =>
+            element.scrollHeight - element.clientHeight - element.scrollTop,
+        ),
+      )
+      .toBeLessThanOrEqual(1)
+    await page.mouse.wheel(0, 300)
+    expect(await page.evaluate(() => window.scrollY)).toBe(documentScroll)
+    const keyboardScroll = await pane.evaluate((element) => element.scrollTop)
+    await pane.focus()
+    await expect(pane).toBeFocused()
+    await page.keyboard.press('Home')
+    await expect
+      .poll(() => pane.evaluate((element) => element.scrollTop))
+      .toBeLessThan(keyboardScroll)
+  }
+})
+
+test('mobile preview keeps normal page scrolling', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(!isMobile, 'Mobile tabs retain their page-scrolling behavior')
+  await page.setViewportSize({ width: 390, height: 500 })
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example' }).click()
+  await preview(page)
+  const pane = page.getByRole('region', {
+    name: 'Document preview',
+    exact: true,
+  })
+  await expect(pane).toHaveCSS('position', 'relative')
+  await expect(pane).toHaveCSS('overflow-y', 'visible')
+  await page
+    .getByRole('button', { name: 'Next preview page' })
+    .scrollIntoViewIfNeeded()
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+  expect(await pane.evaluate((element) => element.scrollTop)).toBe(0)
+  await page
+    .getByRole('group', { name: 'Workspace view' })
+    .getByRole('button', { name: 'Edit', exact: true })
+    .click()
+  await expect(pane).toBeHidden()
+  await expect(page.getByLabel('Full name', { exact: true })).toBeVisible()
+})
+
+test('personal details place portrait beside full name and stack below 360px', async ({
+  page,
+}) => {
+  await page.goto('./')
+  const fullName = page.getByLabel('Full name', { exact: true })
+  const portrait = page.getByLabel('Portrait', { exact: true })
+  await fullName.focus()
+  await page.keyboard.press('Tab')
+  await expect(portrait).toBeFocused()
+
+  const titlePositions = new Map<number, number>()
+  for (const state of ['empty', 'uploaded', 'replaced', 'removed']) {
+    if (state === 'uploaded' || state === 'replaced') {
+      const previousImage =
+        state === 'replaced'
+          ? await page
+              .getByRole('img', { name: 'Your portrait' })
+              .getAttribute('src')
+          : null
+      const image = await page.evaluate((currentState) => {
+        const canvas = document.createElement('canvas')
+        canvas.width = 80
+        canvas.height = 100
+        const context = canvas.getContext('2d')!
+        context.fillStyle = currentState === 'uploaded' ? '#3456a0' : '#b97657'
+        context.fillRect(0, 0, 80, 100)
+        return canvas.toDataURL('image/png').split(',')[1]!
+      }, state)
+      const pendingChooser = page.waitForEvent('filechooser')
+      if (state === 'uploaded') await portrait.press('Enter')
+      else await page.locator('.portrait-upload').click()
+      await (
+        await pendingChooser
+      ).setFiles({
+        name: 'fictional-portrait.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from(image, 'base64'),
+      })
+      await expect(
+        page.getByRole('img', { name: 'Your portrait' }),
+      ).toBeVisible()
+      if (previousImage)
+        await expect(
+          page.getByRole('img', { name: 'Your portrait' }),
+        ).not.toHaveAttribute('src', previousImage)
+      await expect(portrait).toHaveAttribute('title', 'Replace portrait')
+    } else if (state === 'removed') {
+      await page.getByRole('button', { name: 'Remove portrait' }).click()
+      await expect(
+        page.getByRole('img', { name: 'Your portrait' }),
+      ).toHaveCount(0)
+      await expect(portrait).toHaveAttribute('title', 'Upload portrait')
+    }
+    for (const width of [1440, 390, 360, 359, 320]) {
+      await page.setViewportSize({ width, height: 1000 })
+      const nameBox = await fullName.locator('..').boundingBox()
+      const portraitBox = await page.locator('.portrait-field').boundingBox()
+      const titleBox = await page
+        .getByLabel('Professional title', { exact: true })
+        .locator('..')
+        .boundingBox()
+      expect(nameBox).not.toBeNull()
+      expect(portraitBox).not.toBeNull()
+      expect(titleBox).not.toBeNull()
+      if (!nameBox || !portraitBox || !titleBox)
+        throw new Error('Personal details fields must be visible')
+      const portraitInputBox = await portrait.boundingBox()
+      expect(portraitInputBox).not.toBeNull()
+      expect(portraitInputBox!.width).toBe(42)
+      expect(portraitInputBox!.height).toBe(42)
+      expect(portraitInputBox!.x).toBeGreaterThanOrEqual(portraitBox.x)
+      expect(portraitInputBox!.x + portraitInputBox!.width).toBeLessThanOrEqual(
+        portraitBox.x + portraitBox.width,
+      )
+      if (state === 'empty') titlePositions.set(width, titleBox.y)
+      else expect(titleBox.y).toBeCloseTo(titlePositions.get(width)!, 0)
+      expect(portraitBox.width).toBeCloseTo(nameBox.width, 0)
+      if (width >= 360) {
+        expect(portraitBox.y).toBeCloseTo(nameBox.y, 0)
+        expect(portraitBox.x).toBeGreaterThan(nameBox.x + nameBox.width)
+        const nameInputBox = await fullName.boundingBox()
+        expect(nameInputBox).not.toBeNull()
+        expect(portraitInputBox!.y).toBeCloseTo(nameInputBox!.y, 0)
+        const nameLabelBox = await fullName
+          .locator('..')
+          .locator('label')
+          .boundingBox()
+        const portraitLabelBox = await page
+          .locator('.portrait-field label')
+          .boundingBox()
+        expect(nameLabelBox).not.toBeNull()
+        expect(portraitLabelBox).not.toBeNull()
+        expect(portraitLabelBox!.y).toBeCloseTo(nameLabelBox!.y, 0)
+      } else {
+        expect(portraitBox.x).toBeCloseTo(nameBox.x, 0)
+        expect(portraitBox.y).toBeGreaterThan(nameBox.y + nameBox.height)
+      }
+      expect(titleBox.y).toBeGreaterThan(portraitBox.y + portraitBox.height)
+      expect(titleBox.x).toBeCloseTo(nameBox.x, 0)
+      expect(titleBox.width).toBeCloseTo(
+        portraitBox.x + portraitBox.width - nameBox.x,
+        0,
+      )
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true)
+      if (
+        (state === 'empty' || state === 'uploaded') &&
+        (width === 1440 || width === 390)
+      )
+        await page.screenshot({
+          path: test.info().outputPath(`portrait-${state}-${width}.png`),
+          fullPage: true,
+        })
+    }
+  }
+})
 
 test('edit, reload, choose a template, and download a real text PDF', async ({
   page,
@@ -104,13 +423,10 @@ test('edit, reload, choose a template, and download a real text PDF', async ({
     'Taylor Example',
   )
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await page
-    .locator('.template-option')
-    .filter({ has: page.getByRole('radio', { name: 'Classic', exact: true }) })
-    .click()
-  await expect(
-    page.getByRole('radio', { name: 'Classic', exact: true }),
-  ).toBeChecked()
+  await chooseTemplate(page, 'Classic')
+  await expect(page.locator('.selected-template-details strong')).toHaveText(
+    'Classic',
+  )
   await page.getByTitle('Cobalt', { exact: true }).click()
   await page.getByLabel('Paper size').selectOption('LETTER')
   await preview(page)
@@ -297,10 +613,7 @@ test('portrait, rated skills and ordered references persist and render in every 
   })
   expect(backup.cv.references[0].name).toBe('Casey Example')
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await page
-    .locator('.template-option')
-    .filter({ has: page.getByRole('radio', { name: 'Sidebar', exact: true }) })
-    .click()
+  await chooseTemplate(page, 'Sidebar')
   await page.getByLabel('Paper size').selectOption('LETTER')
   for (const template of [
     'Sidebar',
@@ -312,12 +625,7 @@ test('portrait, rated skills and ordered references persist and render in every 
   ]) {
     if (template !== 'Sidebar') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
-      await page
-        .locator('.template-option')
-        .filter({
-          has: page.getByRole('radio', { name: template, exact: true }),
-        })
-        .click()
+      await chooseTemplate(page, template)
     }
     await preview(page)
     await expect(page.locator('.preview-status')).toHaveText(
@@ -490,9 +798,9 @@ test('removed template IDs fall back without discarding content', async ({
     'Alex Morgan',
   )
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await expect(
-    page.getByRole('radio', { name: 'Studio', exact: true }),
-  ).toBeChecked()
+  await expect(page.locator('.selected-template-details strong')).toHaveText(
+    'Studio',
+  )
   await preview(page)
   await expect(page.locator('.preview-status')).toHaveText('Studio / A4')
 })
@@ -527,11 +835,15 @@ test('editor and template controls have no automated accessibility violations', 
     })),
   ).toEqual([])
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await page.getByRole('radio', { name: 'Studio', exact: true }).focus()
-  await page.keyboard.press('ArrowLeft')
+  await page.getByRole('button', { name: 'Browse templates' }).focus()
+  await page.keyboard.press('Enter')
   await expect(
-    page.getByRole('radio', { name: 'Classic', exact: true }),
-  ).toBeChecked()
+    page.getByRole('searchbox', { name: 'Search templates' }),
+  ).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(
+    page.getByRole('button', { name: 'Browse templates' }),
+  ).toBeFocused()
   const designResults = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
     .analyze()
@@ -541,4 +853,185 @@ test('editor and template controls have no automated accessibility violations', 
       targets: issue.nodes.map((node) => node.target),
     })),
   ).toEqual([])
+})
+
+test('template gallery supports real previews, cancellation, filtering and responsive inspection', async ({
+  page,
+  isMobile,
+}) => {
+  test.setTimeout(90_000)
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example' }).click()
+  await page.getByLabel('Full name', { exact: true }).fill('Jordan Gallery')
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await page.getByTitle('Cobalt', { exact: true }).click()
+  await page.getByText('Large', { exact: true }).click()
+  await page.getByLabel('Paper size').selectOption('LETTER')
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance?.pageSize,
+        storageKey,
+      ),
+    )
+    .toBe('LETTER')
+  const before = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)!),
+    storageKey,
+  )
+  expect(
+    (await page.locator('.selected-template').boundingBox())!.height,
+  ).toBeLessThan(150)
+  await page.getByRole('button', { name: 'Browse templates' }).click()
+  const gallery = page.getByRole('dialog', { name: /Templates/ })
+  await expect(gallery.getByRole('searchbox')).toBeFocused()
+  await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
+    6,
+  )
+  await expect(
+    gallery.getByRole('button', { name: 'Inspect Studio', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await gallery.getByRole('button', { name: 'Close template gallery' }).focus()
+  await page.keyboard.press('Shift+Tab')
+  expect(
+    await gallery.evaluate((element) =>
+      element.contains(document.activeElement),
+    ),
+  ).toBe(true)
+  await page.keyboard.press('Escape')
+  await expect(gallery).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: 'Browse templates' }),
+  ).toBeFocused()
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key)!),
+      storageKey,
+    ),
+  ).toEqual(before)
+  await page.getByRole('button', { name: 'Browse templates' }).click()
+  for (const width of isMobile ? [390, 320] : [1440, 800, 700]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await gallery.evaluate(
+        (element) => element.scrollWidth <= element.clientWidth,
+      ),
+    ).toBe(true)
+    expect(
+      await gallery
+        .locator('.gallery-browser')
+        .evaluate((element) => element.scrollWidth <= element.clientWidth),
+    ).toBe(true)
+  }
+  for (const option of await gallery.locator('.template-option').all()) {
+    await option.scrollIntoViewIfNeeded()
+    await expectThumbnailInk(option.locator('canvas'))
+  }
+  await gallery.getByLabel('Layout', { exact: true }).selectOption('two-column')
+  await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
+    1,
+  )
+  await gallery.getByRole('searchbox').fill('missing')
+  await expect(gallery.getByText('No templates found.')).toBeVisible()
+  await gallery.getByRole('button', { name: 'Clear filters' }).click()
+  await page.setViewportSize({ width: isMobile ? 390 : 1440, height: 900 })
+  await expectThumbnailInk(
+    gallery
+      .getByRole('button', { name: 'Inspect Classic', exact: true })
+      .locator('canvas'),
+  )
+  await expectThumbnailInk(
+    gallery
+      .getByRole('button', { name: 'Inspect Studio', exact: true })
+      .locator('canvas'),
+  )
+  await gallery.screenshot({
+    path: test.info().outputPath('template-gallery.png'),
+  })
+  const galleryResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(
+    galleryResults.violations.map((issue) => ({
+      id: issue.id,
+      targets: issue.nodes.map((node) => node.target),
+    })),
+  ).toEqual([])
+  await gallery
+    .getByRole('button', { name: 'Inspect Classic', exact: true })
+    .click()
+  await expect(
+    gallery.getByRole('heading', { name: 'Classic', exact: true }),
+  ).toBeVisible()
+  expect(
+    (await gallery.locator('.gallery-header').boundingBox())!.y,
+  ).toBeGreaterThanOrEqual((await gallery.boundingBox())!.y)
+  await expect(
+    gallery.getByRole('region', { name: 'CV preview text' }),
+  ).toContainText('Jordan Gallery')
+  await expect(gallery.locator('.pdf-paper canvas')).toBeVisible({
+    timeout: 20_000,
+  })
+  await gallery.screenshot({
+    path: test.info().outputPath('template-inspection.png'),
+  })
+  const inspectionResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(
+    inspectionResults.violations.map((issue) => ({
+      id: issue.id,
+      targets: issue.nodes.map((node) => node.target),
+    })),
+  ).toEqual([])
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key)!),
+      storageKey,
+    ),
+  ).toEqual(before)
+  if (isMobile) {
+    await gallery.getByRole('button', { name: 'Back to templates' }).click()
+    await expect(
+      gallery.getByRole('button', { name: 'Inspect Classic', exact: true }),
+    ).toBeFocused()
+  }
+  await gallery.getByRole('searchbox').fill('side')
+  await gallery
+    .getByRole('button', { name: 'Inspect Sidebar', exact: true })
+    .click()
+  await gallery.getByRole('button', { name: 'Close template gallery' }).click()
+  await page.getByRole('button', { name: 'Browse templates' }).click()
+  await expect(gallery.getByRole('searchbox')).toHaveValue('')
+  await expect(
+    gallery.getByRole('button', { name: 'Inspect Studio', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await gallery
+    .getByRole('button', { name: 'Inspect Sidebar', exact: true })
+    .click()
+  await gallery.getByRole('button', { name: 'Use template' }).click()
+  await expect(gallery).toHaveCount(0)
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)!).appearance.templateId,
+        storageKey,
+      ),
+    )
+    .toBe('sidebar')
+  const after = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)!),
+    storageKey,
+  )
+  expect(after.cv).toEqual(before.cv)
+  expect(after.appearance).toEqual({
+    ...before.appearance,
+    templateId: 'sidebar',
+  })
+  await page.reload()
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await expect(page.locator('.selected-template-details strong')).toHaveText(
+    'Sidebar',
+  )
 })
