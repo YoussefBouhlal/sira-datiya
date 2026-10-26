@@ -441,6 +441,27 @@ button {
 .workspace {
   min-width: 0;
 }
+.app-shell.is-choosing-template {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--header-height) 1fr;
+}
+.template-entry {
+  width: 100%;
+  max-width: 1080px;
+  margin-inline: auto;
+  padding: 32px;
+}
+.template-start-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding: 16px 0 max(16px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: #fff;
+}
 .builder-grid {
   display: grid;
   grid-template-columns: minmax(340px, 0.95fr) minmax(360px, 1.05fr);

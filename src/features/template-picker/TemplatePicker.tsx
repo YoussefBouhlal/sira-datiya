@@ -10,6 +10,97 @@ const accents = [
   { value: '#292929', label: 'Ink' },
 ] as const
 
+type TemplateGalleryProps = {
+  options: readonly TemplateOption[]
+  selectedId: string
+  renderThumbnail: (template: TemplateOption) => ReactNode
+  renderPreview: (template: TemplateOption) => ReactNode
+  onClose: () => void
+  onApply: (id: string) => void
+  inspectionId?: string
+}
+
+export function TemplateStart({
+  options,
+  selectedId,
+  renderThumbnail,
+  renderPreview,
+  onApply,
+}: Omit<TemplateGalleryProps, 'onClose' | 'inspectionId'>) {
+  const [inspectionId, setInspectionId] = useState<string | null>(null)
+  return (
+    <div className="template-start">
+      <TemplateChoices
+        options={options}
+        selectedId={selectedId}
+        candidateId={selectedId}
+        renderThumbnail={renderThumbnail}
+        onInspect={setInspectionId}
+      />
+      <footer className="template-start-footer">
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={() => onApply(selectedId)}
+        >
+          <Check size={16} />
+          Use this template
+        </button>
+      </footer>
+      {inspectionId && (
+        <TemplateGallery
+          options={options}
+          selectedId={selectedId}
+          inspectionId={inspectionId}
+          renderThumbnail={renderThumbnail}
+          renderPreview={renderPreview}
+          onClose={() => setInspectionId(null)}
+          onApply={onApply}
+        />
+      )}
+    </div>
+  )
+}
+
+function TemplateChoices({
+  options,
+  selectedId,
+  candidateId,
+  renderThumbnail,
+  onInspect,
+}: Pick<TemplateGalleryProps, 'options' | 'selectedId' | 'renderThumbnail'> & {
+  candidateId: string
+  onInspect: (id: string) => void
+}) {
+  return (
+    <div className="template-options">
+      {options.map((option) => (
+        <button
+          type="button"
+          key={option.id}
+          className={`template-option ${candidateId === option.id ? 'is-selected' : ''}`}
+          aria-label={`Inspect ${option.name}`}
+          aria-pressed={candidateId === option.id}
+          onClick={() => onInspect(option.id)}
+        >
+          <span className="template-miniature" aria-hidden="true">
+            {renderThumbnail(option)}
+          </span>
+          <span className="template-option-label">
+            <span>
+              {option.name}
+              {selectedId === option.id && <small>Current</small>}
+            </span>
+            <span className="selection-indicator">
+              {candidateId === option.id && <Check size={12} />}
+            </span>
+          </span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function TemplatePicker({
   options,
   appearance,
@@ -141,14 +232,8 @@ function TemplateGallery({
   renderPreview,
   onClose,
   onApply,
-}: {
-  options: readonly TemplateOption[]
-  selectedId: string
-  renderThumbnail: (template: TemplateOption) => ReactNode
-  renderPreview: (template: TemplateOption) => ReactNode
-  onClose: () => void
-  onApply: (id: string) => void
-}) {
+  inspectionId,
+}: TemplateGalleryProps) {
   const dialog = useRef<HTMLDialogElement>(null)
   const searchInput = useRef<HTMLInputElement>(null)
   const previewHeading = useRef<HTMLHeadingElement>(null)
@@ -157,8 +242,8 @@ function TemplateGallery({
   const layoutId = useId()
   const [query, setQuery] = useState('')
   const [layout, setLayout] = useState('all')
-  const [candidateId, setCandidateId] = useState(selectedId)
-  const [inspecting, setInspecting] = useState(false)
+  const [candidateId, setCandidateId] = useState(inspectionId ?? selectedId)
+  const [inspecting, setInspecting] = useState(Boolean(inspectionId))
   const candidate = options.find((option) => option.id === candidateId)!
   const filtered = options.filter(
     (option) =>
@@ -256,34 +341,16 @@ function TemplateGallery({
           <p className="gallery-count" role="status">
             {filtered.length} {filtered.length === 1 ? 'template' : 'templates'}
           </p>
-          <div className="template-options">
-            {filtered.map((option) => (
-              <button
-                type="button"
-                key={option.id}
-                className={`template-option ${candidateId === option.id ? 'is-selected' : ''}`}
-                aria-label={`Inspect ${option.name}`}
-                aria-pressed={candidateId === option.id}
-                onClick={() => {
-                  setCandidateId(option.id)
-                  setInspecting(true)
-                }}
-              >
-                <span className="template-miniature" aria-hidden="true">
-                  {renderThumbnail(option)}
-                </span>
-                <span className="template-option-label">
-                  <span>
-                    {option.name}
-                    {selectedId === option.id && <small>Current</small>}
-                  </span>
-                  <span className="selection-indicator">
-                    {candidateId === option.id && <Check size={12} />}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
+          <TemplateChoices
+            options={filtered}
+            selectedId={selectedId}
+            candidateId={candidateId}
+            renderThumbnail={renderThumbnail}
+            onInspect={(templateId) => {
+              setCandidateId(templateId)
+              setInspecting(true)
+            }}
+          />
           {filtered.length === 0 && (
             <div className="gallery-empty">
               <p>No templates found.</p>
