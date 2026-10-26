@@ -19,8 +19,11 @@ The on-screen representation of the CV with its current content and appearance.
 **Template gallery**:
 The collection of available templates presented for browsing and comparison.
 
+**Template sample**:
+A representation of a template populated with fictional CV content, separate from the person's own CV.
+
 **Template thumbnail**:
-A small representation of a template using fictional CV content, rather than the person's own content.
+A small representation of a template sample.
 
 **ATS-oriented template**:
 A template that prioritizes readable CV text for applicant-tracking systems. The label expresses a design goal, not guaranteed compatibility with every system.

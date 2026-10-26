@@ -8,7 +8,7 @@ import {
 import AxeBuilder from '@axe-core/playwright'
 import { PDFDocument } from 'pdf-lib'
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
-import { createDocument } from '../src/domain/cv/defaults'
+import { createDocument, createEmptyCv } from '../src/domain/cv/defaults'
 import { createExampleCv } from '../src/domain/cv/example'
 
 const storageKey = 'sira-datiya.cv.v1'
@@ -91,6 +91,190 @@ async function downloadBytes(download: Download): Promise<Buffer> {
   for await (const chunk of stream) chunks.push(Buffer.from(chunk))
   return Buffer.concat(chunks)
 }
+
+test('empty CVs start with template samples before editing and resume entered content', async ({
+  page,
+  isMobile,
+}) => {
+  test.setTimeout(90_000)
+  await page.goto('./')
+  const entry = page.getByRole('region', { name: 'Choose a template' })
+  await expect(
+    page.getByRole('heading', { name: 'Choose a template' }),
+  ).toBeFocused()
+  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(6)
+  await expect(page.getByRole('group', { name: 'Workspace view' })).toHaveCount(
+    0,
+  )
+  await expect(page.getByLabel('Full name', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Accent color', { exact: true })).toHaveCount(0)
+  const defaultChoice = entry.getByRole('button', {
+    name: 'Inspect Studio',
+    exact: true,
+  })
+  await expect(defaultChoice).toHaveAttribute('aria-pressed', 'true')
+  await expectThumbnailInk(defaultChoice.locator('canvas'))
+  for (const width of isMobile ? [390, 320] : [1440, 800, 700]) {
+    await page.setViewportSize({ width, height: 844 })
+    await expect(
+      entry.getByRole('button', { name: 'Use this template' }),
+    ).toBeInViewport()
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    const grid = await entry
+      .locator('.template-options')
+      .evaluate(
+        (element) =>
+          getComputedStyle(element).gridTemplateColumns.split(' ').length,
+      )
+    expect(grid).toBe(isMobile ? 2 : 3)
+    const first = await entry
+      .getByRole('button', { name: 'Inspect Classic', exact: true })
+      .boundingBox()
+    expect(first!.y + first!.height).toBeLessThan(844)
+  }
+  await page.screenshot({
+    path: test.info().outputPath('template-start.png'),
+    fullPage: true,
+  })
+  const entryResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(
+    entryResults.violations.map((issue) => ({
+      id: issue.id,
+      targets: issue.nodes.map((node) => node.target),
+    })),
+  ).toEqual([])
+  await entry
+    .getByRole('button', { name: 'Inspect Classic', exact: true })
+    .click()
+  let gallery = page.getByRole('dialog', { name: /Templates/ })
+  await expect(
+    gallery.getByRole('heading', { name: 'Classic', exact: true }),
+  ).toBeVisible()
+  await expect(
+    gallery.getByRole('region', { name: 'CV preview text' }),
+  ).toContainText('Alex Morgan')
+  await expect(
+    gallery.getByRole('button', { name: 'Download PDF' }),
+  ).toHaveCount(0)
+  await expectThumbnailInk(gallery.locator('.pdf-paper canvas'))
+  if (isMobile) {
+    expect(await gallery.boundingBox()).toMatchObject({
+      x: 0,
+      y: 0,
+      width: 320,
+      height: 844,
+    })
+    await expect(
+      gallery.getByRole('heading', { name: 'Classic', exact: true }),
+    ).toBeFocused()
+  }
+  await gallery.screenshot({
+    path: test.info().outputPath('template-start-inspection.png'),
+  })
+  const inspectionResults = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(
+    inspectionResults.violations.map((issue) => ({
+      id: issue.id,
+      targets: issue.nodes.map((node) => node.target),
+    })),
+  ).toEqual([])
+  await page.keyboard.press('Escape')
+  await expect(
+    entry.getByRole('button', { name: 'Inspect Classic', exact: true }),
+  ).toBeFocused()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key) ?? '{}').cv,
+        storageKey,
+      ),
+    )
+    .toEqual(createEmptyCv())
+  await entry
+    .getByRole('button', { name: 'Inspect Classic', exact: true })
+    .click()
+  gallery = page.getByRole('dialog', { name: /Templates/ })
+  await gallery
+    .getByRole('button', { name: 'Use template', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Personal details' }),
+  ).toBeFocused()
+  await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('')
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance?.templateId,
+        storageKey,
+      ),
+    )
+    .toBe('classic')
+  await page.reload()
+  await expect(entry).toBeVisible()
+  await expect(
+    entry.getByRole('button', { name: 'Inspect Classic', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await entry.getByRole('button', { name: 'Use this template' }).click()
+  await page.getByLabel('Full name', { exact: true }).fill('Taylor Returning')
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').cv?.personal?.fullName,
+        storageKey,
+      ),
+    )
+    .toBe('Taylor Returning')
+  await page.reload()
+  await expect(entry).toHaveCount(0)
+  await expect(page.getByLabel('Full name', { exact: true })).toHaveValue(
+    'Taylor Returning',
+  )
+})
+
+test('appearance-only drafts retain styling through opening template selection', async ({
+  page,
+}) => {
+  const document = createDocument('sidebar')
+  document.appearance = {
+    ...document.appearance,
+    accent: '#8c4255',
+    fontSize: 12,
+    pageSize: 'LETTER',
+  }
+  await page.addInitScript(
+    ({ key, value }) => localStorage.setItem(key, JSON.stringify(value)),
+    { key: storageKey, value: { version: 2, ...document } },
+  )
+  await page.goto('./')
+  await expect(
+    page.getByRole('button', { name: 'Inspect Sidebar', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Use this template' }).click()
+  await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('')
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await expect(page.locator('.selected-template-details strong')).toHaveText(
+    'Sidebar',
+  )
+  await expect(page.getByRole('radio', { name: 'Rose' })).toBeChecked()
+  await expect(page.getByRole('radio', { name: 'Large' })).toBeChecked()
+  await expect(page.getByLabel('Paper size')).toHaveValue('LETTER')
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key) ?? '{}'),
+        storageKey,
+      ),
+    )
+    .toEqual({ version: 2, ...document })
+})
 
 test('brand stays on one line without crowding header actions', async ({
   page,
@@ -253,6 +437,7 @@ test('personal details place portrait beside full name and stack below 360px', a
   page,
 }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: 'Use this template' }).click()
   const fullName = page.getByLabel('Full name', { exact: true })
   const portrait = page.getByLabel('Portrait', { exact: true })
   await fullName.focus()
@@ -401,6 +586,7 @@ test('edit, reload, choose a template, and download a real text PDF', async ({
   await expect(page).toHaveURL(baseURL)
   await expect(page.locator('.workspace-heading')).toHaveCount(0)
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.getByRole('button', { name: 'Use this template' }).click()
   await page.getByLabel('Full name', { exact: true }).fill('Taylor Example')
   await page
     .getByLabel('Professional title', { exact: true })
@@ -489,7 +675,10 @@ test('backup, confirmed reset, and restore preserve the document', async ({
     .getByRole('dialog')
     .getByRole('button', { name: 'Start over', exact: true })
     .click()
-  await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('')
+  await expect(
+    page.getByRole('heading', { name: 'Choose a template' }),
+  ).toBeVisible()
+  await expect(page.getByLabel('Full name', { exact: true })).toHaveCount(0)
   await page.getByLabel('CV backup file').setInputFiles({
     name: 'backup.json',
     mimeType: 'application/json',
@@ -823,6 +1012,7 @@ test('editor and template controls have no automated accessibility violations', 
   page,
 }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: 'Use this template' }).click()
   await page.keyboard.press('Tab')
   await expect(page.getByLabel('Full name', { exact: true })).toBeFocused()
   const editorResults = await new AxeBuilder({ page })

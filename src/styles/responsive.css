@@ -139,6 +139,17 @@
 }
 
 @media (max-width: 699px) {
+  .template-entry {
+    padding: 22px 18px 0;
+  }
+  .template-start .template-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 14px;
+  }
+  .template-start-footer .button {
+    width: 100%;
+    justify-content: center;
+  }
   .template-gallery {
     width: 100%;
     height: 100dvh;
