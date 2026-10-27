@@ -33,6 +33,7 @@ beforeAll(() => {
 afterEach(() => {
   cleanup()
   localStorage.clear()
+  vi.unstubAllGlobals()
 })
 
 it('opens empty CVs with samples and applies appearance without inserting sample content', async () => {
@@ -101,4 +102,39 @@ it('keeps unreadable storage in the editor recovery flow without overwriting it'
   })
   window.dispatchEvent(new Event('pagehide'))
   expect(localStorage.getItem(STORAGE_KEY)).toBe('{unreadable')
+})
+
+it('switches the whole interface without changing content and keeps language on reset', () => {
+  const document = createDocument('classic')
+  document.cv.personal.fullName = 'ليلى Example'
+  document.cv.summary = 'Keep exactly this text.'
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, ...document }))
+  render(<App />)
+  fireEvent.change(screen.getByLabelText('Language'), {
+    target: { value: 'fr' },
+  })
+  expect(screen.getByLabelText('Nom complet', { exact: true })).toHaveValue(
+    'ليلى Example',
+  )
+  expect(window.document.documentElement).toHaveAttribute('lang', 'fr')
+  fireEvent.change(screen.getByLabelText('Langue'), { target: { value: 'ar' } })
+  expect(screen.getByLabelText('الاسم الكامل', { exact: true })).toHaveValue(
+    'ليلى Example',
+  )
+  expect(window.document.documentElement).toHaveAttribute('dir', 'rtl')
+  window.dispatchEvent(new Event('pagehide'))
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
+  expect(saved.cv).toEqual(document.cv)
+  expect(saved.appearance.language).toBe('ar')
+  fireEvent.click(screen.getByLabelText('إجراءات المستند'))
+  fireEvent.click(screen.getByRole('button', { name: 'البدء من جديد' }))
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'البدء من جديد',
+    }),
+  )
+  expect(
+    screen.getByRole('heading', { name: 'اختر قالبًا' }),
+  ).toBeInTheDocument()
+  expect(screen.getByLabelText('اللغة')).toHaveValue('ar')
 })

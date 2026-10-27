@@ -6,6 +6,7 @@ import {
   type RenderTask,
 } from 'pdfjs-dist'
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+import { useTranslation } from '../../i18n/context'
 
 GlobalWorkerOptions.workerSrc = workerUrl
 
@@ -20,6 +21,7 @@ export function PdfCanvas({
   onPageCount: (count: number) => void
   scale?: number
 }) {
+  const { t } = useTranslation()
   const canvas = useRef<HTMLCanvasElement>(null)
   const [failure, setFailure] = useState<{
     blob: Blob
@@ -36,6 +38,7 @@ export function PdfCanvas({
       loader = getDocument({
         data: new Uint8Array(bytes),
         useSystemFonts: true,
+        disableFontFace: true,
       })
       const document = await loader.promise
       if (cancelled) return
@@ -74,9 +77,13 @@ export function PdfCanvas({
     failure?.blob === blob && failure.page === page ? failure.message : ''
   return error ? (
     <p className="preview-error" role="alert">
-      {error}
+      {t(error)}
     </p>
   ) : (
-    <canvas ref={canvas} aria-label={`CV preview, page ${page}`} role="img" />
+    <canvas
+      ref={canvas}
+      aria-label={t('CV preview, page {page}', { page })}
+      role="img"
+    />
   )
 }

@@ -5,7 +5,7 @@ Templates are modules, not branches in the editor or PDF export feature. The onl
 ## Add a template
 
 1. Create `src/templates/<stable-id>/` with `Document.tsx`, `styles.ts`, and `index.ts`.
-2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, and page size preferences.
+2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
 5. Run `npm run check` and `npm run test:e2e`. The registry test automatically exercises all templates with empty, typical, and long CVs. Visually inspect page breaks and text selection too.
@@ -40,6 +40,12 @@ Pure ATS uses a compact single-column Helvetica layout with a left-aligned mixed
 Treat CV data as read-only. A renderer must not mutate it, access local storage, fetch remote assets, inspect editor state, or import another concrete template. Template-specific fonts/styles/assets belong with the template. Introduce shared PDF primitives in `templates/shared/` only for real common behavior. Existing shared content can be reused or a template can supply its own layout using the same CV model.
 
 Missing optional sections should produce no empty headings. Preserve text rather than truncating it to one page. Avoid wrapping a long section in an unbreakable container. Check long names, URLs, multiline descriptions, and multiple pages. Bundle new fonts and document coverage/attribution; do not claim support for untested scripts.
+
+## Document language
+
+Every template supports English, French, and Modern Standard Arabic through `appearance.language`. Keep `<Document>` as the root, set its language metadata, and wrap its page content in `PdfLanguage`. Apply `pageLanguageStyle` after page styles. Use the shared PDF `Text`, `View`, and `Image` components so font selection, RTL rows, and directional spacing remain consistent. Translate generated headings and proficiency labels explicitly; never pass personal content through the message catalogue. Use the common date formatter for full localized month names with Western digits, and `ContactText` when combining Latin contact fields with Arabic text. Do not insert Unicode bidi-control markers: this font/renderer combination can draw them as visible glyphs.
+
+Amiri Regular, Bold, Italic, and Bold Italic are bundled under `public/fonts/amiri/`, with the original SIL Open Font License in `OFL.txt`. Copyright belongs to the Amiri Project Authors. These assets are served locally, not fetched from a font service. Arabic fonts need not match the template's Latin font. Preserve the shared shaping settings and test both PDF extraction and visible glyph rendering when changing fonts; generation or selected-word extraction alone is insufficient.
 
 ## Remove a template
 

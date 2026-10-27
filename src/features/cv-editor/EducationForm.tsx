@@ -3,6 +3,7 @@ import { Field, TextArea } from '../../components/ui/Field'
 import { createEducation } from '../../domain/cv/defaults'
 import type { Education } from '../../domain/cv/types'
 import { EntryGroup } from './EntryGroup'
+import { useTranslation } from '../../i18n/context'
 
 export function EducationForm({
   entries,
@@ -11,6 +12,7 @@ export function EducationForm({
   entries: Education[]
   onChange: (entries: Education[]) => void
 }) {
+  const { t } = useTranslation()
   function update(id: string, patch: Partial<Education>) {
     onChange(
       entries.map((entry) =>
@@ -20,7 +22,9 @@ export function EducationForm({
   }
   return (
     <div className="entries">
-      {entries.length === 0 && <p className="empty-section">Your education</p>}
+      {entries.length === 0 && (
+        <p className="empty-section">{t('Your education')}</p>
+      )}
       {entries.map((entry, index) => (
         <EntryGroup
           key={entry.id}
@@ -84,7 +88,7 @@ export function EducationForm({
         }
       >
         <Plus size={17} />
-        Add education
+        {t('Add education')}
       </button>
     </div>
   )

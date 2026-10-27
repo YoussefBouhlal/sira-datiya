@@ -11,7 +11,11 @@ The personal details, profile, experience, education, skills, languages, certifi
 A visual presentation of CV content. Choosing a different template does not change the content.
 
 **Appearance**:
-The chosen template, accent color, text size, and paper size of a CV.
+The chosen template, accent color, text size, paper size, and document language of a CV.
+
+**Document language**:
+The single language used for the builder interface and generated CV labels. It does not determine or translate the person's written CV content.
+_Avoid_: Interface language, CV language
 
 **CV preview**:
 The on-screen representation of the CV with its current content and appearance.

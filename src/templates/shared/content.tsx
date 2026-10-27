@@ -1,4 +1,6 @@
-import { Image, StyleSheet, View } from '@react-pdf/renderer'
+import { StyleSheet } from '@react-pdf/renderer'
+import { Image, View, ContactText } from './PdfLayout'
+import { usePdfTranslation } from './localization'
 import { Text } from './Text'
 import { proficiencyLevels } from '../../domain/cv/defaults'
 import type { TemplateProps } from '../types'
@@ -29,32 +31,6 @@ const styles = StyleSheet.create({
   },
 })
 
-function formatMonth(value: string): string {
-  if (!value) return ''
-  const [year, month] = value.split('-')
-  const names = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ]
-  return `${names[Number(month) - 1] ?? ''} ${year}`.trim()
-}
-
-function dateRange(start: string, end: string, current = false): string {
-  return [formatMonth(start), current ? 'Present' : formatMonth(end)]
-    .filter(Boolean)
-    .join(' - ')
-}
-
 function Description({
   text,
   bullets = false,
@@ -75,11 +51,11 @@ function Description({
 export function ContactLine({ cv }: Pick<TemplateProps, 'cv'>) {
   const { email, phone, location, website, linkedin } = cv.personal
   return (
-    <Text style={{ fontSize: 9, lineHeight: 1.7, color: '#626b69' }}>
-      {[email, phone, location, website, linkedin]
-        .filter(Boolean)
-        .join('  |  ')}
-    </Text>
+    <ContactText
+      style={{ fontSize: 9, lineHeight: 1.7, color: '#626b69' }}
+      values={[email, phone, location, website, linkedin]}
+      separator="  |  "
+    />
   )
 }
 
@@ -104,6 +80,7 @@ export function CvSections({
   appearance,
   variant = 'standard',
 }: TemplateProps & { variant?: 'standard' | 'sidebar' }) {
+  const { t, dates: dateRange } = usePdfTranslation()
   const sidebar = variant === 'sidebar'
   const headingStyle = sidebar
     ? {
@@ -141,7 +118,7 @@ export function CvSections({
       {cv.summary.trim() && (
         <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={35}>
-            Profile
+            {t('Profile')}
           </Text>
           <Text style={styles.body} orphans={2} widows={2}>
             {cv.summary}
@@ -151,7 +128,7 @@ export function CvSections({
       {experience.length > 0 && (
         <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={65}>
-            {sidebar ? 'Employment History' : 'Experience'}
+            {t(sidebar ? 'Employment History' : 'Experience')}
           </Text>
           {experience.map((entry) => (
             <View key={entry.id} style={styles.entry}>
@@ -175,7 +152,7 @@ export function CvSections({
       {education.length > 0 && (
         <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={55}>
-            Education
+            {t('Education')}
           </Text>
           {education.map((entry) => (
             <View key={entry.id} style={styles.entry}>
@@ -198,14 +175,14 @@ export function CvSections({
       {!sidebar && skills.length > 0 && (
         <View style={styles.section}>
           <Text style={headingStyle} minPresenceAhead={30}>
-            Skills
+            {t('Skills')}
           </Text>
           <Text style={styles.body}>
             {skills
               .map((skill) =>
                 skill.level === null
                   ? skill.name
-                  : `${skill.name} (${proficiencyLevels[skill.level - 1]})`,
+                  : `${skill.name} (${t(proficiencyLevels[skill.level - 1]!)})`,
               )
               .join('  /  ')}
           </Text>
@@ -214,7 +191,7 @@ export function CvSections({
       {projects.length > 0 && (
         <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={55}>
-            Projects
+            {t('Projects')}
           </Text>
           {projects.map((entry) => (
             <View key={entry.id} style={styles.entry}>
@@ -230,7 +207,7 @@ export function CvSections({
       {!sidebar && cv.languages.some((language) => language.trim()) && (
         <View style={styles.section}>
           <Text style={headingStyle} minPresenceAhead={30}>
-            Languages
+            {t('Languages')}
           </Text>
           <Text style={styles.body}>{cv.languages.join('  /  ')}</Text>
         </View>
@@ -238,7 +215,7 @@ export function CvSections({
       {cv.certifications.some((certification) => certification.trim()) && (
         <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={30}>
-            Certifications
+            {t('Certifications')}
           </Text>
           <Description text={cv.certifications.join('\n')} />
         </View>
@@ -246,7 +223,7 @@ export function CvSections({
       {references.length > 0 && (
         <View style={sectionStyle}>
           <Text style={headingStyle} minPresenceAhead={45}>
-            References
+            {t('References')}
           </Text>
           {references.map((entry) => (
             <View key={entry.id} style={styles.entry}>

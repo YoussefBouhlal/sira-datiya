@@ -12,6 +12,7 @@ import { documentFilename, downloadBlob } from '../../lib/download'
 import type { TemplateDefinition } from '../../templates/types'
 import { PdfCanvas } from './PdfCanvas'
 import { usePdfDocument } from './use-pdf-document'
+import { useTranslation } from '../../i18n/context'
 
 export function PdfWorkspace({
   cv,
@@ -24,6 +25,7 @@ export function PdfWorkspace({
   template: TemplateDefinition
   downloadable?: boolean
 }) {
+  const { t } = useTranslation()
   const { blob, loading, error } = usePdfDocument(cv, appearance, template)
   const [page, setPage] = useState(1)
   const [pageCount, setPageCount] = useState(1)
@@ -36,18 +38,18 @@ export function PdfWorkspace({
       <div className="preview-toolbar">
         <span className="preview-label">
           <span className="live-dot" />
-          PREVIEW
+          {t('PREVIEW')}
         </span>
         {downloadable && (
           <button
             type="button"
             className="button button-primary download-button"
             disabled={!canDownload}
-            title={
+            title={t(
               !cv.personal.fullName.trim()
                 ? 'Add your name to download'
-                : 'Download PDF'
-            }
+                : 'Download PDF',
+            )}
             onClick={() => {
               if (blob)
                 downloadBlob(
@@ -61,7 +63,7 @@ export function PdfWorkspace({
             ) : (
               <ArrowDownToLine size={16} />
             )}
-            <span>Download PDF</span>
+            <span>{t('Download PDF')}</span>
           </button>
         )}
       </div>
@@ -83,35 +85,38 @@ export function PdfWorkspace({
           ) : (
             <div className="preview-placeholder">
               <FileText size={32} strokeWidth={1} />
-              <span>Preparing your document</span>
+              <span>{t('Preparing your document')}</span>
             </div>
           )}
         </div>
         <div className="preview-status" role="status">
-          {error ||
+          {t(error) ||
             (loading
-              ? 'Updating preview...'
-              : `${template.name} / ${appearance.pageSize === 'LETTER' ? 'US Letter' : 'A4'}`)}
+              ? t('Updating preview...')
+              : `${template.name} / ${appearance.pageSize === 'LETTER' ? t('US Letter') : 'A4'}`)}
         </div>
         <div className="preview-pagination">
           <button
             type="button"
             className="icon-button"
-            aria-label="Previous preview page"
-            title="Previous page"
+            aria-label={t('Previous preview page')}
+            title={t('Previous page')}
             disabled={currentPage <= 1}
             onClick={() => setPage(currentPage - 1)}
           >
             <ChevronLeft size={16} />
           </button>
           <span>
-            Page {currentPage} <span className="muted">of {pageCount}</span>
+            {t('Page {page} of {total}', {
+              page: currentPage,
+              total: pageCount,
+            })}
           </span>
           <button
             type="button"
             className="icon-button"
-            aria-label="Next preview page"
-            title="Next page"
+            aria-label={t('Next preview page')}
+            title={t('Next page')}
             disabled={currentPage >= pageCount}
             onClick={() => setPage(currentPage + 1)}
           >
@@ -119,8 +124,8 @@ export function PdfWorkspace({
           </button>
         </div>
       </div>
-      <section className="sr-only" aria-label="CV preview text">
-        <h2>{cv.personal.fullName || 'Your name'}</h2>
+      <section className="sr-only" aria-label={t('CV preview text')}>
+        <h2>{cv.personal.fullName || t('Your name')}</h2>
         {Object.entries(cv.personal)
           .filter(([key]) => key !== 'fullName' && key !== 'portrait')
           .map(([key, value]) => (
@@ -134,7 +139,7 @@ export function PdfWorkspace({
               entry.employer,
               entry.location,
               entry.startDate,
-              entry.current ? 'Present' : entry.endDate,
+              entry.current ? t('Present') : entry.endDate,
               entry.description,
             ]
               .filter(Boolean)
@@ -157,7 +162,9 @@ export function PdfWorkspace({
         {cv.personal.portrait && (
           <img
             src={cv.personal.portrait}
-            alt={`${cv.personal.fullName || 'CV owner'} portrait`}
+            alt={t('{name} portrait', {
+              name: cv.personal.fullName || t('CV owner'),
+            })}
             width={64}
             height={64}
           />
@@ -167,7 +174,7 @@ export function PdfWorkspace({
             .map((skill) =>
               skill.level === null
                 ? skill.name
-                : `${skill.name}: ${proficiencyLevels[skill.level - 1]}`,
+                : `${skill.name}: ${t(proficiencyLevels[skill.level - 1]!)}`,
             )
             .join(', ')}
         </p>
@@ -178,7 +185,7 @@ export function PdfWorkspace({
             {entry.name}. {entry.url}. {entry.description}
           </p>
         ))}
-        {cv.references.length > 0 && <h3>References</h3>}
+        {cv.references.length > 0 && <h3>{t('References')}</h3>}
         {cv.references.map((entry) => (
           <p key={entry.id}>
             {[

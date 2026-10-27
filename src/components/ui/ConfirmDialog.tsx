@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
+import { useTranslation } from '../../i18n/context'
 
 export function ConfirmDialog({
   title,
@@ -14,6 +15,7 @@ export function ConfirmDialog({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { t } = useTranslation()
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const bodyId = useId()
@@ -31,7 +33,7 @@ export function ConfirmDialog({
       <button
         type="button"
         className="icon-button dialog-close"
-        aria-label="Close dialog"
+        aria-label={t('Close dialog')}
         onClick={onCancel}
       >
         <X size={18} />
@@ -45,7 +47,7 @@ export function ConfirmDialog({
           autoFocus
           onClick={onCancel}
         >
-          Cancel
+          {t('Cancel')}
         </button>
         <button
           type="button"

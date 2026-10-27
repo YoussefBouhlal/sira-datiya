@@ -81,6 +81,7 @@ export const cvSchema = z.object({
 })
 
 export const appearanceSchema = z.object({
+  language: z.enum(['en', 'fr', 'ar']).default('en'),
   templateId: z.string(),
   accent: z.enum(['#177568', '#3456a0', '#8c4255', '#292929']),
   fontSize: z.union([z.literal(10), z.literal(11), z.literal(12)]),

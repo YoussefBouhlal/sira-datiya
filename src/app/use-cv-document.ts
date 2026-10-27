@@ -10,7 +10,13 @@ import {
 import { templateRegistry } from '../templates/registry'
 
 function initialize(storage?: StoragePort) {
-  const fallback = createDocument(templateRegistry.defaultId)
+  const preferred = typeof navigator === 'undefined' ? [] : navigator.languages
+  const language =
+    preferred
+      .map((value) => value.toLowerCase().split('-')[0])
+      .find((value) => value === 'en' || value === 'fr' || value === 'ar') ??
+    'en'
+  const fallback = createDocument(templateRegistry.defaultId, language)
   try {
     const port = storage ?? window.localStorage
     const loaded = loadDocument(port)
@@ -89,7 +95,12 @@ export function useCvDocument(storage?: StoragePort) {
       setBlocked(false)
       setMessage('')
       setSaveStatus('saving')
-      setDocument(createDocument(templateRegistry.defaultId))
+      setDocument(
+        createDocument(
+          templateRegistry.defaultId,
+          document.appearance.language,
+        ),
+      )
       return true
     } catch {
       setMessage(

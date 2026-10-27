@@ -1,3 +1,17 @@
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/amiri/Amiri-Regular.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Amiri';
+  src: url('/fonts/amiri/Amiri-Bold.ttf') format('truetype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
 :root {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
@@ -86,7 +100,7 @@ button {
 }
 .skip-link {
   position: fixed;
-  left: 16px;
+  inset-inline-start: 16px;
   top: -60px;
   z-index: 100;
   background: var(--accent);
@@ -108,7 +122,7 @@ button {
   display: flex;
   align-items: center;
   height: 76px;
-  padding-right: 26px;
+  padding-inline-end: 26px;
   border-bottom: 1px solid var(--border);
   background: #fff;
   position: sticky;
@@ -121,7 +135,7 @@ button {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  padding-left: 30px;
+  padding-inline-start: 30px;
   text-decoration: none;
   color: var(--ink);
   font-size: 29px;
@@ -133,7 +147,7 @@ button {
   color: var(--accent);
   display: grid;
   place-items: center;
-  margin-right: 7px;
+  margin-inline-end: 7px;
 }
 .brand-period {
   color: var(--accent);
@@ -161,8 +175,25 @@ button {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-left: auto;
-  padding-left: 20px;
+  margin-inline-start: auto;
+  padding-inline-start: 20px;
+}
+.language-control {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.language-control select {
+  width: 106px;
+  height: 34px;
+  min-height: 34px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.4;
 }
 .save-status {
   display: flex;
@@ -215,7 +246,7 @@ button {
 }
 .button-back {
   background: transparent;
-  padding-left: 0;
+  padding-inline-start: 0;
   color: #626e66;
 }
 .icon-button {
@@ -247,7 +278,7 @@ button {
 .document-menu-items {
   position: absolute;
   top: 43px;
-  right: 0;
+  inset-inline-end: 0;
   min-width: 205px;
   padding: 6px;
   border: 1px solid var(--border);
@@ -265,7 +296,7 @@ button {
   width: 100%;
   padding: 11px 10px;
   font-size: 12px;
-  text-align: left;
+  text-align: start;
   border-radius: 3px;
 }
 .document-menu-items button:hover {
@@ -274,7 +305,7 @@ button {
 .import-error {
   position: absolute;
   width: 280px;
-  right: 0;
+  inset-inline-end: 0;
   top: 45px;
   background: #fff5ef;
   border: 1px solid #d3ab8b;
@@ -290,7 +321,7 @@ button {
   padding: 8px 0 0;
 }
 .sidebar {
-  border-right: 1px solid var(--border);
+  border-inline-end: 1px solid var(--border);
   background: #fafbf9;
   padding: 32px 17px 0;
   display: flex;
@@ -350,7 +381,7 @@ button {
   border: 0;
   border-radius: 5px;
   background: transparent;
-  text-align: left;
+  text-align: start;
   color: #626e64;
   font-size: 12px;
   min-height: 45px;
@@ -384,7 +415,7 @@ button {
   border-color: #cee0d3;
 }
 .step-arrow {
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 .completion {
   border-top: 1px solid var(--border);
@@ -603,16 +634,17 @@ button {
 .entry-group legend {
   font-weight: 500;
   font-size: 13px;
-  padding: 0 14px 0 0;
+  padding: 0;
+  padding-inline-end: 14px;
 }
 .entry-group legend span {
   color: #9ba69b;
   font-size: 10px;
-  padding-left: 5px;
+  padding-inline-start: 5px;
 }
 .remove-entry {
   position: absolute;
-  right: 0;
+  inset-inline-end: 0;
   top: -24px;
   background: #fff;
 }
@@ -716,7 +748,7 @@ button {
 .character-count {
   display: block;
   margin-top: 10px;
-  text-align: right;
+  text-align: end;
   font-size: 10px;
   color: var(--muted);
 }
@@ -725,7 +757,7 @@ button {
   background-color: #eef2ef;
   background-image: radial-gradient(#ced8ce 0.5px, transparent 0.5px);
   background-size: 9px 9px;
-  border-left: 1px solid var(--border);
+  border-inline-start: 1px solid var(--border);
   padding: 24px 28px 22px;
   position: relative;
 }
@@ -902,7 +934,7 @@ button {
   font-weight: 400;
 }
 .gallery-header h2 span {
-  margin-left: 8px;
+  margin-inline-start: 8px;
   color: var(--muted);
   font:
     12px 'DM Sans',
@@ -938,13 +970,13 @@ button {
 .gallery-search svg {
   position: absolute;
   top: 50%;
-  left: 11px;
+  inset-inline-start: 11px;
   transform: translateY(-50%);
   color: var(--muted);
   pointer-events: none;
 }
 .gallery-search input {
-  padding-left: 34px;
+  padding-inline-start: 34px;
 }
 .gallery-count {
   margin: 18px 0 14px;
@@ -961,7 +993,7 @@ button {
   border: 0;
   padding: 0;
   background: none;
-  text-align: left;
+  text-align: start;
   border-radius: 3px;
 }
 .template-miniature {
@@ -1048,7 +1080,7 @@ button {
   background-color: #eef2ef;
   background-image: radial-gradient(#ced8ce 0.5px, transparent 0.5px);
   background-size: 9px 9px;
-  border-left: 1px solid var(--border);
+  border-inline-start: 1px solid var(--border);
 }
 .gallery-preview-heading {
   display: flex;
@@ -1174,7 +1206,7 @@ button {
   font-size: 28px;
   font-weight: 400;
   margin: 0 0 16px;
-  padding-right: 15px;
+  padding-inline-end: 15px;
 }
 .confirm-dialog p {
   font-size: 13px;
@@ -1184,7 +1216,7 @@ button {
 .dialog-close {
   position: absolute;
   top: 12px;
-  right: 12px;
+  inset-inline-end: 12px;
 }
 .dialog-actions {
   display: flex;

@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import type { CvDocument } from '../domain/cv/types'
 import { documentFilename, downloadBlob } from '../lib/download'
 import { parseBackup, serializeBackup } from '../lib/storage/cv-storage'
+import { useTranslation } from '../i18n/context'
 
 export function DocumentActions({
   document,
@@ -13,6 +14,7 @@ export function DocumentActions({
   onRestore: (document: CvDocument) => void
   onReset: () => void
 }) {
+  const { t } = useTranslation()
   const fileInput = useRef<HTMLInputElement>(null)
   const menu = useRef<HTMLDetailsElement>(null)
   const [error, setError] = useState('')
@@ -24,8 +26,8 @@ export function DocumentActions({
       <details className="document-menu" ref={menu}>
         <summary
           className="icon-button"
-          aria-label="Document actions"
-          title="Document actions"
+          aria-label={t('Document actions')}
+          title={t('Document actions')}
         >
           <Ellipsis size={20} />
         </summary>
@@ -43,7 +45,7 @@ export function DocumentActions({
             }}
           >
             <Download size={16} />
-            Download backup
+            {t('Download backup')}
           </button>
           <button
             type="button"
@@ -53,7 +55,7 @@ export function DocumentActions({
             }}
           >
             <FileUp size={16} />
-            Restore backup
+            {t('Restore backup')}
           </button>
           <button
             type="button"
@@ -63,7 +65,7 @@ export function DocumentActions({
             }}
           >
             <RotateCcw size={16} />
-            Start over
+            {t('Start over')}
           </button>
         </div>
       </details>
@@ -72,7 +74,7 @@ export function DocumentActions({
         accept="application/json,.json"
         className="sr-only"
         ref={fileInput}
-        aria-label="CV backup file"
+        aria-label={t('CV backup file')}
         tabIndex={-1}
         onChange={async (event) => {
           const file = event.target.files?.[0]
@@ -91,9 +93,9 @@ export function DocumentActions({
       />
       {error && (
         <div className="import-error" role="alert">
-          {error}
+          {t(error)}
           <button type="button" onClick={() => setError('')}>
-            Dismiss
+            {t('Dismiss')}
           </button>
         </div>
       )}
