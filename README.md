@@ -18,12 +18,15 @@ Open the local address printed by Vite. For an example document, choose **Load e
 ## Available workflows
 
 - Personal details, optional local portrait, summary, experience, education, skills with optional proficiency ratings, languages, certifications, projects, and ordered references.
-- Classic, Studio, Sidebar, Traditional, and Prime ATS templates; accent, text size, and A4/US Letter settings.
+- Classic, Studio, Sidebar, Traditional, Prime ATS, and Pure ATS templates; accent, text size, and A4/US Letter settings.
+- One English, French, or Arabic language selector for the interface and generated CV labels, with right-to-left Arabic layouts in every template and localized fictional examples.
 - Preview generated PDF pages and download the exact PDF being previewed.
 - Browser autosave and JSON backup/restore under the document actions menu.
 - Confirmed reset and replacement actions.
 
 Drafts can be incomplete. A name is needed to enable PDF download. Portraits are processed entirely on-device and included in JSON backups. Browser storage is not encrypted or a permanent backup; clearing site data or private browsing may remove the CV. Unreadable saved data blocks autosave rather than being overwritten. Explicit restore/reset actions can replace it. Existing version 1 drafts and backups are upgraded without dropping skill names; new saves use version 2.
+
+Language changes never translate or replace your written content. New drafts detect a supported browser language, with English fallback; existing drafts without a language setting stay English. The selected language is saved with the CV and included in JSON backups. Restoring a backup switches the whole app to its language, and reset keeps the current language. Dates use translated month names and Western digits. There is still one current draft, not separate versions for each language.
 
 ## Quality checks
 
@@ -67,8 +70,10 @@ Start with [the architecture](docs/architecture.md), [the template guide](docs/t
 
 ## Current limits
 
-One CV per browser profile. No cloud sync, account recovery, rich text, portrait crop editor, or DOCX export. Portrait uploads accept PNG/JPEG files up to 10 MB and are center-cropped, resized, and compressed locally. Built-in PDF fonts target Latin-script CVs; broader script coverage requires bundled font registration and dedicated layout tests. Standard PDF fonts can produce a preview font warning in PDF.js on platforms without equivalent system fonts. The PDF renderer and worker are lazy-loaded but are relatively large dependencies. PDF text is selectable, but tagged-PDF/PDF-UA and universal ATS compatibility are not claimed.
+One CV per browser profile. No cloud sync, account recovery, rich text, portrait crop editor, automatic translation, or DOCX export. Portrait uploads accept PNG/JPEG files up to 10 MB and are center-cropped, resized, and compressed locally. English/French use the existing Latin PDF fonts; Arabic uses locally bundled Amiri fonts, including mixed Arabic/Latin content. Other scripts are not guaranteed. PDF text extraction can infer extra spaces within shaped Arabic words. Standard PDF fonts can produce a preview font warning in PDF.js on platforms without equivalent system fonts. The PDF renderer and worker are lazy-loaded but are relatively large dependencies. PDF text is selectable, but tagged-PDF/PDF-UA and universal ATS compatibility are not claimed.
 
 ## Publishing and licensing
 
 No project license has been selected yet. Before publishing as open source, the owner must select a license, add its full text, and confirm the attribution requirements of bundled dependencies and fonts. No permission to reuse this project's code should be inferred from the absence of a license.
+
+Bundled Amiri font files are Copyright 2010-2022 The Amiri Project Authors and distributed under the SIL Open Font License 1.1. Their original license is included at [public/fonts/amiri/OFL.txt](public/fonts/amiri/OFL.txt).

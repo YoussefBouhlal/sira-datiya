@@ -4,9 +4,99 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
 import { createDocument, createEmptyCv } from '../domain/cv/defaults'
 import { createExampleCv } from '../domain/cv/example'
+import { translate } from '../i18n/messages'
 import { createTemplateRegistry, templateRegistry } from './registry'
 
 describe('template registry', () => {
+  for (const language of ['fr', 'ar'] as const) {
+    for (const pageSize of ['A4', 'LETTER'] as const) {
+      for (const { id } of templateRegistry.templates) {
+        it(`${id} renders localized ${language} text with local fonts on ${pageSize}`, async () => {
+          const template = templateRegistry.resolve(id)
+          const render = await template.load()
+          const cv = createExampleCv(language)
+          cv.skills[0]!.level = 4
+          cv.projects = [
+            {
+              id: 'localized-project',
+              name: 'Figma Toolkit',
+              url: 'https://toolkit.example',
+              description:
+                language === 'ar'
+                  ? 'أدوات تصميم سهلة الاستخدام'
+                  : 'Outils de design accessibles',
+            },
+          ]
+          cv.references = [
+            {
+              id: 'localized-reference',
+              name: language === 'ar' ? 'عمر Example' : 'Dominique Exemple',
+              jobTitle: 'Team Lead',
+              organization: 'Example Studio',
+              email: 'reference@example.com',
+              phone: '+1 415 555 0142',
+            },
+          ]
+          const appearance = {
+            ...createDocument(id, language).appearance,
+            pageSize,
+          }
+          const buffer = await renderToBuffer(render({ cv, appearance }))
+          const task = getDocument({
+            data: new Uint8Array(buffer),
+            useSystemFonts: true,
+          })
+          const pdf = await task.promise
+          try {
+            const text = (
+              await Promise.all(
+                Array.from({ length: pdf.numPages }, async (_, index) => {
+                  const page = await pdf.getPage(index + 1)
+                  const items = (await page.getTextContent()).items.filter(
+                    (item) => 'str' in item,
+                  )
+                  for (const item of items.filter((item) => item.str.trim())) {
+                    expect(item.transform[4], item.str).toBeGreaterThanOrEqual(
+                      -1,
+                    )
+                    expect(
+                      item.transform[4] + item.width,
+                      item.str,
+                    ).toBeLessThanOrEqual(page.view[2]! + 1)
+                    expect(item.transform[5], item.str).toBeGreaterThan(0)
+                    expect(item.transform[5], item.str).toBeLessThan(
+                      page.view[3]!,
+                    )
+                  }
+                  return items.map((item) => item.str).join(' ')
+                }),
+              )
+            ).join(' ')
+            expect(text.toLowerCase()).toContain(
+              language === 'fr' ? 'camille martin' : 'ليلى',
+            )
+            expect(text).toContain(language === 'fr' ? 'mars 2022' : '2022')
+            expect(text).not.toContain('Present')
+            expect(text).not.toContain('\uFFFD')
+            expect(text).not.toMatch(/[\u2066-\u2069]/)
+            expect(text.replace(/\s/g, '')).toContain(
+              cv.summary.replace(/\s/g, ''),
+            )
+            expect(text).toContain(cv.personal.phone)
+            expect(text).toContain('Figma Toolkit')
+            expect(text).toContain('reference@example.com')
+            expect(text).toContain(translate(language, 'Advanced'))
+            expect(text.toLowerCase()).not.toMatch(
+              /\b(profile|education|present|references)\b/,
+            )
+          } finally {
+            await task.destroy()
+          }
+        })
+      }
+    }
+  }
+
   it('rejects an empty registry, duplicate IDs, or a missing default', () => {
     const first = templateRegistry.templates[0]!
     expect(() => createTemplateRegistry([], 'none')).toThrow()
@@ -68,7 +158,7 @@ describe('template registry', () => {
         expect(
           Math.abs(profile.transform[5] - summary.transform[5]),
         ).toBeLessThan(3)
-        const date = find('Mar 2022 - Present')
+        const date = find('March 2022 - Present')
         const role = find('Senior Product Designer')
         expect(date.transform[4]).toBeCloseTo(profile.transform[4], 0)
         expect(role.transform[4]).toBeCloseTo(summary.transform[4], 0)
@@ -132,7 +222,7 @@ describe('template registry', () => {
         )
         expect(phone.transform[5]).toBeCloseTo(email.transform[5], 0)
         const role = find('Senior Product Designer')
-        const date = find('Mar 2022 - Present')
+        const date = find('March 2022 - Present')
         expect(role.transform[4] + role.width).toBeLessThan(date.transform[4])
         expect(date.transform[4] + date.width).toBeCloseTo(
           page.view[2]! - 42,
@@ -231,7 +321,7 @@ describe('template registry', () => {
           0,
         )
         const role = find('Senior Product Designer')
-        const date = find('Mar 2022 - Present')
+        const date = find('March 2022 - Present')
         expect(role.transform[4] + role.width).toBeLessThan(date.transform[4])
         expect(date.transform[4] + date.width).toBeCloseTo(
           firstPage.view[2]! - 40,
@@ -273,7 +363,7 @@ describe('template registry', () => {
           'Product designer turning',
           'PROFESSIONAL EXPERIENCE',
           'Senior Product Designer',
-          'Mar 2022 - Present',
+          'March 2022 - Present',
           'EDUCATION',
           'TECHNICAL SKILLS',
           'Alpha capability',
@@ -420,7 +510,7 @@ describe('template registry', () => {
         expect(name.transform[4]).toBeCloseTo(35, 0)
         expect(name.height).toBeCloseTo(appearance.fontSize * 1.8, 0)
         const role = find('Senior Product Designer')
-        const date = find('Mar 2022 - Present')
+        const date = find('March 2022 - Present')
         expect(date.transform[4]).toBeCloseTo(role.transform[4], 0)
         expect(date.transform[5]).toBeLessThan(role.transform[5])
         const alpha = find('Alpha capability')
@@ -457,7 +547,7 @@ describe('template registry', () => {
           'Profile',
           'Professional Experience',
           'Senior Product Designer',
-          'Mar 2022 - Present',
+          'March 2022 - Present',
           'Education',
           'California College',
           'BFA, Communication Design',

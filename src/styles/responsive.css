@@ -34,7 +34,7 @@
   }
   .app-shell .brand {
     width: 190px;
-    padding-left: 23px;
+    padding-inline-start: 23px;
   }
   .app-shell .header-actions {
     gap: 9px;
@@ -80,11 +80,11 @@
   }
   .app-shell .app-header {
     height: 68px;
-    padding-right: 17px;
+    padding-inline-end: 17px;
   }
   .app-shell .brand {
     width: 150px;
-    padding-left: 20px;
+    padding-inline-start: 20px;
     font-size: 27px;
   }
   .app-shell .document-path {
@@ -103,7 +103,7 @@
     height: auto;
     min-height: 0;
     padding: 12px 17px;
-    border-right: 0;
+    border-inline-end: 0;
     border-bottom: 1px solid var(--border);
   }
   .app-shell .sidebar-top,
@@ -176,7 +176,7 @@
   }
   .gallery-inspection {
     display: none;
-    border-left: 0;
+    border-inline-start: 0;
   }
   .is-inspecting .gallery-browser {
     display: none;
@@ -201,14 +201,14 @@
     justify-content: center;
   }
   .app-shell .app-header {
-    padding-right: 12px;
+    padding-inline-end: 12px;
   }
   .app-shell .brand {
     width: 120px;
-    padding-left: 12px;
+    padding-inline-start: 12px;
   }
   .app-shell .brand-symbol {
-    margin-right: 3px;
+    margin-inline-end: 3px;
     width: 27px;
   }
   .app-shell .document-path {
@@ -216,7 +216,7 @@
   }
   .app-shell .header-actions {
     gap: 9px;
-    padding-left: 0;
+    padding-inline-start: 0;
   }
   .app-shell .example-button {
     padding: 8px 9px;
@@ -270,7 +270,7 @@
   .app-shell .preview-pane {
     padding: 22px;
     min-height: 650px;
-    border-left: 0;
+    border-inline-start: 0;
   }
   .app-shell .preview-stage {
     max-width: 430px;
@@ -296,10 +296,10 @@
 
 @media (max-width: 359px) {
   .app-shell .app-header {
-    padding-right: 8px;
+    padding-inline-end: 8px;
   }
   .app-shell .brand {
-    padding-left: 8px;
+    padding-inline-start: 8px;
   }
   .app-shell .header-actions {
     gap: 4px;
@@ -316,5 +316,55 @@
   .app-shell .editor-pane {
     padding-left: 18px;
     padding-right: 18px;
+  }
+}
+
+html[lang='ar'] body,
+html[lang='ar'] h1,
+html[lang='ar'] h2,
+html[lang='ar'] h3,
+html[lang='ar'] .empty-section {
+  font-family: 'Amiri', 'DM Sans', sans-serif;
+}
+html[dir='rtl'] .button-back svg,
+html[dir='rtl'] .editor-footer .button-primary .lucide-arrow-right,
+html[dir='rtl'] .privacy-button svg,
+html[dir='rtl'] .step-arrow,
+html[dir='rtl'] .gallery-back svg,
+html[dir='rtl'] .preview-pagination svg {
+  transform: scaleX(-1);
+}
+.section-heading h1,
+.button,
+.step-button {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 699px) {
+  .app-shell .app-header {
+    column-gap: 8px;
+  }
+  .app-shell .brand {
+    width: auto;
+    font-size: 20px;
+  }
+  .app-shell .header-actions {
+    gap: 6px;
+  }
+  .language-control select {
+    width: 88px;
+    height: 36px;
+    min-height: 36px;
+    font-size: 13px;
+  }
+  .app-shell .example-button {
+    width: 34px;
+    height: 36px;
+    padding: 0;
+  }
+  .example-button .example-label {
+    display: none;
+  }
+  .app-shell .button {
+    white-space: normal;
   }
 }

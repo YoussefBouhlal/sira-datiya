@@ -5,9 +5,12 @@ import type { Appearance } from '../../domain/cv/types'
 import type { TemplateDefinition } from '../../templates/types'
 import { PdfCanvas } from './PdfCanvas'
 import { generatePdfDocument } from './use-pdf-document'
+import { useTranslation } from '../../i18n/context'
 
-const sample = createExampleCv()
-const sampleDocuments = new WeakMap<TemplateDefinition, Promise<Blob>>()
+const sampleDocuments = new WeakMap<
+  TemplateDefinition,
+  Map<string, Promise<Blob>>
+>()
 const ignorePageCount = () => {}
 
 export function TemplateThumbnail({
@@ -15,10 +18,21 @@ export function TemplateThumbnail({
 }: {
   template: TemplateDefinition
 }) {
+  const { language, t } = useTranslation()
   const container = useRef<HTMLSpanElement>(null)
   const [visible, setVisible] = useState(false)
-  const [blob, setBlob] = useState<Blob | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [result, setResult] = useState<{
+    template: TemplateDefinition
+    language: Appearance['language']
+    blob: Blob | null
+    failed: boolean
+  } | null>(null)
+  const current =
+    result?.template === template && result.language === language
+      ? result
+      : null
+  const blob = current?.blob ?? null
+  const failed = current?.failed ?? false
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -34,30 +48,40 @@ export function TemplateThumbnail({
   useEffect(() => {
     if (!visible) return
     let cancelled = false
-    let pending = sampleDocuments.get(template)
+    const documents =
+      sampleDocuments.get(template) ?? new Map<string, Promise<Blob>>()
+    sampleDocuments.set(template, documents)
+    let pending = documents.get(language)
     if (!pending) {
       const appearance: Appearance = {
+        language,
         templateId: template.id,
         accent: '#177568',
         fontSize: 11,
         pageSize: 'A4',
       }
-      pending = generatePdfDocument(sample, appearance, template)
-      sampleDocuments.set(template, pending)
+      pending = generatePdfDocument(
+        createExampleCv(language),
+        appearance,
+        template,
+      )
+      documents.set(language, pending)
     }
     void pending.then(
       (result) => {
-        if (!cancelled) setBlob(result)
+        if (!cancelled)
+          setResult({ template, language, blob: result, failed: false })
       },
       () => {
-        sampleDocuments.delete(template)
-        if (!cancelled) setFailed(true)
+        documents.delete(language)
+        if (!cancelled)
+          setResult({ template, language, blob: null, failed: true })
       },
     )
     return () => {
       cancelled = true
     }
-  }, [visible, template])
+  }, [visible, template, language])
 
   return (
     <span
@@ -79,7 +103,7 @@ export function TemplateThumbnail({
           ) : (
             <LoaderCircle size={18} className="spin" />
           )}
-          <span>{failed ? 'Preview unavailable' : 'Loading'}</span>
+          <span>{t(failed ? 'Preview unavailable' : 'Loading')}</span>
         </span>
       )}
     </span>

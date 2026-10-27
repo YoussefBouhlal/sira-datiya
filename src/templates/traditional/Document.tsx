@@ -1,25 +1,13 @@
-import { Document, Image, Page, View } from '@react-pdf/renderer'
+import { Document, Page } from '@react-pdf/renderer'
+import { PdfLanguage, View, Image } from '../shared/PdfLayout'
+import { pageLanguageStyle, usePdfTranslation } from '../shared/localization'
+import { dateRange as localizedDateRange, translate } from '../../i18n/messages'
 import type { ReactNode } from 'react'
 import { proficiencyLevels } from '../../domain/cv/defaults'
 import { PageNumber } from '../shared/content'
 import { Text } from '../shared/Text'
 import type { TemplateProps } from '../types'
 import { styles } from './styles'
-
-function dateRange(start: string, end: string, current = false) {
-  const format = (value: string) => {
-    if (!value) return ''
-    const [year, month] = value.split('-').map(Number)
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(new Date(Date.UTC(year!, month! - 1)))
-  }
-  return [format(start), current ? 'Present' : format(end)]
-    .filter(Boolean)
-    .join(' - ')
-}
 
 function Description({ text }: { text: string }) {
   return text
@@ -54,6 +42,7 @@ function Section({
   lead?: ReactNode
   children: ReactNode
 }) {
+  const { t } = usePdfTranslation()
   return (
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={70}>
@@ -63,7 +52,7 @@ function Section({
             { color: appearance.accent, fontSize: appearance.fontSize * 1.2 },
           ]}
         >
-          {title}
+          {t(title)}
         </Text>
         {lead}
       </View>
@@ -107,6 +96,9 @@ function EntryHeader({
 }
 
 export function TraditionalDocument({ cv, appearance }: TemplateProps) {
+  const t = (text: string) => translate(appearance.language, text)
+  const dateRange = (start: string, end: string, current = false) =>
+    localizedDateRange(start, end, current, appearance.language)
   const experience = cv.experience.filter(
     (entry) =>
       [
@@ -172,131 +164,140 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
       title={`${cv.personal.fullName || 'Untitled'} - CV`}
       author={cv.personal.fullName}
       creator="Sira Datiya CV"
+      language={appearance.language}
     >
-      <Page
-        size={appearance.pageSize}
-        style={[styles.page, { fontSize: appearance.fontSize }]}
-      >
-        <View style={styles.header}>
-          {cv.personal.portrait && (
-            <Image src={cv.personal.portrait} style={styles.portrait} />
-          )}
-          <Text style={[styles.name, { fontSize: appearance.fontSize * 2.1 }]}>
-            {cv.personal.fullName || 'Your name'}
-          </Text>
-          {cv.personal.jobTitle && (
-            <Text style={styles.jobTitle}>{cv.personal.jobTitle}</Text>
-          )}
-          {cv.personal.location && (
-            <Text style={styles.contact}>{cv.personal.location}</Text>
-          )}
-          {(cv.personal.phone || cv.personal.email) && (
-            <View style={styles.contactRow}>
-              {cv.personal.phone && (
-                <Text style={styles.phone}>{cv.personal.phone}</Text>
-              )}
-              {cv.personal.email && (
-                <Text style={styles.email}>{cv.personal.email}</Text>
-              )}
-            </View>
-          )}
-          {links && <Text style={styles.links}>{links}</Text>}
-        </View>
-        <View style={ruleStyle} />
-        {cv.summary.trim() && (
-          <Section title="Profile" appearance={appearance}>
-            <Text style={styles.profile} orphans={2} widows={2}>
-              {cv.summary}
+      <PdfLanguage language={appearance.language}>
+        <Page
+          size={appearance.pageSize}
+          style={[
+            styles.page,
+            { fontSize: appearance.fontSize },
+            pageLanguageStyle(appearance.language),
+          ]}
+        >
+          <View style={styles.header}>
+            {cv.personal.portrait && (
+              <Image src={cv.personal.portrait} style={styles.portrait} />
+            )}
+            <Text
+              style={[styles.name, { fontSize: appearance.fontSize * 2.1 }]}
+            >
+              {cv.personal.fullName || t('Your name')}
             </Text>
-            <View style={ruleStyle} />
-          </Section>
-        )}
-        {experience.length > 0 && (
-          <Section
-            title="Experience"
-            appearance={appearance}
-            lead={experienceHeader(experience[0]!)}
-          >
-            {experience.map((entry, index) => (
-              <View key={entry.id} style={styles.entry}>
-                {index > 0 && experienceHeader(entry)}
-                <Description text={entry.description} />
-              </View>
-            ))}
-          </Section>
-        )}
-        {education.length > 0 && (
-          <Section
-            title="Education"
-            appearance={appearance}
-            lead={educationHeader(education[0]!)}
-          >
-            {education.map((entry, index) => (
-              <View key={entry.id} style={styles.entry}>
-                {index > 0 && educationHeader(entry)}
-                <Description text={entry.description} />
-              </View>
-            ))}
-          </Section>
-        )}
-        {skills.length > 0 && (
-          <Section title="Skills" appearance={appearance}>
-            <Text style={styles.body} orphans={2} widows={2}>
-              {skills
-                .map((skill) =>
-                  skill.level === null
-                    ? skill.name
-                    : `${skill.name} (${proficiencyLevels[skill.level - 1]})`,
-                )
-                .join(' / ')}
-            </Text>
-          </Section>
-        )}
-        {languages.length > 0 && (
-          <Section title="Languages" appearance={appearance}>
-            <Text style={styles.body} orphans={2} widows={2}>
-              {languages.join(' / ')}
-            </Text>
-          </Section>
-        )}
-        {projects.length > 0 && (
-          <Section title="Projects" appearance={appearance}>
-            {projects.map((entry) => (
-              <View key={entry.id} style={styles.entry}>
-                {entry.name && (
-                  <Text style={styles.additionalTitle} minPresenceAhead={30}>
-                    {entry.name}
-                  </Text>
+            {cv.personal.jobTitle && (
+              <Text style={styles.jobTitle}>{cv.personal.jobTitle}</Text>
+            )}
+            {cv.personal.location && (
+              <Text style={styles.contact}>{cv.personal.location}</Text>
+            )}
+            {(cv.personal.phone || cv.personal.email) && (
+              <View style={styles.contactRow}>
+                {cv.personal.phone && (
+                  <Text style={styles.phone}>{cv.personal.phone}</Text>
                 )}
-                {entry.url && <Text style={styles.body}>{entry.url}</Text>}
-                <Description text={entry.description} />
+                {cv.personal.email && (
+                  <Text style={styles.email}>{cv.personal.email}</Text>
+                )}
               </View>
-            ))}
-          </Section>
-        )}
-        {certifications.length > 0 && (
-          <Section title="Certifications" appearance={appearance}>
-            <Description text={certifications.join('\n')} />
-          </Section>
-        )}
-        {references.length > 0 && (
-          <Section title="References" appearance={appearance}>
-            {references.map((entry) => (
-              <View key={entry.id} style={styles.entry}>
-                <Text style={styles.additionalTitle} minPresenceAhead={25}>
-                  {[entry.name, entry.jobTitle, entry.organization]
-                    .filter(Boolean)
-                    .join(' - ')}
-                </Text>
-                <Text style={styles.body}>
-                  {[entry.email, entry.phone].filter(Boolean).join(' | ')}
-                </Text>
-              </View>
-            ))}
-          </Section>
-        )}
-        <PageNumber />
-      </Page>
+            )}
+            {links && <Text style={styles.links}>{links}</Text>}
+          </View>
+          <View style={ruleStyle} />
+          {cv.summary.trim() && (
+            <Section title="Profile" appearance={appearance}>
+              <Text style={styles.profile} orphans={2} widows={2}>
+                {cv.summary}
+              </Text>
+              <View style={ruleStyle} />
+            </Section>
+          )}
+          {experience.length > 0 && (
+            <Section
+              title="Experience"
+              appearance={appearance}
+              lead={experienceHeader(experience[0]!)}
+            >
+              {experience.map((entry, index) => (
+                <View key={entry.id} style={styles.entry}>
+                  {index > 0 && experienceHeader(entry)}
+                  <Description text={entry.description} />
+                </View>
+              ))}
+            </Section>
+          )}
+          {education.length > 0 && (
+            <Section
+              title="Education"
+              appearance={appearance}
+              lead={educationHeader(education[0]!)}
+            >
+              {education.map((entry, index) => (
+                <View key={entry.id} style={styles.entry}>
+                  {index > 0 && educationHeader(entry)}
+                  <Description text={entry.description} />
+                </View>
+              ))}
+            </Section>
+          )}
+          {skills.length > 0 && (
+            <Section title="Skills" appearance={appearance}>
+              <Text style={styles.body} orphans={2} widows={2}>
+                {skills
+                  .map((skill) =>
+                    skill.level === null
+                      ? skill.name
+                      : `${skill.name} (${t(proficiencyLevels[skill.level - 1]!)})`,
+                  )
+                  .join(' / ')}
+              </Text>
+            </Section>
+          )}
+          {languages.length > 0 && (
+            <Section title="Languages" appearance={appearance}>
+              <Text style={styles.body} orphans={2} widows={2}>
+                {languages.join(' / ')}
+              </Text>
+            </Section>
+          )}
+          {projects.length > 0 && (
+            <Section title="Projects" appearance={appearance}>
+              {projects.map((entry) => (
+                <View key={entry.id} style={styles.entry}>
+                  {entry.name && (
+                    <Text style={styles.additionalTitle} minPresenceAhead={30}>
+                      {entry.name}
+                    </Text>
+                  )}
+                  {entry.url && <Text style={styles.body}>{entry.url}</Text>}
+                  <Description text={entry.description} />
+                </View>
+              ))}
+            </Section>
+          )}
+          {certifications.length > 0 && (
+            <Section title="Certifications" appearance={appearance}>
+              <Description text={certifications.join('\n')} />
+            </Section>
+          )}
+          {references.length > 0 && (
+            <Section title="References" appearance={appearance}>
+              {references.map((entry) => (
+                <View key={entry.id} style={styles.entry}>
+                  <Text style={styles.additionalTitle} minPresenceAhead={25}>
+                    {[entry.name, entry.jobTitle, entry.organization]
+                      .filter(Boolean)
+                      .join(' - ')}
+                  </Text>
+                  <Text style={styles.body}>
+                    {[entry.email, entry.phone].filter(Boolean).join(' | ')}
+                  </Text>
+                </View>
+              ))}
+            </Section>
+          )}
+          <PageNumber />
+        </Page>
+      </PdfLanguage>
     </Document>
   )
 }

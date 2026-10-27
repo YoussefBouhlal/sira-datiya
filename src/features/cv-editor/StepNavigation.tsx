@@ -1,6 +1,7 @@
 import { ArrowUpRight, Check, CheckCheck } from 'lucide-react'
 import type { CvData } from '../../domain/cv/types'
 import { editorSteps, type EditorStep } from './steps'
+import { useTranslation } from '../../i18n/context'
 
 export function StepNavigation({
   step,
@@ -11,6 +12,7 @@ export function StepNavigation({
   cv: CvData
   onSelect: (step: EditorStep) => void
 }) {
+  const { t } = useTranslation()
   const completed = [
     Boolean(cv.personal.fullName.trim() && cv.personal.jobTitle.trim()),
     Boolean(cv.summary.trim()),
@@ -22,9 +24,9 @@ export function StepNavigation({
   return (
     <>
       <div className="sidebar-section-label">
-        YOUR DOCUMENT <span>{count}/5</span>
+        {t('YOUR DOCUMENT')} <span>{count}/5</span>
       </div>
-      <nav aria-label="CV sections">
+      <nav aria-label={t('CV sections')}>
         <ol className="step-list">
           {editorSteps.map((item, index) => (
             <li key={item.id}>
@@ -38,12 +40,12 @@ export function StepNavigation({
                   className={`step-number ${completed[index] ? 'is-complete' : ''}`}
                 >
                   {completed[index] ? (
-                    <Check size={13} aria-label="Filled in" />
+                    <Check size={13} aria-label={t('Filled in')} />
                   ) : (
                     String(index + 1).padStart(2, '0')
                   )}
                 </span>
-                <span>{item.shortLabel}</span>
+                <span>{t(item.shortLabel)}</span>
                 {step === item.id && (
                   <ArrowUpRight
                     size={15}
@@ -60,8 +62,8 @@ export function StepNavigation({
         <CheckCheck size={15} aria-hidden="true" />
         <span>
           {count === 5
-            ? 'All sections filled in'
-            : `${count} of 5 sections filled in`}
+            ? t('All sections filled in')
+            : t('{count} of 5 sections filled in', { count })}
         </span>
       </div>
     </>

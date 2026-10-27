@@ -3,6 +3,7 @@ import { Field, TextArea } from '../../components/ui/Field'
 import { createExperience } from '../../domain/cv/defaults'
 import type { Experience } from '../../domain/cv/types'
 import { EntryGroup } from './EntryGroup'
+import { useTranslation } from '../../i18n/context'
 
 export function ExperienceForm({
   entries,
@@ -11,6 +12,7 @@ export function ExperienceForm({
   entries: Experience[]
   onChange: (entries: Experience[]) => void
 }) {
+  const { t } = useTranslation()
   function update(id: string, patch: Partial<Experience>) {
     onChange(
       entries.map((entry) =>
@@ -21,7 +23,7 @@ export function ExperienceForm({
   return (
     <div className="entries">
       {entries.length === 0 && (
-        <p className="empty-section">Your work experience</p>
+        <p className="empty-section">{t('Your work experience')}</p>
       )}
       {entries.map((entry, index) => (
         <EntryGroup
@@ -79,7 +81,7 @@ export function ExperienceForm({
                 update(entry.id, { current: event.target.checked })
               }
             />
-            I currently work here
+            {t('I currently work here')}
           </label>
           <TextArea
             className="full-width"
@@ -102,7 +104,7 @@ export function ExperienceForm({
         }
       >
         <Plus size={17} />
-        Add position
+        {t('Add position')}
       </button>
     </div>
   )

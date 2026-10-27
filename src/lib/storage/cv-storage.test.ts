@@ -24,6 +24,41 @@ function memoryStorage(): StoragePort {
 }
 
 describe('CV persistence', () => {
+  it('defaults old drafts to English without writing and preserves language in backups', () => {
+    const storage = memoryStorage()
+    const document = createDocument('classic', 'ar')
+    expect(parseBackup(serializeBackup(document))).toEqual(document)
+    const raw = JSON.stringify({
+      version: 2,
+      ...document,
+      appearance: {
+        ...document.appearance,
+        language: undefined,
+      },
+    })
+    storage.setItem(STORAGE_KEY, raw)
+    expect(loadDocument(storage)).toEqual({
+      status: 'ready',
+      document: {
+        ...document,
+        appearance: { ...document.appearance, language: 'en' },
+      },
+    })
+    expect(storage.getItem(STORAGE_KEY)).toBe(raw)
+    expect(() =>
+      parseBackup(
+        JSON.stringify({
+          version: 2,
+          ...document,
+          appearance: {
+            ...document.appearance,
+            language: 'unknown',
+          },
+        }),
+      ),
+    ).toThrow()
+  })
+
   it('migrates legacy skills without overwriting the original saved data', () => {
     const storage = memoryStorage()
     const document = createDocument('classic')

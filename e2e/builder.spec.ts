@@ -13,6 +13,274 @@ import { createExampleCv } from '../src/domain/cv/example'
 
 const storageKey = 'sira-datiya.cv.v1'
 
+test('document language detects, switches, restores and resets without translating content', async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'languages', {
+      get: () => ['de-DE', 'fr-CA', 'en'],
+    })
+  })
+  await page.goto('./')
+  await expect(
+    page.getByRole('heading', { name: 'Choisir un modèle' }),
+  ).toBeVisible()
+  await expect(page.getByLabel('Langue')).toHaveValue('fr')
+  await expectThumbnailInk(
+    page
+      .getByRole('button', { name: 'Examiner Studio', exact: true })
+      .locator('canvas'),
+  )
+  await page
+    .getByRole('button', { name: 'Utiliser ce modèle', exact: true })
+    .click()
+  await page.getByLabel('Nom complet', { exact: true }).fill('ليلى Example')
+  await page
+    .getByLabel('Titre professionnel', { exact: true })
+    .fill('Product Designer')
+  await page.getByLabel('Langue').selectOption('ar')
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+  await expect(page.getByLabel('الاسم الكامل', { exact: true })).toHaveValue(
+    'ليلى Example',
+  )
+  await expect(page.getByLabel('المسمى المهني', { exact: true })).toHaveValue(
+    'Product Designer',
+  )
+  await page.reload()
+  await expect(page.getByLabel('اللغة')).toHaveValue('ar')
+  await expect(page.getByLabel('الاسم الكامل', { exact: true })).toHaveValue(
+    'ليلى Example',
+  )
+
+  for (const width of [320, 390, 800, 1440]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    const language = await page.getByLabel('اللغة').boundingBox()
+    const actions = await page.getByLabel('إجراءات المستند').boundingBox()
+    expect(language!.x).toBeGreaterThanOrEqual(0)
+    expect(actions!.x + actions!.width).toBeLessThanOrEqual(width)
+  }
+
+  await page.getByLabel('إجراءات المستند').click()
+  const backupEvent = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'تنزيل نسخة احتياطية', exact: true })
+    .click()
+  const bytes = await downloadBytes(await backupEvent)
+  const backup = JSON.parse(bytes.toString())
+  expect(backup.appearance.language).toBe('ar')
+  expect(backup.cv.personal.fullName).toBe('ليلى Example')
+  await page.getByLabel('اللغة').selectOption('fr')
+  await page.getByLabel('Fichier de sauvegarde du CV').setInputFiles({
+    name: 'arabic-backup.json',
+    mimeType: 'application/json',
+    buffer: bytes,
+  })
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Restaurer une sauvegarde', exact: true })
+    .click()
+  await expect(page.getByLabel('اللغة')).toHaveValue('ar')
+  await expect(page.getByLabel('الاسم الكامل', { exact: true })).toHaveValue(
+    'ليلى Example',
+  )
+  await page.getByLabel('إجراءات المستند').click()
+  await page.getByRole('button', { name: 'البدء من جديد', exact: true }).click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'البدء من جديد', exact: true })
+    .click()
+  await expect(page.getByRole('heading', { name: 'اختر قالبًا' })).toBeVisible()
+  await expect(page.getByLabel('اللغة')).toHaveValue('ar')
+})
+
+test('Arabic templates render local fonts and download selectable mixed-script PDFs', async ({
+  page,
+  isMobile,
+}) => {
+  test.setTimeout(180_000)
+  const document = createDocument('modern', 'ar')
+  document.cv = createExampleCv('ar')
+  document.cv.projects = [
+    {
+      id: 'mixed-project',
+      name: 'Figma Toolkit',
+      url: 'toolkit.example',
+      description: 'أدوات تصميم سهلة الاستخدام',
+    },
+  ]
+  const externalRequests: string[] = []
+  page.on('request', (request) => {
+    if (
+      /^https?:/.test(request.url()) &&
+      new URL(request.url()).hostname !== '127.0.0.1'
+    )
+      externalRequests.push(request.url())
+  })
+  await page.addInitScript(
+    ({ key, value }) => localStorage.setItem(key, value),
+    { key: storageKey, value: JSON.stringify({ version: 2, ...document }) },
+  )
+  await page.goto('./')
+  const canvas = page.getByRole('img', {
+    name: /معاينة السيرة الذاتية، الصفحة/,
+  })
+  for (const name of [
+    'Classic',
+    'Studio',
+    'Sidebar',
+    'Traditional',
+    'Prime ATS',
+    'Pure ATS',
+  ]) {
+    const switcher = page.getByRole('group', { name: 'عرض مساحة العمل' })
+    if (await switcher.isVisible())
+      await switcher.getByRole('button', { name: 'تحرير', exact: true }).click()
+    await page.getByRole('button', { name: /القالب والتنسيق/ }).click()
+    await page
+      .getByRole('button', { name: 'تصفح القوالب', exact: true })
+      .click()
+    const gallery = page.getByRole('dialog')
+    await gallery
+      .getByRole('button', { name: `معاينة ${name}`, exact: true })
+      .click()
+    await expectThumbnailInk(gallery.locator('.pdf-paper canvas'))
+    await gallery
+      .getByRole('button', { name: 'استخدام القالب', exact: true })
+      .click()
+    if (await switcher.isVisible())
+      await switcher
+        .getByRole('button', { name: 'معاينة', exact: true })
+        .click()
+    await expect(
+      page.getByRole('button', { name: 'تنزيل PDF', exact: true }),
+    ).toBeEnabled({ timeout: 30_000 })
+    await expectThumbnailInk(canvas)
+    const downloadEvent = page.waitForEvent('download')
+    await page.getByRole('button', { name: 'تنزيل PDF', exact: true }).click()
+    const task = getDocument({
+      data: new Uint8Array(await downloadBytes(await downloadEvent)),
+      useSystemFonts: true,
+    })
+    const pdf = await task.promise
+    try {
+      const text = (
+        await Promise.all(
+          Array.from({ length: pdf.numPages }, async (_, index) => {
+            const pdfPage = await pdf.getPage(index + 1)
+            return (await pdfPage.getTextContent()).items
+              .filter((item) => 'str' in item)
+              .map((item) => item.str)
+              .join(' ')
+          }),
+        )
+      ).join(' ')
+      expect(text).toContain('ليلى')
+      expect(text).toContain('layla@example.com')
+      expect(text).toContain('Figma Toolkit')
+      expect(text).not.toContain('Present')
+      expect(text).not.toContain('\uFFFD')
+      if (name === 'Pure ATS') {
+        const first = await pdf.getPage(1)
+        const items = (await first.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const title = items.find((item) => item.str === 'Figma Toolkit')!
+        expect(title).toBeDefined()
+        const overlap = await canvas.evaluate(
+          async (element, info) => {
+            const target = element as HTMLCanvasElement
+            const scale = target.width / info.width
+            const size = info.size * scale
+            await window.document.fonts.load(`700 ${size}px Amiri`)
+            const reference = window.document.createElement('canvas')
+            reference.width = target.width
+            reference.height = target.height
+            const context = reference.getContext('2d')!
+            context.fillStyle = 'white'
+            context.fillRect(0, 0, reference.width, reference.height)
+            context.fillStyle = 'black'
+            context.font = `700 ${size}px Amiri`
+            context.textAlign = 'left'
+            context.direction = 'ltr'
+            const left = info.x * scale
+            const baseline = (info.height - info.y) * scale
+            context.fillText('Figma Toolkit', left, baseline)
+            const width = Math.ceil(info.textWidth * scale + 6)
+            const top = Math.floor(baseline - size * 1.2)
+            const height = Math.ceil(size * 1.7)
+            const actual = target
+              .getContext('2d')!
+              .getImageData(Math.floor(left - 3), top, width, height).data
+            const expected = context.getImageData(
+              Math.floor(left - 3),
+              top,
+              width,
+              height,
+            ).data
+            let best = 0
+            for (let dy = -1; dy <= 1; dy++) {
+              for (let dx = -1; dx <= 1; dx++) {
+                let intersection = 0
+                let union = 0
+                for (let y = 1; y < height - 1; y++) {
+                  for (let x = 1; x < width - 1; x++) {
+                    const a = actual[(y * width + x) * 4]! < 180
+                    const b = expected[((y + dy) * width + x + dx) * 4]! < 180
+                    if (a && b) intersection++
+                    if (a || b) union++
+                  }
+                }
+                best = Math.max(best, intersection / union)
+              }
+            }
+            return best
+          },
+          {
+            x: title.transform[4]!,
+            y: title.transform[5]!,
+            size: title.height,
+            textWidth: title.width,
+            width: first.view[2]!,
+            height: first.view[3]!,
+          },
+        )
+        expect(
+          overlap,
+          'PDF glyphs should match the same font rendered by the browser',
+        ).toBeGreaterThan(0.55)
+      }
+    } finally {
+      await task.destroy()
+    }
+    await page.screenshot({
+      path: test
+        .info()
+        .outputPath(`arabic-${name.toLowerCase().replaceAll(' ', '-')}.png`),
+      fullPage: true,
+    })
+  }
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(
+    results.violations.map((issue) => ({
+      id: issue.id,
+      targets: issue.nodes.map((node) => node.target),
+    })),
+  ).toEqual([])
+  expect(externalRequests).toEqual([])
+  if (isMobile) {
+    await page.setViewportSize({ width: 320, height: 844 })
+    expect(
+      await page.evaluate(() => window.document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(320)
+  }
+})
+
 async function expectThumbnailInk(canvas: Locator) {
   await expect(canvas).toBeVisible({ timeout: 20_000 })
   await expect
@@ -325,6 +593,64 @@ test('brand stays on one line without crowding header actions', async ({
       await page.evaluate(() => document.documentElement.scrollWidth),
       `Page width at ${width}px`,
     ).toBeLessThanOrEqual(width)
+  }
+})
+
+test('language selector aligns with header actions in every language', async ({
+  page,
+}) => {
+  await page.goto('./')
+  const selector = page.locator('.language-control select')
+  for (const [language, label] of [
+    ['en', 'Language'],
+    ['fr', 'Langue'],
+    ['ar', 'اللغة'],
+  ]) {
+    await selector.selectOption(language!)
+    await expect(
+      page.getByRole('combobox', { name: label, exact: true }),
+    ).toBeVisible()
+    await page.evaluate(() => document.fonts.ready)
+    for (const width of [1440, 800, 390, 320]) {
+      await page.setViewportSize({ width, height: 1000 })
+      const control = await selector.boundingBox()
+      const example = await page.locator('.example-button').boundingBox()
+      const menu = await page.locator('.document-menu > summary').boundingBox()
+      if (!control || !example || !menu)
+        throw new Error('Header controls must be visible')
+      for (const adjacent of [example, menu]) {
+        expect(
+          Math.abs(
+            control.y + control.height / 2 - adjacent.y - adjacent.height / 2,
+          ),
+        ).toBeLessThanOrEqual(1)
+      }
+      expect(control.height).toBe(example.height)
+      const brand = await page.locator('.brand').boundingBox()
+      const actions = await page.locator('.header-actions').boundingBox()
+      if (!brand || !actions) throw new Error('Header must be visible')
+      const gap =
+        language === 'ar'
+          ? brand.x - actions.x - actions.width
+          : actions.x - brand.x - brand.width
+      expect(gap).toBeGreaterThanOrEqual(width < 700 ? 8 : 0)
+      const title = await page.locator('.language-control > span').boundingBox()
+      expect(title?.height).toBeLessThanOrEqual(1)
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width)
+      if (width === 1440 || width === 320)
+        await page.getByRole('banner').screenshot({
+          path: test
+            .info()
+            .outputPath(`language-selector-${language}-${width}.png`),
+        })
+    }
+    await selector.focus()
+    await page.keyboard.press('Tab')
+    await expect(page.locator('.example-button')).toBeFocused()
+    await page.keyboard.press('Shift+Tab')
+    await expect(selector).toBeFocused()
   }
 })
 

@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Trash2, Upload } from 'lucide-react'
+import { useTranslation } from '../../i18n/context'
+import { messages } from '../../i18n/messages'
 
 async function preparePortrait(file: File): Promise<string> {
   if (!['image/png', 'image/jpeg'].includes(file.type))
@@ -51,6 +53,7 @@ export function PortraitField({
   value: string
   onChange: (value: string) => void
 }) {
+  const { t } = useTranslation()
   const inputId = useId()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -67,7 +70,7 @@ export function PortraitField({
   )
   return (
     <div className="form-field portrait-field">
-      <label htmlFor={inputId}>Portrait</label>
+      <label htmlFor={inputId}>{t('Portrait')}</label>
       <div className="portrait-controls">
         <div className="portrait-upload">
           <input
@@ -75,7 +78,7 @@ export function PortraitField({
             className="portrait-input"
             type="file"
             accept="image/png,image/jpeg"
-            title={value ? 'Replace portrait' : 'Upload portrait'}
+            title={t(value ? 'Replace portrait' : 'Upload portrait')}
             disabled={busy}
             aria-invalid={Boolean(error)}
             aria-describedby={
@@ -98,7 +101,8 @@ export function PortraitField({
               } catch (failure) {
                 if (request.current === current)
                   setError(
-                    failure instanceof Error
+                    failure instanceof Error &&
+                      Object.hasOwn(messages, failure.message)
                       ? failure.message
                       : 'The portrait could not be opened. Choose another PNG or JPEG.',
                   )
@@ -111,7 +115,7 @@ export function PortraitField({
             <img
               className="portrait-preview"
               src={value}
-              alt="Your portrait"
+              alt={t('Your portrait')}
               width={42}
               height={42}
             />
@@ -123,8 +127,8 @@ export function PortraitField({
           <button
             type="button"
             className="icon-button"
-            title="Remove portrait"
-            aria-label="Remove portrait"
+            title={t('Remove portrait')}
+            aria-label={t('Remove portrait')}
             disabled={busy}
             onClick={() => {
               setError('')
@@ -137,12 +141,12 @@ export function PortraitField({
       </div>
       {busy && (
         <span id={`${inputId}-status`} role="status">
-          Preparing portrait...
+          {t('Preparing portrait...')}
         </span>
       )}
       {error && (
         <p id={`${inputId}-error`} className="field-error" role="alert">
-          {error}
+          {t(error)}
         </p>
       )}
     </div>

@@ -8,6 +8,7 @@ import {
 } from '../../domain/cv/defaults'
 import type { CvData, Project } from '../../domain/cv/types'
 import { EntryGroup } from './EntryGroup'
+import { useTranslation } from '../../i18n/context'
 
 export function ExtrasForm({
   cv,
@@ -16,6 +17,7 @@ export function ExtrasForm({
   cv: CvData
   onChange: (cv: CvData) => void
 }) {
+  const { t } = useTranslation()
   function updateProject(id: string, patch: Partial<Project>) {
     onChange({
       ...cv,
@@ -26,7 +28,7 @@ export function ExtrasForm({
   }
   return (
     <div className="extras-form">
-      <h2 className="subsection-title">Skills</h2>
+      <h2 className="subsection-title">{t('Skills')}</h2>
       {cv.skills.map((skill, index) => (
         <EntryGroup
           key={skill.id}
@@ -54,7 +56,7 @@ export function ExtrasForm({
             }
           />
           <div className="form-field">
-            <label htmlFor={`level-${skill.id}`}>Proficiency</label>
+            <label htmlFor={`level-${skill.id}`}>{t('Proficiency')}</label>
             <select
               id={`level-${skill.id}`}
               value={skill.level ?? ''}
@@ -74,10 +76,10 @@ export function ExtrasForm({
                 })
               }
             >
-              <option value="">Unrated</option>
+              <option value="">{t('Unrated')}</option>
               {proficiencyLevels.map((label, position) => (
                 <option key={label} value={position + 1}>
-                  {label}
+                  {t(label)}
                 </option>
               ))}
             </select>
@@ -96,7 +98,7 @@ export function ExtrasForm({
         }
       >
         <Plus size={17} />
-        Add skill
+        {t('Add skill')}
       </button>
       <TextArea
         label="Languages"
@@ -123,7 +125,7 @@ export function ExtrasForm({
           })
         }
       />
-      <h2 className="subsection-title">Projects</h2>
+      <h2 className="subsection-title">{t('Projects')}</h2>
       {cv.projects.map((entry, index) => (
         <EntryGroup
           key={entry.id}
@@ -175,9 +177,9 @@ export function ExtrasForm({
         }
       >
         <Plus size={17} />
-        Add project
+        {t('Add project')}
       </button>
-      <h2 className="subsection-title">References</h2>
+      <h2 className="subsection-title">{t('References')}</h2>
       {cv.references.map((reference, index) => (
         <EntryGroup
           key={reference.id}
@@ -229,8 +231,17 @@ export function ExtrasForm({
                 key={direction}
                 type="button"
                 className="icon-button"
-                title={`Move reference ${direction === -1 ? 'up' : 'down'}`}
-                aria-label={`Move reference ${index + 1} ${direction === -1 ? 'up' : 'down'}`}
+                title={t(
+                  direction === -1
+                    ? 'Move reference up'
+                    : 'Move reference down',
+                )}
+                aria-label={t(
+                  direction === -1
+                    ? 'Move reference {count} up'
+                    : 'Move reference {count} down',
+                  { count: index + 1 },
+                )}
                 disabled={
                   index + direction < 0 ||
                   index + direction >= cv.references.length
@@ -270,7 +281,7 @@ export function ExtrasForm({
         }
       >
         <Plus size={17} />
-        Add reference
+        {t('Add reference')}
       </button>
     </div>
   )

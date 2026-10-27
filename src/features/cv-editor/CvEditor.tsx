@@ -5,6 +5,7 @@ import { ExperienceForm } from './ExperienceForm'
 import { ExtrasForm } from './ExtrasForm'
 import { PortraitField } from './PortraitField'
 import type { EditorStep } from './steps'
+import { useTranslation } from '../../i18n/context'
 
 export function CvEditor({
   cv,
@@ -15,6 +16,7 @@ export function CvEditor({
   step: Exclude<EditorStep, 'design'>
   onChange: (cv: CvData) => void
 }) {
+  const { t, language } = useTranslation()
   if (step === 'experience')
     return (
       <ExperienceForm
@@ -41,7 +43,9 @@ export function CvEditor({
           placeholder="Product designer turning complex problems into thoughtful, useful digital experiences..."
         />
         <span className="character-count">
-          {cv.summary.length.toLocaleString()} characters
+          {t('{count} characters', {
+            count: cv.summary.length.toLocaleString(`${language}-u-nu-latn`),
+          })}
         </span>
       </div>
     )
@@ -93,7 +97,7 @@ export function CvEditor({
         onChange={(event) => update('location', event.target.value)}
       />
       <div className="form-divider full-width">
-        <span>ON THE WEB</span>
+        <span>{t('ON THE WEB')}</span>
       </div>
       <Field
         className="full-width"

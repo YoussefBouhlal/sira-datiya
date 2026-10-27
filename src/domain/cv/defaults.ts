@@ -1,6 +1,7 @@
 import type {
   CvData,
   CvDocument,
+  Appearance,
   Education,
   Experience,
   Project,
@@ -31,10 +32,19 @@ export function createEmptyCv(): CvData {
   }
 }
 
-export function createDocument(templateId: string): CvDocument {
+export function createDocument(
+  templateId: string,
+  language: Appearance['language'] = 'en',
+): CvDocument {
   return {
     cv: createEmptyCv(),
-    appearance: { templateId, accent: '#177568', fontSize: 11, pageSize: 'A4' },
+    appearance: {
+      language,
+      templateId,
+      accent: '#177568',
+      fontSize: 11,
+      pageSize: 'A4',
+    },
   }
 }
 

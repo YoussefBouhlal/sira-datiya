@@ -2,6 +2,7 @@ import { ArrowLeft, Check, LayoutGrid, Search, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { Appearance } from '../../domain/cv/types'
 import type { TemplateOption } from '../../templates/types'
+import { useTranslation } from '../../i18n/context'
 
 const accents = [
   { value: '#177568', label: 'Forest' },
@@ -27,6 +28,7 @@ export function TemplateStart({
   renderPreview,
   onApply,
 }: Omit<TemplateGalleryProps, 'onClose' | 'inspectionId'>) {
+  const { t } = useTranslation()
   const [inspectionId, setInspectionId] = useState<string | null>(null)
   return (
     <div className="template-start">
@@ -44,7 +46,7 @@ export function TemplateStart({
           onClick={() => onApply(selectedId)}
         >
           <Check size={16} />
-          Use this template
+          {t('Use this template')}
         </button>
       </footer>
       {inspectionId && (
@@ -72,6 +74,7 @@ function TemplateChoices({
   candidateId: string
   onInspect: (id: string) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="template-options">
       {options.map((option) => (
@@ -79,7 +82,7 @@ function TemplateChoices({
           type="button"
           key={option.id}
           className={`template-option ${candidateId === option.id ? 'is-selected' : ''}`}
-          aria-label={`Inspect ${option.name}`}
+          aria-label={t('Inspect {name}', { name: option.name })}
           aria-pressed={candidateId === option.id}
           onClick={() => onInspect(option.id)}
         >
@@ -89,7 +92,7 @@ function TemplateChoices({
           <span className="template-option-label">
             <span>
               {option.name}
-              {selectedId === option.id && <small>Current</small>}
+              {selectedId === option.id && <small>{t('Current')}</small>}
             </span>
             <span className="selection-indicator">
               {candidateId === option.id && <Check size={12} />}
@@ -114,6 +117,7 @@ export function TemplatePicker({
   renderThumbnail: (template: TemplateOption) => ReactNode
   renderPreview: (template: TemplateOption) => ReactNode
 }) {
+  const { t } = useTranslation()
   const groupId = useId()
   const [galleryOpen, setGalleryOpen] = useState(false)
   const selected = options.find(
@@ -123,7 +127,7 @@ export function TemplatePicker({
     <div className="design-settings">
       <fieldset className="plain-fieldset">
         <legend className="setting-label">
-          Template <span>{String(options.length).padStart(2, '0')}</span>
+          {t('Template')} <span>{String(options.length).padStart(2, '0')}</span>
         </legend>
         <div className="selected-template">
           <div className="selected-template-thumbnail" aria-hidden="true">
@@ -132,34 +136,36 @@ export function TemplatePicker({
           <div className="selected-template-details">
             <strong>{selected.name}</strong>
             <span>
-              {selected.layout === 'two-column'
-                ? 'Two columns'
-                : 'Single column'}
+              {t(
+                selected.layout === 'two-column'
+                  ? 'Two columns'
+                  : 'Single column',
+              )}
             </span>
             <button
               type="button"
               className="button button-quiet"
               onClick={() => setGalleryOpen(true)}
             >
-              <LayoutGrid size={15} /> Browse templates
+              <LayoutGrid size={15} /> {t('Browse templates')}
             </button>
           </div>
         </div>
       </fieldset>
       <fieldset className="plain-fieldset">
-        <legend className="setting-label">Accent color</legend>
+        <legend className="setting-label">{t('Accent color')}</legend>
         <div className="color-options">
           {accents.map((accent) => (
             <label
               key={accent.value}
               className="color-option"
-              title={accent.label}
+              title={t(accent.label)}
             >
               <input
                 className="sr-only"
                 type="radio"
                 name={`${groupId}-accent`}
-                aria-label={accent.label}
+                aria-label={t(accent.label)}
                 checked={appearance.accent === accent.value}
                 onChange={() =>
                   onChange({ ...appearance, accent: accent.value })
@@ -176,7 +182,7 @@ export function TemplatePicker({
         </div>
       </fieldset>
       <fieldset className="plain-fieldset">
-        <legend className="setting-label">Text size</legend>
+        <legend className="setting-label">{t('Text size')}</legend>
         <div className="segmented-control">
           {([10, 11, 12] as const).map((size, index) => (
             <label key={size}>
@@ -187,13 +193,13 @@ export function TemplatePicker({
                 checked={appearance.fontSize === size}
                 onChange={() => onChange({ ...appearance, fontSize: size })}
               />
-              <span>{['Small', 'Medium', 'Large'][index]}</span>
+              <span>{t(['Small', 'Medium', 'Large'][index]!)}</span>
             </label>
           ))}
         </div>
       </fieldset>
       <div className="form-field">
-        <label htmlFor={`${groupId}-paper`}>Paper size</label>
+        <label htmlFor={`${groupId}-paper`}>{t('Paper size')}</label>
         <select
           id={`${groupId}-paper`}
           value={appearance.pageSize}
@@ -204,8 +210,8 @@ export function TemplatePicker({
             })
           }
         >
-          <option value="A4">A4 (210 x 297 mm)</option>
-          <option value="LETTER">US Letter (8.5 x 11 in)</option>
+          <option value="A4">{t('A4 (210 x 297 mm)')}</option>
+          <option value="LETTER">{t('US Letter (8.5 x 11 in)')}</option>
         </select>
       </div>
       {galleryOpen && (
@@ -234,6 +240,7 @@ function TemplateGallery({
   onApply,
   inspectionId,
 }: TemplateGalleryProps) {
+  const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
   const searchInput = useRef<HTMLInputElement>(null)
   const previewHeading = useRef<HTMLHeadingElement>(null)
@@ -296,23 +303,26 @@ function TemplateGallery({
     >
       <header className="gallery-header">
         <h2 id={titleId}>
-          Templates <span>{options.length}</span>
+          {t('Templates')} <span>{options.length}</span>
         </h2>
         <button
           type="button"
           className="icon-button"
-          aria-label="Close template gallery"
-          title="Close template gallery"
+          aria-label={t('Close template gallery')}
+          title={t('Close template gallery')}
           onClick={onClose}
         >
           <X size={20} />
         </button>
       </header>
       <div className="gallery-body">
-        <section className="gallery-browser" aria-label="Template collection">
+        <section
+          className="gallery-browser"
+          aria-label={t('Template collection')}
+        >
           <div className="gallery-filters">
             <div className="form-field">
-              <label htmlFor={searchId}>Search templates</label>
+              <label htmlFor={searchId}>{t('Search templates')}</label>
               <div className="gallery-search">
                 <Search size={16} aria-hidden="true" />
                 <input
@@ -326,20 +336,23 @@ function TemplateGallery({
               </div>
             </div>
             <div className="form-field">
-              <label htmlFor={layoutId}>Layout</label>
+              <label htmlFor={layoutId}>{t('Layout')}</label>
               <select
                 id={layoutId}
                 value={layout}
                 onChange={(event) => setLayout(event.target.value)}
               >
-                <option value="all">All layouts</option>
-                <option value="single-column">Single column</option>
-                <option value="two-column">Two columns</option>
+                <option value="all">{t('All layouts')}</option>
+                <option value="single-column">{t('Single column')}</option>
+                <option value="two-column">{t('Two columns')}</option>
               </select>
             </div>
           </div>
           <p className="gallery-count" role="status">
-            {filtered.length} {filtered.length === 1 ? 'template' : 'templates'}
+            {t(
+              filtered.length === 1 ? '{count} template' : '{count} templates',
+              { count: filtered.length },
+            )}
           </p>
           <TemplateChoices
             options={filtered}
@@ -353,7 +366,7 @@ function TemplateGallery({
           />
           {filtered.length === 0 && (
             <div className="gallery-empty">
-              <p>No templates found.</p>
+              <p>{t('No templates found.')}</p>
               <button
                 type="button"
                 className="button button-quiet"
@@ -362,7 +375,7 @@ function TemplateGallery({
                   setLayout('all')
                 }}
               >
-                Clear filters
+                {t('Clear filters')}
               </button>
             </div>
           )}
@@ -375,8 +388,8 @@ function TemplateGallery({
             <button
               type="button"
               className="icon-button gallery-back"
-              aria-label="Back to templates"
-              title="Back to templates"
+              aria-label={t('Back to templates')}
+              title={t('Back to templates')}
               onClick={() => {
                 setInspecting(false)
                 window.requestAnimationFrame(() =>
@@ -399,7 +412,7 @@ function TemplateGallery({
             key={candidate.id}
             tabIndex={0}
             role="region"
-            aria-label="Template CV preview"
+            aria-label={t('Template CV preview')}
           >
             {renderPreview(candidate)}
           </div>
@@ -410,7 +423,7 @@ function TemplateGallery({
               onClick={() => onApply(candidate.id)}
             >
               <Check size={16} />
-              Use template
+              {t('Use template')}
             </button>
           </footer>
         </section>
