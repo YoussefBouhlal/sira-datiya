@@ -19,14 +19,14 @@ Open the local address printed by Vite. For an example document, choose **Load e
 
 - Personal details, optional local portrait, summary, experience, education, skills with optional proficiency ratings, languages, certifications, projects, and ordered references.
 - Classic, Studio, Sidebar, Traditional, Prime ATS, and Pure ATS templates; accent, text size, and A4/US Letter settings.
-- One English, French, or Arabic language selector for the interface and generated CV labels, with right-to-left Arabic layouts in every template and localized fictional examples.
+- A first-visit English, French, or Arabic choice before templates, plus the existing header language selector for later changes, with right-to-left Arabic layouts and localized fictional examples.
 - Preview generated PDF pages and download the exact PDF being previewed.
 - Browser autosave and JSON backup/restore under the document actions menu.
 - Confirmed reset and replacement actions.
 
 Drafts can be incomplete. A name is needed to enable PDF download. Portraits are processed entirely on-device and included in JSON backups. Browser storage is not encrypted or a permanent backup; clearing site data or private browsing may remove the CV. Unreadable saved data blocks autosave rather than being overwritten. Explicit restore/reset actions can replace it. Existing version 1 drafts and backups are upgraded without dropping skill names; new saves use version 2.
 
-Language changes never translate or replace your written content. New drafts detect a supported browser language, with English fallback; existing drafts without a language setting stay English. The selected language is saved with the CV and included in JSON backups. Restoring a backup switches the whole app to its language, and reset keeps the current language. Dates use translated month names and Western digits. There is still one current draft, not separate versions for each language.
+Language changes never translate or replace your written content. First-time visitors choose a language before templates; the opening screen uses a supported browser language, with English fallback. Existing drafts skip this choice, and older drafts without a language setting stay English. The initial choice is remembered in this browser even after resetting the CV; clearing site data removes it. The selected language is also saved with the CV and included in JSON backups. Restoring a backup switches the whole app to its language, and reset keeps the current language. Dates use translated month names and Western digits. There is still one current draft, not separate versions for each language.
 
 ## Quality checks
 

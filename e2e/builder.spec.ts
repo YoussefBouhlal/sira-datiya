@@ -13,6 +13,75 @@ import { createExampleCv } from '../src/domain/cv/example'
 
 const storageKey = 'sira-datiya.cv.v1'
 
+for (const choice of [
+  {
+    label: 'English',
+    language: 'en',
+    heading: 'Choose a template',
+    direction: 'ltr',
+  },
+  {
+    label: 'Français',
+    language: 'fr',
+    heading: 'Choisir un modèle',
+    direction: 'ltr',
+  },
+  {
+    label: 'العربية',
+    language: 'ar',
+    heading: 'اختر قالبًا',
+    direction: 'rtl',
+  },
+]) {
+  test(`first visit chooses ${choice.label} before templates and remembers it`, async ({
+    page,
+  }) => {
+    await page.goto('./')
+    const entry = page.getByRole('region', { name: 'Choose your language' })
+    await expect(
+      page.getByRole('heading', { name: 'Choose your language' }),
+    ).toBeFocused()
+    await expect(entry.getByRole('button')).toHaveCount(3)
+    await expect(page.locator('.template-start')).toHaveCount(0)
+    await page.reload()
+    await expect(entry).toBeVisible()
+    for (const width of [1440, 800, 390, 320]) {
+      await page.setViewportSize({ width, height: 844 })
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width)
+      for (const label of ['English', 'Français', 'العربية']) {
+        await expect(
+          entry.getByRole('button', { name: label, exact: true }),
+        ).toBeInViewport()
+      }
+      if (width === 1440 || width === 320)
+        await page.screenshot({
+          path: test.info().outputPath(`language-choice-${width}.png`),
+          fullPage: true,
+        })
+    }
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+      .analyze()
+    expect(results.violations).toEqual([])
+    await entry.getByRole('button', { name: choice.label, exact: true }).focus()
+    await page.keyboard.press('Enter')
+    await expect(
+      page.getByRole('heading', { name: choice.heading }),
+    ).toBeFocused()
+    await expect(page.locator('.language-control select')).toHaveValue(
+      choice.language,
+    )
+    await expect(page.locator('html')).toHaveAttribute('dir', choice.direction)
+    await page.reload()
+    await expect(
+      page.getByRole('heading', { name: choice.heading }),
+    ).toBeVisible()
+    await expect(page.locator('.language-choices')).toHaveCount(0)
+  })
+}
+
 test('document language detects, switches, restores and resets without translating content', async ({
   page,
 }) => {
@@ -23,6 +92,7 @@ test('document language detects, switches, restores and resets without translati
     })
   })
   await page.goto('./')
+  await page.getByRole('button', { name: 'Français', exact: true }).click()
   await expect(
     page.getByRole('heading', { name: 'Choisir un modèle' }),
   ).toBeVisible()
@@ -366,6 +436,7 @@ test('empty CVs start with template samples before editing and resume entered co
 }) => {
   test.setTimeout(90_000)
   await page.goto('./')
+  await page.getByRole('button', { name: 'English', exact: true }).click()
   const entry = page.getByRole('region', { name: 'Choose a template' })
   await expect(
     page.getByRole('heading', { name: 'Choose a template' }),
@@ -763,6 +834,7 @@ test('personal details place portrait beside full name and stack below 360px', a
   page,
 }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: 'English', exact: true }).click()
   await page.getByRole('button', { name: 'Use this template' }).click()
   const fullName = page.getByLabel('Full name', { exact: true })
   const portrait = page.getByLabel('Portrait', { exact: true })
@@ -912,6 +984,7 @@ test('edit, reload, choose a template, and download a real text PDF', async ({
   await expect(page).toHaveURL(baseURL)
   await expect(page.locator('.workspace-heading')).toHaveCount(0)
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.getByRole('button', { name: 'English', exact: true }).click()
   await page.getByRole('button', { name: 'Use this template' }).click()
   await page.getByLabel('Full name', { exact: true }).fill('Taylor Example')
   await page
@@ -1338,6 +1411,7 @@ test('editor and template controls have no automated accessibility violations', 
   page,
 }) => {
   await page.goto('./')
+  await page.getByRole('button', { name: 'English', exact: true }).click()
   await page.getByRole('button', { name: 'Use this template' }).click()
   await page.keyboard.press('Tab')
   await expect(page.getByLabel('Full name', { exact: true })).toBeFocused()

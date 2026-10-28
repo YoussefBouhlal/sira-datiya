@@ -3,6 +3,7 @@ import { appearanceSchema, cvSchema } from '../../domain/cv/schema'
 import type { CvDocument } from '../../domain/cv/types'
 
 export const STORAGE_KEY = 'sira-datiya.cv.v1'
+export const LANGUAGE_PREFERENCE_KEY = 'sira-datiya.language.v1'
 const savedDocumentSchema = z.object({
   version: z.union([z.literal(1), z.literal(2)]),
   cv: cvSchema,

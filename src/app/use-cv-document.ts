@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
 import { createDocument } from '../domain/cv/defaults'
 import type { CvDocument } from '../domain/cv/types'
+import type { Language } from '../i18n/messages'
 import {
   clearDocument,
+  LANGUAGE_PREFERENCE_KEY,
   loadDocument,
   saveDocument,
   type StoragePort,
+  type WriteResult,
 } from '../lib/storage/cv-storage'
 import { templateRegistry } from '../templates/registry'
 
@@ -21,19 +24,55 @@ function initialize(storage?: StoragePort) {
     const port = storage ?? window.localStorage
     const loaded = loadDocument(port)
     if (loaded.status === 'blocked') {
-      return { document: fallback, blocked: true, message: loaded.message }
+      return {
+        document: fallback,
+        blocked: true,
+        message: loaded.message,
+        choosingLanguage: false,
+      }
     }
+    const preference =
+      loaded.status === 'empty' ? port.getItem(LANGUAGE_PREFERENCE_KEY) : null
+    const hasPreference =
+      preference === 'en' || preference === 'fr' || preference === 'ar'
+    if (hasPreference) fallback.appearance.language = preference
     const document = loaded.status === 'ready' ? loaded.document : fallback
     document.appearance.templateId = templateRegistry.resolve(
       document.appearance.templateId,
     ).id
-    return { document, blocked: false, message: '' }
+    return {
+      document,
+      blocked: false,
+      message: '',
+      choosingLanguage: loaded.status === 'empty' && !hasPreference,
+    }
   } catch {
     return {
       document: fallback,
       blocked: true,
+      choosingLanguage: false,
       message:
         'Browser storage is unavailable. You can still edit and download your CV, but changes will not be saved.',
+    }
+  }
+}
+
+function persistDocument(
+  storage: StoragePort | undefined,
+  document: CvDocument,
+): WriteResult {
+  try {
+    const port = storage ?? window.localStorage
+    const result = saveDocument(port, document)
+    if (result.ok) {
+      port.setItem(LANGUAGE_PREFERENCE_KEY, document.appearance.language)
+    }
+    return result
+  } catch {
+    return {
+      ok: false,
+      message:
+        'Browser storage is unavailable. Download a backup before closing this tab.',
     }
   }
 }
@@ -43,23 +82,19 @@ export function useCvDocument(storage?: StoragePort) {
   const [document, setDocument] = useState(initial.document)
   const [blocked, setBlocked] = useState(initial.blocked)
   const [message, setMessage] = useState(initial.message)
+  const [choosingLanguage, setChoosingLanguage] = useState(
+    initial.choosingLanguage,
+  )
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'error'>(
     initial.blocked ? 'error' : 'saving',
   )
 
   useEffect(() => {
-    if (blocked) return
+    if (blocked || choosingLanguage) return
     const save = () => {
-      try {
-        const result = saveDocument(storage ?? window.localStorage, document)
-        setSaveStatus(result.ok ? 'saved' : 'error')
-        setMessage(result.ok ? '' : result.message)
-      } catch {
-        setSaveStatus('error')
-        setMessage(
-          'Browser storage is unavailable. Download a backup before closing this tab.',
-        )
-      }
+      const result = persistDocument(storage, document)
+      setSaveStatus(result.ok ? 'saved' : 'error')
+      setMessage(result.ok ? '' : result.message)
     }
     const timer = window.setTimeout(save, 350)
     const onVisibility = () => {
@@ -72,7 +107,19 @@ export function useCvDocument(storage?: StoragePort) {
       window.removeEventListener('pagehide', save)
       window.document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [document, blocked, storage])
+  }, [document, blocked, choosingLanguage, storage])
+
+  function chooseLanguage(language: Language) {
+    const next = {
+      ...document,
+      appearance: { ...document.appearance, language },
+    }
+    setDocument(next)
+    setChoosingLanguage(false)
+    const result = persistDocument(storage, next)
+    setSaveStatus(result.ok ? 'saved' : 'error')
+    setMessage(result.ok ? '' : result.message)
+  }
 
   function update(next: CvDocument) {
     setDocument({
@@ -87,12 +134,15 @@ export function useCvDocument(storage?: StoragePort) {
 
   function reset(): boolean {
     try {
-      const result = clearDocument(storage ?? window.localStorage)
+      const port = storage ?? window.localStorage
+      port.setItem(LANGUAGE_PREFERENCE_KEY, document.appearance.language)
+      const result = clearDocument(port)
       if (!result.ok) {
         setMessage(result.message)
         return false
       }
       setBlocked(false)
+      setChoosingLanguage(false)
       setMessage('')
       setSaveStatus('saving')
       setDocument(
@@ -112,10 +162,21 @@ export function useCvDocument(storage?: StoragePort) {
 
   function replace(next: CvDocument) {
     setBlocked(false)
+    setChoosingLanguage(false)
     setMessage('')
     setSaveStatus('saving')
     update(next)
   }
 
-  return { document, update, replace, reset, saveStatus, message, blocked }
+  return {
+    document,
+    update,
+    replace,
+    reset,
+    saveStatus,
+    message,
+    blocked,
+    choosingLanguage,
+    chooseLanguage,
+  }
 }

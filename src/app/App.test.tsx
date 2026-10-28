@@ -36,8 +36,44 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+it('asks first-time visitors for a language before templates and remembers the choice', () => {
+  const { unmount } = render(<App />)
+  expect(
+    screen.getByRole('heading', { name: 'Choose your language' }),
+  ).toHaveFocus()
+  expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute(
+    'lang',
+    'en',
+  )
+  expect(screen.getByRole('button', { name: 'Français' })).toHaveAttribute(
+    'lang',
+    'fr',
+  )
+  expect(screen.getByRole('button', { name: 'العربية' })).toHaveAttribute(
+    'lang',
+    'ar',
+  )
+  expect(
+    screen.queryByRole('heading', { name: 'Choose a template' }),
+  ).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Français' }))
+  expect(
+    screen.getByRole('heading', { name: 'Choisir un modèle' }),
+  ).toHaveFocus()
+  expect(screen.getByLabelText('Langue')).toHaveValue('fr')
+  unmount()
+  render(<App />)
+  expect(
+    screen.getByRole('heading', { name: 'Choisir un modèle' }),
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: 'Français' }),
+  ).not.toBeInTheDocument()
+})
+
 it('opens empty CVs with samples and applies appearance without inserting sample content', async () => {
   render(<App />)
+  fireEvent.click(screen.getByRole('button', { name: 'English' }))
   expect(
     screen.getByRole('heading', { name: 'Choose a template' }),
   ).toHaveFocus()
@@ -60,6 +96,21 @@ it('opens empty CVs with samples and applies appearance without inserting sample
   expect(saved.cv).toEqual(createEmptyCv())
   expect(saved.appearance.templateId).toBe('classic')
 })
+
+it.each([
+  ['English', 'en', 'Choose a template', 'ltr'],
+  ['Français', 'fr', 'Choisir un modèle', 'ltr'],
+  ['العربية', 'ar', 'اختر قالبًا', 'rtl'],
+])(
+  'opens translated templates after choosing %s',
+  (label, language, heading, direction) => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: label }))
+    expect(screen.getByRole('heading', { name: heading })).toHaveFocus()
+    expect(window.document.documentElement).toHaveAttribute('lang', language)
+    expect(window.document.documentElement).toHaveAttribute('dir', direction)
+  },
+)
 
 it('reopens the gallery for appearance-only drafts and preserves their selection', () => {
   localStorage.setItem(
