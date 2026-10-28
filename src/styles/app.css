@@ -482,6 +482,40 @@ button {
   margin-inline: auto;
   padding: 32px;
 }
+.language-entry {
+  max-width: 880px;
+  padding-block: 64px;
+}
+.language-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 16px;
+  margin-block-start: 28px;
+}
+.language-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 20px;
+  font-weight: 500;
+}
+.language-choice:hover,
+.language-choice:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-pale);
+}
+.language-flag {
+  flex-shrink: 0;
+  font-size: 32px;
+  line-height: 1;
+}
 .template-start-footer {
   position: sticky;
   bottom: 0;

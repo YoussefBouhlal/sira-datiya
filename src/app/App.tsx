@@ -53,8 +53,17 @@ function hasCvContent(cv: CvData) {
 }
 
 export default function App() {
-  const { document, update, replace, reset, saveStatus, message, blocked } =
-    useCvDocument()
+  const {
+    document,
+    update,
+    replace,
+    reset,
+    saveStatus,
+    message,
+    blocked,
+    choosingLanguage,
+    chooseLanguage,
+  } = useCvDocument()
   const language = document.appearance.language
   const t = (text: string) => translate(language, text)
   const templateSample = createExampleCv(language)
@@ -78,7 +87,7 @@ export default function App() {
 
   useEffect(() => {
     heading.current?.focus({ preventScroll: true })
-  }, [step, choosingTemplate])
+  }, [step, choosingTemplate, choosingLanguage])
 
   function chooseStep(next: EditorStep) {
     setChoosingTemplate(false)
@@ -146,7 +155,13 @@ export default function App() {
         className={`app-shell view-${view}${choosingTemplate ? ' is-choosing-template' : ''}`}
       >
         <a className="skip-link" href="#editor-heading">
-          {t(choosingTemplate ? 'Skip to templates' : 'Skip to editor')}
+          {t(
+            choosingLanguage
+              ? 'Skip to languages'
+              : choosingTemplate
+                ? 'Skip to templates'
+                : 'Skip to editor',
+          )}
         </a>
         <header className="app-header">
           <a className="brand" href="./" aria-label={t('Sira Datiya home')}>
@@ -185,7 +200,9 @@ export default function App() {
               className={`save-status ${saveStatus === 'error' ? 'has-error' : ''}`}
               role="status"
             >
-              {saveStatus === 'saved' ? (
+              {choosingLanguage ? (
+                <CircleHelp size={14} />
+              ) : saveStatus === 'saved' ? (
                 <Check size={14} />
               ) : saveStatus === 'saving' ? (
                 <LoaderCircle size={14} className="spin" />
@@ -194,11 +211,13 @@ export default function App() {
               )}
               <span>
                 {t(
-                  saveStatus === 'saved'
-                    ? 'Saved on this device'
-                    : saveStatus === 'saving'
-                      ? 'Saving...'
-                      : 'Not saved',
+                  choosingLanguage
+                    ? 'Not saved'
+                    : saveStatus === 'saved'
+                      ? 'Saved on this device'
+                      : saveStatus === 'saving'
+                        ? 'Saving...'
+                        : 'Not saved',
                 )}
               </span>
             </span>
@@ -255,7 +274,42 @@ export default function App() {
               <span>{t(message)}</span>
             </div>
           )}
-          {choosingTemplate ? (
+          {choosingLanguage ? (
+            <section
+              className="language-entry template-entry"
+              aria-labelledby="editor-heading"
+            >
+              <div className="section-heading">
+                <h1 id="editor-heading" ref={heading} tabIndex={-1}>
+                  {t('Choose your language')}
+                </h1>
+                <span className="section-rule" />
+              </div>
+              <div className="language-choices">
+                {(
+                  [
+                    { language: 'en', label: 'English', flag: '🇬🇧' },
+                    { language: 'fr', label: 'Français', flag: '🇫🇷' },
+                    { language: 'ar', label: 'العربية', flag: '🇲🇦' },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    type="button"
+                    key={option.language}
+                    className="language-choice"
+                    lang={option.language}
+                    dir={option.language === 'ar' ? 'rtl' : 'ltr'}
+                    onClick={() => chooseLanguage(option.language)}
+                  >
+                    <span className="language-flag" aria-hidden="true">
+                      {option.flag}
+                    </span>
+                    <span>{option.label}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : choosingTemplate ? (
             <section
               className="template-entry"
               aria-labelledby="editor-heading"

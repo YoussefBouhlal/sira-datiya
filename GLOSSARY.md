@@ -17,6 +17,9 @@ The chosen template, accent color, text size, paper size, and document language 
 The single language used for the builder interface and generated CV labels. It does not determine or translate the person's written CV content.
 _Avoid_: Interface language, CV language
 
+**Initial language choice**:
+The selection of document language that precedes a person's first template selection.
+
 **CV preview**:
 The on-screen representation of the CV with its current content and appearance.
 

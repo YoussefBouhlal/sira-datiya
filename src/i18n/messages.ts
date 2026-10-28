@@ -3,6 +3,8 @@ export type Language = (typeof languages)[number]
 
 export const messages = {
   Language: ['Langue', 'اللغة'],
+  'Choose your language': ['Choisissez votre langue', 'اختر لغتك'],
+  'Skip to languages': ['Aller aux langues', 'الانتقال إلى اللغات'],
   'Skip to templates': ['Aller aux modèles', 'الانتقال إلى القوالب'],
   'Skip to editor': ['Aller à l’éditeur', 'الانتقال إلى المحرر'],
   'Sira Datiya home': ['Accueil Sira Datiya', 'الصفحة الرئيسية لسيرة ذاتية'],
