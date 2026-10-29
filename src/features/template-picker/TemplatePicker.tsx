@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, LayoutGrid, Search, X } from 'lucide-react'
+import { Check, LayoutGrid, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { Appearance } from '../../domain/cv/types'
 import type { TemplateOption } from '../../templates/types'
@@ -15,7 +15,6 @@ type TemplateGalleryProps = {
   options: readonly TemplateOption[]
   selectedId: string
   renderThumbnail: (template: TemplateOption) => ReactNode
-  renderPreview: (template: TemplateOption) => ReactNode
   onClose: () => void
   onApply: (id: string) => void
   inspectionId?: string
@@ -25,7 +24,6 @@ export function TemplateStart({
   options,
   selectedId,
   renderThumbnail,
-  renderPreview,
   onApply,
 }: Omit<TemplateGalleryProps, 'onClose' | 'inspectionId'>) {
   const { t } = useTranslation()
@@ -34,7 +32,6 @@ export function TemplateStart({
     <div className="template-start">
       <TemplateChoices
         options={options}
-        selectedId={selectedId}
         candidateId={selectedId}
         renderThumbnail={renderThumbnail}
         onInspect={setInspectionId}
@@ -55,7 +52,6 @@ export function TemplateStart({
           selectedId={selectedId}
           inspectionId={inspectionId}
           renderThumbnail={renderThumbnail}
-          renderPreview={renderPreview}
           onClose={() => setInspectionId(null)}
           onApply={onApply}
         />
@@ -66,11 +62,10 @@ export function TemplateStart({
 
 function TemplateChoices({
   options,
-  selectedId,
   candidateId,
   renderThumbnail,
   onInspect,
-}: Pick<TemplateGalleryProps, 'options' | 'selectedId' | 'renderThumbnail'> & {
+}: Pick<TemplateGalleryProps, 'options' | 'renderThumbnail'> & {
   candidateId: string
   onInspect: (id: string) => void
 }) {
@@ -89,15 +84,6 @@ function TemplateChoices({
           <span className="template-miniature" aria-hidden="true">
             {renderThumbnail(option)}
           </span>
-          <span className="template-option-label">
-            <span>
-              {option.name}
-              {selectedId === option.id && <small>{t('Current')}</small>}
-            </span>
-            <span className="selection-indicator">
-              {candidateId === option.id && <Check size={12} />}
-            </span>
-          </span>
         </button>
       ))}
     </div>
@@ -109,13 +95,11 @@ export function TemplatePicker({
   appearance,
   onChange,
   renderThumbnail,
-  renderPreview,
 }: {
   options: readonly TemplateOption[]
   appearance: Appearance
   onChange: (appearance: Appearance) => void
   renderThumbnail: (template: TemplateOption) => ReactNode
-  renderPreview: (template: TemplateOption) => ReactNode
 }) {
   const { t } = useTranslation()
   const groupId = useId()
@@ -134,14 +118,6 @@ export function TemplatePicker({
             {renderThumbnail(selected)}
           </div>
           <div className="selected-template-details">
-            <strong>{selected.name}</strong>
-            <span>
-              {t(
-                selected.layout === 'two-column'
-                  ? 'Two columns'
-                  : 'Single column',
-              )}
-            </span>
             <button
               type="button"
               className="button button-quiet"
@@ -219,7 +195,6 @@ export function TemplatePicker({
           options={options}
           selectedId={selected.id}
           renderThumbnail={renderThumbnail}
-          renderPreview={renderPreview}
           onClose={() => setGalleryOpen(false)}
           onApply={(templateId) => {
             onChange({ ...appearance, templateId })
@@ -235,34 +210,21 @@ function TemplateGallery({
   options,
   selectedId,
   renderThumbnail,
-  renderPreview,
   onClose,
   onApply,
   inspectionId,
 }: TemplateGalleryProps) {
   const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
-  const searchInput = useRef<HTMLInputElement>(null)
-  const previewHeading = useRef<HTMLHeadingElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
   const titleId = useId()
-  const searchId = useId()
-  const layoutId = useId()
-  const [query, setQuery] = useState('')
-  const [layout, setLayout] = useState('all')
   const [candidateId, setCandidateId] = useState(inspectionId ?? selectedId)
-  const [inspecting, setInspecting] = useState(Boolean(inspectionId))
-  const candidate = options.find((option) => option.id === candidateId)!
-  const filtered = options.filter(
-    (option) =>
-      option.name.toLowerCase().includes(query.trim().toLowerCase()) &&
-      (layout === 'all' || (option.layout ?? 'single-column') === layout),
-  )
 
   useEffect(() => {
     const element = dialog.current
     const opener = document.activeElement
     element?.showModal()
-    searchInput.current?.focus()
+    closeButton.current?.focus()
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
@@ -272,15 +234,10 @@ function TemplateGallery({
     }
   }, [])
 
-  useEffect(() => {
-    if (inspecting && window.innerWidth < 700)
-      previewHeading.current?.focus({ preventScroll: true })
-  }, [inspecting, candidateId])
-
   return (
     <dialog
       ref={dialog}
-      className={`template-gallery ${inspecting ? 'is-inspecting' : ''}`}
+      className="template-gallery"
       aria-labelledby={titleId}
       onCancel={onClose}
       onKeyDown={(event) => {
@@ -302,10 +259,9 @@ function TemplateGallery({
       }}
     >
       <header className="gallery-header">
-        <h2 id={titleId}>
-          {t('Templates')} <span>{options.length}</span>
-        </h2>
+        <h2 id={titleId}>{t('Templates')}</h2>
         <button
+          ref={closeButton}
           type="button"
           className="icon-button"
           aria-label={t('Close template gallery')}
@@ -320,114 +276,24 @@ function TemplateGallery({
           className="gallery-browser"
           aria-label={t('Template collection')}
         >
-          <div className="gallery-filters">
-            <div className="form-field">
-              <label htmlFor={searchId}>{t('Search templates')}</label>
-              <div className="gallery-search">
-                <Search size={16} aria-hidden="true" />
-                <input
-                  ref={searchInput}
-                  autoFocus
-                  id={searchId}
-                  type="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </div>
-            </div>
-            <div className="form-field">
-              <label htmlFor={layoutId}>{t('Layout')}</label>
-              <select
-                id={layoutId}
-                value={layout}
-                onChange={(event) => setLayout(event.target.value)}
-              >
-                <option value="all">{t('All layouts')}</option>
-                <option value="single-column">{t('Single column')}</option>
-                <option value="two-column">{t('Two columns')}</option>
-              </select>
-            </div>
-          </div>
-          <p className="gallery-count" role="status">
-            {t(
-              filtered.length === 1 ? '{count} template' : '{count} templates',
-              { count: filtered.length },
-            )}
-          </p>
           <TemplateChoices
-            options={filtered}
-            selectedId={selectedId}
+            options={options}
             candidateId={candidateId}
             renderThumbnail={renderThumbnail}
-            onInspect={(templateId) => {
-              setCandidateId(templateId)
-              setInspecting(true)
-            }}
+            onInspect={setCandidateId}
           />
-          {filtered.length === 0 && (
-            <div className="gallery-empty">
-              <p>{t('No templates found.')}</p>
-              <button
-                type="button"
-                className="button button-quiet"
-                onClick={() => {
-                  setQuery('')
-                  setLayout('all')
-                }}
-              >
-                {t('Clear filters')}
-              </button>
-            </div>
-          )}
-        </section>
-        <section
-          className="gallery-inspection"
-          aria-labelledby={`${titleId}-preview`}
-        >
-          <div className="gallery-preview-heading">
-            <button
-              type="button"
-              className="icon-button gallery-back"
-              aria-label={t('Back to templates')}
-              title={t('Back to templates')}
-              onClick={() => {
-                setInspecting(false)
-                window.requestAnimationFrame(() =>
-                  dialog.current
-                    ?.querySelector<HTMLButtonElement>(
-                      `button[aria-pressed="true"]`,
-                    )
-                    ?.focus(),
-                )
-              }}
-            >
-              <ArrowLeft size={18} />
-            </button>
-            <h3 id={`${titleId}-preview`} ref={previewHeading} tabIndex={-1}>
-              {candidate.name}
-            </h3>
-          </div>
-          <div
-            className="gallery-document"
-            key={candidate.id}
-            tabIndex={0}
-            role="region"
-            aria-label={t('Template CV preview')}
-          >
-            {renderPreview(candidate)}
-          </div>
-          <footer className="gallery-apply">
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => onApply(candidate.id)}
-            >
-              <Check size={16} />
-              {t('Use template')}
-            </button>
-          </footer>
         </section>
       </div>
+      <footer className="gallery-apply">
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={() => onApply(candidateId)}
+        >
+          <Check size={16} />
+          {t('Use template')}
+        </button>
+      </footer>
     </dialog>
   )
 }

@@ -81,11 +81,14 @@ it('opens empty CVs with samples and applies appearance without inserting sample
   expect(
     screen.queryByRole('group', { name: 'Workspace view' }),
   ).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole('button', { name: 'Inspect Classic' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Inspect 001' }))
   const gallery = screen.getByRole('dialog')
   expect(
-    await within(gallery).findByText(createExampleCv().personal.fullName),
-  ).toBeInTheDocument()
+    within(gallery).queryByText(createExampleCv().personal.fullName),
+  ).not.toBeInTheDocument()
+  expect(
+    within(gallery).getByRole('button', { name: 'Inspect 001' }),
+  ).toHaveAttribute('aria-pressed', 'true')
   fireEvent.click(within(gallery).getByRole('button', { name: 'Use template' }))
   expect(
     screen.getByRole('heading', { name: 'Personal details' }),
@@ -98,17 +101,25 @@ it('opens empty CVs with samples and applies appearance without inserting sample
 })
 
 it.each([
-  ['English', 'en', 'Choose a template', 'ltr'],
-  ['Français', 'fr', 'Choisir un modèle', 'ltr'],
-  ['العربية', 'ar', 'اختر قالبًا', 'rtl'],
+  ['English', 'en', 'Choose a template', 'ltr', 'Inspect'],
+  ['Français', 'fr', 'Choisir un modèle', 'ltr', 'Examiner'],
+  ['العربية', 'ar', 'اختر قالبًا', 'rtl', 'معاينة'],
 ])(
   'opens translated templates after choosing %s',
-  (label, language, heading, direction) => {
+  (label, language, heading, direction, inspect) => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: label }))
     expect(screen.getByRole('heading', { name: heading })).toHaveFocus()
     expect(window.document.documentElement).toHaveAttribute('lang', language)
     expect(window.document.documentElement).toHaveAttribute('dir', direction)
+    for (const number of ['001', '002', '003', '004', '005', '006']) {
+      expect(
+        screen.getByRole('button', { name: `${inspect} ${number}` }),
+      ).not.toHaveTextContent(number)
+    }
+    expect(
+      screen.getByRole('button', { name: `${inspect} 002` }),
+    ).toHaveAttribute('aria-pressed', 'true')
   },
 )
 
@@ -121,9 +132,10 @@ it('reopens the gallery for appearance-only drafts and preserves their selection
   expect(
     screen.getByRole('heading', { name: 'Choose a template' }),
   ).toBeInTheDocument()
-  expect(
-    screen.getByRole('button', { name: 'Inspect Classic' }),
-  ).toHaveAttribute('aria-pressed', 'true')
+  expect(screen.getByRole('button', { name: 'Inspect 001' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   fireEvent.click(screen.getByRole('button', { name: 'Use this template' }))
   expect(screen.getByLabelText('Full name', { exact: true })).toHaveValue('')
 })

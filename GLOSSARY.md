@@ -10,6 +10,10 @@ The personal details, profile, experience, education, skills, languages, certifi
 **Template**:
 A visual presentation of CV content. Choosing a different template does not change the content.
 
+**Template number**:
+A permanent, zero-padded catalog label for a template, such as 001. The same label identifies the template in every language and is not reassigned when templates are reordered or retired.
+_Avoid_: Template name
+
 **Appearance**:
 The chosen template, accent color, text size, paper size, and document language of a CV.
 

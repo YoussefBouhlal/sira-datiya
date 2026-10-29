@@ -8,6 +8,45 @@ import { translate } from '../i18n/messages'
 import { createTemplateRegistry, templateRegistry } from './registry'
 
 describe('template registry', () => {
+  it('keeps permanent template numbers independent of order and default', () => {
+    const expected = {
+      classic: '001',
+      modern: '002',
+      sidebar: '003',
+      traditional: '004',
+      'prime-ats': '005',
+      'pure-ats': '006',
+    }
+    const reordered = createTemplateRegistry(
+      [...templateRegistry.templates].reverse(),
+      templateRegistry.defaultId,
+    )
+    for (const [id, number] of Object.entries(expected)) {
+      expect(templateRegistry.resolve(id).name).toBe(number)
+      expect(reordered.resolve(id).name).toBe(number)
+    }
+    expect(templateRegistry.resolve('removed').name).toBe('002')
+    const reduced = createTemplateRegistry(
+      templateRegistry.templates.filter(
+        (template) => template.id !== 'classic',
+      ),
+      templateRegistry.defaultId,
+    )
+    expect(reduced.resolve('sidebar').name).toBe('003')
+  })
+
+  it('rejects duplicate or non-numeric template numbers', () => {
+    const first = templateRegistry.templates[0]!
+    expect(() =>
+      createTemplateRegistry([first, { ...first, id: 'other' }], first.id),
+    ).toThrow(/numbers must be unique/)
+    for (const name of ['Classic', '01', '٠٠١']) {
+      expect(() =>
+        createTemplateRegistry([{ ...first, name }], first.id),
+      ).toThrow(/three digits/)
+    }
+  })
+
   for (const language of ['fr', 'ar'] as const) {
     for (const pageSize of ['A4', 'LETTER'] as const) {
       for (const { id } of templateRegistry.templates) {

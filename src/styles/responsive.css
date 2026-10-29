@@ -166,32 +166,8 @@
   .gallery-browser {
     padding: 20px 18px;
   }
-  .gallery-filters {
-    grid-template-columns: minmax(0, 1fr) 132px;
-    gap: 10px;
-  }
-  .gallery-filters input,
-  .gallery-filters select {
-    font-size: 16px;
-  }
-  .gallery-inspection {
-    display: none;
-    border-inline-start: 0;
-  }
-  .is-inspecting .gallery-browser {
-    display: none;
-  }
-  .is-inspecting .gallery-inspection {
-    display: grid;
-  }
-  .gallery-back {
-    display: grid;
-  }
-  .gallery-preview-heading {
-    padding: 12px 18px;
-  }
-  .gallery-document {
-    padding-inline: 18px;
+  .template-gallery .template-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .gallery-apply {
     padding: 14px 18px max(14px, env(safe-area-inset-bottom));
@@ -330,7 +306,6 @@ html[dir='rtl'] .button-back svg,
 html[dir='rtl'] .editor-footer .button-primary .lucide-arrow-right,
 html[dir='rtl'] .privacy-button svg,
 html[dir='rtl'] .step-arrow,
-html[dir='rtl'] .gallery-back svg,
 html[dir='rtl'] .preview-pagination svg {
   transform: scaleX(-1);
 }

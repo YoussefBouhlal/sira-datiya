@@ -89,11 +89,11 @@ export function PdfWorkspace({
             </div>
           )}
         </div>
-        <div className="preview-status" role="status">
-          {t(error) ||
-            (loading
-              ? t('Updating preview...')
-              : `${template.name} / ${appearance.pageSize === 'LETTER' ? t('US Letter') : 'A4'}`)}
+        <div
+          className={error || loading ? 'preview-status' : 'sr-only'}
+          role="status"
+        >
+          {t(error) || (loading ? t('Updating preview...') : '')}
         </div>
         <div className="preview-pagination">
           <button
