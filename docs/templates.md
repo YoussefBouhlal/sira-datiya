@@ -1,10 +1,25 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Classic, Studio, Sidebar, Traditional, Prime ATS, and Pure ATS are registered; Studio remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 006 are registered; 002 remains the default.
+
+## Template numbers
+
+Each definition's `name` is its permanent, zero-padded template number. Its folder uses the same number, for example `src/templates/001/`. Visible template labels and accessible actions use this number in every language, including Western digits in Arabic. Gallery thumbnails have no captions or check icons, and the popup has no filters or totals. Ready previews do not display a template-number or paper-size caption. Internal IDs remain unchanged because saved drafts and backups use them; they do not need to match folder names.
+
+| Number | Stable ID     |
+| ------ | ------------- |
+| 001    | `classic`     |
+| 002    | `modern`      |
+| 003    | `sidebar`     |
+| 004    | `traditional` |
+| 005    | `prime-ats`   |
+| 006    | `pure-ats`    |
+
+Assign the next unused number explicitly in the definition, starting with 007. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<stable-id>/` with `Document.tsx`, `styles.ts`, and `index.ts`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `007`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -17,7 +32,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: 'Editorial',
+  name: '007',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -25,7 +40,7 @@ export const editorialTemplate = {
 
 Keep IDs stable: they are persisted. `typography` describes the design, not a renderer branch. The gallery, preview, and download flow consume definitions automatically. Gallery thumbnails are generated locally from each actual renderer using consistent fictional content; no separate illustration or thumbnail asset needs to be maintained.
 
-Optional `layout` metadata (`single-column` or `two-column`) drives the gallery layout filter and selected-template label. Omitted layout means single-column. Keep this metadata consistent with the actual design; the renderer still owns the column layout. Sidebar uses `two-column`. Its sidebar background repeats on every PDF page, while identity and contact content flow once. Both columns may continue onto later pages. It renders skill proficiency as bars with named levels; Classic and Studio use named text levels. All templates render portraits and references when supplied.
+Optional `layout` metadata (`single-column` or `two-column`) describes the design; it is not displayed in the selected-template summary. That summary shows only the thumbnail and Browse templates button, without a template number or layout label. Omitted layout means single-column. Keep this metadata consistent with the actual design; the renderer still owns the column layout. Sidebar uses `two-column`. Its sidebar background repeats on every PDF page, while identity and contact content flow once. Both columns may continue onto later pages. It renders skill proficiency as bars with named levels; Classic and Studio use named text levels. All templates render portraits and references when supplied.
 
 Classic uses a compact centered serif identity header, separate contact and website lines, accent-colored horizontal rules, and a narrow date rail beside experience and education. Profile text sits beside its section label; languages use two columns without interpreting supplied language strings. Description lines become bullets, preserving existing bullet markers. Skills retain their flat list and named proficiency; projects, certifications, and references follow the main sections. Optional portraits, text and paper sizes, page numbers, and flowing multi-page content remain supported. No personal-detail fields or skill categories are inferred from existing content.
 
@@ -52,7 +67,7 @@ Amiri Regular, Bold, Italic, and Bold Italic are bundled under `public/fonts/ami
 1. Remove its definition from the registry.
 2. If it was the default, choose another registered default.
 3. Delete its folder, exclusively owned assets, and dedicated tests.
-4. Run the checks. Registry tests reject an empty list, duplicate IDs, and a missing default.
+4. Run the checks. Registry tests reject an empty list, duplicate IDs or numbers, invalid numbers, and a missing default. Mark the number as retired in the table above; do not reassign it.
 
 A saved removed ID resolves to the default without changing CV content. The next successful save stores the resolved ID. Do not add template-ID switch statements to compensate for removal.
 

@@ -66,7 +66,6 @@ export default function App() {
   } = useCvDocument()
   const language = document.appearance.language
   const t = (text: string) => translate(language, text)
-  const templateSample = createExampleCv(language)
   useEffect(() => {
     window.document.documentElement.lang = language
     window.document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'
@@ -126,25 +125,6 @@ export default function App() {
         }
       >
         <TemplateThumbnail template={templateRegistry.resolve(option.id)} />
-      </Suspense>
-    )
-  }
-
-  function renderTemplatePreview(option: TemplateOption) {
-    return (
-      <Suspense
-        fallback={
-          <div className="preview-placeholder">
-            <LoaderCircle size={24} className="spin" />
-          </div>
-        }
-      >
-        <PdfWorkspace
-          cv={choosingTemplate ? templateSample : document.cv}
-          appearance={document.appearance}
-          template={templateRegistry.resolve(option.id)}
-          downloadable={false}
-        />
       </Suspense>
     )
   }
@@ -332,7 +312,6 @@ export default function App() {
                   window.scrollTo({ top: 0 })
                 }}
                 renderThumbnail={renderThumbnail}
-                renderPreview={renderTemplatePreview}
               />
             </section>
           ) : (
@@ -383,7 +362,6 @@ export default function App() {
                           update({ ...document, appearance })
                         }
                         renderThumbnail={renderThumbnail}
-                        renderPreview={renderTemplatePreview}
                       />
                     ) : (
                       <CvEditor

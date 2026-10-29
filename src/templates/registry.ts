@@ -1,9 +1,9 @@
-import { classicTemplate } from './classic'
-import { modernTemplate } from './modern'
-import { primeAtsTemplate } from './prime-ats'
-import { pureAtsTemplate } from './pure-ats'
-import { sidebarTemplate } from './sidebar'
-import { traditionalTemplate } from './traditional'
+import { classicTemplate } from './001'
+import { modernTemplate } from './002'
+import { primeAtsTemplate } from './005'
+import { pureAtsTemplate } from './006'
+import { sidebarTemplate } from './003'
+import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
 
 export function createTemplateRegistry(
@@ -20,6 +20,15 @@ export function createTemplateRegistry(
     definitions.length
   ) {
     throw new Error('Template IDs must be unique.')
+  }
+  if (definitions.some((template) => !/^\d{3,}$/.test(template.name))) {
+    throw new Error('Template numbers must contain at least three digits.')
+  }
+  if (
+    new Set(definitions.map((template) => template.name)).size !==
+    definitions.length
+  ) {
+    throw new Error('Template numbers must be unique.')
   }
   return {
     templates: definitions,

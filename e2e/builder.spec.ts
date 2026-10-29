@@ -99,7 +99,7 @@ test('document language detects, switches, restores and resets without translati
   await expect(page.getByLabel('Langue')).toHaveValue('fr')
   await expectThumbnailInk(
     page
-      .getByRole('button', { name: 'Examiner Studio', exact: true })
+      .getByRole('button', { name: 'Examiner 002', exact: true })
       .locator('canvas'),
   )
   await page
@@ -198,14 +198,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
   const canvas = page.getByRole('img', {
     name: /معاينة السيرة الذاتية، الصفحة/,
   })
-  for (const name of [
-    'Classic',
-    'Studio',
-    'Sidebar',
-    'Traditional',
-    'Prime ATS',
-    'Pure ATS',
-  ]) {
+  for (const name of ['001', '002', '003', '004', '005', '006']) {
     const switcher = page.getByRole('group', { name: 'عرض مساحة العمل' })
     if (await switcher.isVisible())
       await switcher.getByRole('button', { name: 'تحرير', exact: true }).click()
@@ -217,7 +210,11 @@ test('Arabic templates render local fonts and download selectable mixed-script P
     await gallery
       .getByRole('button', { name: `معاينة ${name}`, exact: true })
       .click()
-    await expectThumbnailInk(gallery.locator('.pdf-paper canvas'))
+    await expectThumbnailInk(
+      gallery
+        .getByRole('button', { name: `معاينة ${name}`, exact: true })
+        .locator('canvas'),
+    )
     await gallery
       .getByRole('button', { name: 'استخدام القالب', exact: true })
       .click()
@@ -253,7 +250,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
       expect(text).toContain('Figma Toolkit')
       expect(text).not.toContain('Present')
       expect(text).not.toContain('\uFFFD')
-      if (name === 'Pure ATS') {
+      if (name === '006') {
         const first = await pdf.getPage(1)
         const items = (await first.getTextContent()).items.filter(
           (item) => 'str' in item,
@@ -448,7 +445,7 @@ test('empty CVs start with template samples before editing and resume entered co
   await expect(page.getByLabel('Full name', { exact: true })).toHaveCount(0)
   await expect(page.getByText('Accent color', { exact: true })).toHaveCount(0)
   const defaultChoice = entry.getByRole('button', {
-    name: 'Inspect Studio',
+    name: 'Inspect 002',
     exact: true,
   })
   await expect(defaultChoice).toHaveAttribute('aria-pressed', 'true')
@@ -469,7 +466,7 @@ test('empty CVs start with template samples before editing and resume entered co
       )
     expect(grid).toBe(isMobile ? 2 : 3)
     const first = await entry
-      .getByRole('button', { name: 'Inspect Classic', exact: true })
+      .getByRole('button', { name: 'Inspect 001', exact: true })
       .boundingBox()
     expect(first!.y + first!.height).toBeLessThan(844)
   }
@@ -486,20 +483,23 @@ test('empty CVs start with template samples before editing and resume entered co
       targets: issue.nodes.map((node) => node.target),
     })),
   ).toEqual([])
-  await entry
-    .getByRole('button', { name: 'Inspect Classic', exact: true })
-    .click()
+  await entry.getByRole('button', { name: 'Inspect 001', exact: true }).click()
   let gallery = page.getByRole('dialog', { name: /Templates/ })
   await expect(
-    gallery.getByRole('heading', { name: 'Classic', exact: true }),
-  ).toBeVisible()
+    gallery.getByRole('button', { name: 'Inspect 001', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
   await expect(
     gallery.getByRole('region', { name: 'CV preview text' }),
-  ).toContainText('Alex Morgan')
+  ).toHaveCount(0)
   await expect(
     gallery.getByRole('button', { name: 'Download PDF' }),
   ).toHaveCount(0)
-  await expectThumbnailInk(gallery.locator('.pdf-paper canvas'))
+  await expect(gallery.locator('.pdf-paper')).toHaveCount(0)
+  await expectThumbnailInk(
+    gallery
+      .getByRole('button', { name: 'Inspect 001', exact: true })
+      .locator('canvas'),
+  )
   if (isMobile) {
     expect(await gallery.boundingBox()).toMatchObject({
       x: 0,
@@ -508,9 +508,12 @@ test('empty CVs start with template samples before editing and resume entered co
       height: 844,
     })
     await expect(
-      gallery.getByRole('heading', { name: 'Classic', exact: true }),
+      gallery.getByRole('button', { name: 'Close template gallery' }),
     ).toBeFocused()
   }
+  await expect(
+    gallery.getByRole('button', { name: 'Use template', exact: true }),
+  ).toBeInViewport()
   await gallery.screenshot({
     path: test.info().outputPath('template-start-inspection.png'),
   })
@@ -525,7 +528,7 @@ test('empty CVs start with template samples before editing and resume entered co
   ).toEqual([])
   await page.keyboard.press('Escape')
   await expect(
-    entry.getByRole('button', { name: 'Inspect Classic', exact: true }),
+    entry.getByRole('button', { name: 'Inspect 001', exact: true }),
   ).toBeFocused()
   await expect
     .poll(() =>
@@ -535,9 +538,7 @@ test('empty CVs start with template samples before editing and resume entered co
       ),
     )
     .toEqual(createEmptyCv())
-  await entry
-    .getByRole('button', { name: 'Inspect Classic', exact: true })
-    .click()
+  await entry.getByRole('button', { name: 'Inspect 001', exact: true }).click()
   gallery = page.getByRole('dialog', { name: /Templates/ })
   await gallery
     .getByRole('button', { name: 'Use template', exact: true })
@@ -558,7 +559,7 @@ test('empty CVs start with template samples before editing and resume entered co
   await page.reload()
   await expect(entry).toBeVisible()
   await expect(
-    entry.getByRole('button', { name: 'Inspect Classic', exact: true }),
+    entry.getByRole('button', { name: 'Inspect 001', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')
   await entry.getByRole('button', { name: 'Use this template' }).click()
   await page.getByLabel('Full name', { exact: true }).fill('Taylor Returning')
@@ -594,13 +595,13 @@ test('appearance-only drafts retain styling through opening template selection',
   )
   await page.goto('./')
   await expect(
-    page.getByRole('button', { name: 'Inspect Sidebar', exact: true }),
+    page.getByRole('button', { name: 'Inspect 003', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: 'Use this template' }).click()
   await expect(page.getByLabel('Full name', { exact: true })).toHaveValue('')
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await expect(page.locator('.selected-template-details strong')).toHaveText(
-    'Sidebar',
+  await expect(page.locator('.selected-template-details')).toHaveText(
+    'Browse templates',
   )
   await expect(page.getByRole('radio', { name: 'Rose' })).toBeChecked()
   await expect(page.getByRole('radio', { name: 'Large' })).toBeChecked()
@@ -1008,9 +1009,9 @@ test('edit, reload, choose a template, and download a real text PDF', async ({
     'Taylor Example',
   )
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await chooseTemplate(page, 'Classic')
-  await expect(page.locator('.selected-template-details strong')).toHaveText(
-    'Classic',
+  await chooseTemplate(page, '001')
+  await expect(page.locator('.selected-template-details')).toHaveText(
+    'Browse templates',
   )
   await page.getByTitle('Cobalt', { exact: true }).click()
   await page.getByLabel('Paper size').selectOption('LETTER')
@@ -1201,24 +1202,16 @@ test('portrait, rated skills and ordered references persist and render in every 
   })
   expect(backup.cv.references[0].name).toBe('Casey Example')
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await chooseTemplate(page, 'Sidebar')
+  await chooseTemplate(page, '003')
   await page.getByLabel('Paper size').selectOption('LETTER')
-  for (const template of [
-    'Sidebar',
-    'Classic',
-    'Studio',
-    'Traditional',
-    'Prime ATS',
-    'Pure ATS',
-  ]) {
-    if (template !== 'Sidebar') {
+  for (const template of ['003', '001', '002', '004', '005', '006']) {
+    if (template !== '003') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
       await chooseTemplate(page, template)
     }
     await preview(page)
-    await expect(page.locator('.preview-status')).toHaveText(
-      `${template} / US Letter`,
-    )
+    await expect(page.locator('.preview-status')).toHaveCount(0)
+    await expect(page.locator('.preview-pagination')).toBeVisible()
     const pending = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Download PDF' }).click()
     const bytes = await downloadBytes(await pending)
@@ -1234,14 +1227,10 @@ test('portrait, rated skills and ordered references persist and render in every 
             const items = (
               await (await pdf.getPage(index + 1)).getTextContent()
             ).items.filter((item) => 'str' in item)
-            if (
-              (template === 'Prime ATS' || template === 'Pure ATS') &&
-              index === 0
-            ) {
+            if ((template === '005' || template === '006') && index === 0) {
               const summary = items.find(
                 (item) =>
-                  item.str ===
-                  (template === 'Pure ATS' ? 'Profile' : 'SUMMARY'),
+                  item.str === (template === '006' ? 'Profile' : 'SUMMARY'),
               )!
               const header = items.filter(
                 (item) =>
@@ -1250,15 +1239,13 @@ test('portrait, rated skills and ordered references persist and render in every 
               const firstPage = await pdf.getPage(1)
               for (const item of header)
                 expect(item.transform[4] + item.width).toBeLessThanOrEqual(
-                  firstPage.view[2]! -
-                    (template === 'Pure ATS' ? 113 : 134) +
-                    1,
+                  firstPage.view[2]! - (template === '006' ? 113 : 134) + 1,
                 )
             }
             if (
-              template === 'Traditional' ||
-              template === 'Prime ATS' ||
-              template === 'Pure ATS'
+              template === '004' ||
+              template === '005' ||
+              template === '006'
             ) {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
@@ -1287,19 +1274,19 @@ test('portrait, rated skills and ordered references persist and render in every 
     } finally {
       await task.destroy()
     }
-    if (template === 'Traditional') {
+    if (template === '004') {
       await page.screenshot({
         path: test.info().outputPath('traditional-portrait-preview.png'),
         fullPage: true,
       })
     }
-    if (template === 'Prime ATS') {
+    if (template === '005') {
       await page.screenshot({
         path: test.info().outputPath('prime-ats-portrait-preview.png'),
         fullPage: true,
       })
     }
-    if (template === 'Pure ATS') {
+    if (template === '006') {
       const samples = await page
         .getByRole('img', { name: /CV preview, page/ })
         .evaluate((element) => {
@@ -1328,7 +1315,7 @@ test('portrait, rated skills and ordered references persist and render in every 
         fullPage: true,
       })
     }
-    if (template === 'Sidebar') {
+    if (template === '003') {
       const samples = await page
         .getByRole('img', { name: /CV preview, page/ })
         .evaluate((element) => {
@@ -1386,11 +1373,19 @@ test('removed template IDs fall back without discarding content', async ({
     'Alex Morgan',
   )
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await expect(page.locator('.selected-template-details strong')).toHaveText(
-    'Studio',
+  await expect(page.locator('.selected-template-details')).toHaveText(
+    'Browse templates',
   )
+  await page.getByRole('button', { name: 'Browse templates' }).click()
+  await expect(
+    page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Inspect 002', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Close template gallery' }).click()
   await preview(page)
-  await expect(page.locator('.preview-status')).toHaveText('Studio / A4')
+  await expect(page.locator('.preview-status')).toHaveCount(0)
+  await expect(page.locator('.preview-pagination')).toBeVisible()
 })
 
 test('storage write failure is actionable and does not prevent PDF export', async ({
@@ -1428,7 +1423,7 @@ test('editor and template controls have no automated accessibility violations', 
   await page.getByRole('button', { name: 'Browse templates' }).focus()
   await page.keyboard.press('Enter')
   await expect(
-    page.getByRole('searchbox', { name: 'Search templates' }),
+    page.getByRole('button', { name: 'Close template gallery' }),
   ).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(
@@ -1445,7 +1440,7 @@ test('editor and template controls have no automated accessibility violations', 
   ).toEqual([])
 })
 
-test('template gallery supports real previews, cancellation, filtering and responsive inspection', async ({
+test('template gallery supports thumbnails, cancellation and responsive selection without a preview, filters or totals', async ({
   page,
   isMobile,
 }) => {
@@ -1475,12 +1470,20 @@ test('template gallery supports real previews, cancellation, filtering and respo
   ).toBeLessThan(150)
   await page.getByRole('button', { name: 'Browse templates' }).click()
   const gallery = page.getByRole('dialog', { name: /Templates/ })
-  await expect(gallery.getByRole('searchbox')).toBeFocused()
+  await expect(
+    gallery.getByRole('button', { name: 'Close template gallery' }),
+  ).toBeFocused()
+  await expect(gallery.getByRole('searchbox')).toHaveCount(0)
+  await expect(gallery.getByRole('combobox')).toHaveCount(0)
+  await expect(
+    gallery.getByRole('heading', { name: 'Templates', exact: true }),
+  ).toHaveText('Templates')
+  await expect(gallery.getByText(/^\d+ templates?$/)).toHaveCount(0)
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
     6,
   )
   await expect(
-    gallery.getByRole('button', { name: 'Inspect Studio', exact: true }),
+    gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')
   await gallery.getByRole('button', { name: 'Close template gallery' }).focus()
   await page.keyboard.press('Shift+Tab')
@@ -1518,22 +1521,15 @@ test('template gallery supports real previews, cancellation, filtering and respo
     await option.scrollIntoViewIfNeeded()
     await expectThumbnailInk(option.locator('canvas'))
   }
-  await gallery.getByLabel('Layout', { exact: true }).selectOption('two-column')
-  await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    1,
-  )
-  await gallery.getByRole('searchbox').fill('missing')
-  await expect(gallery.getByText('No templates found.')).toBeVisible()
-  await gallery.getByRole('button', { name: 'Clear filters' }).click()
   await page.setViewportSize({ width: isMobile ? 390 : 1440, height: 900 })
   await expectThumbnailInk(
     gallery
-      .getByRole('button', { name: 'Inspect Classic', exact: true })
+      .getByRole('button', { name: 'Inspect 001', exact: true })
       .locator('canvas'),
   )
   await expectThumbnailInk(
     gallery
-      .getByRole('button', { name: 'Inspect Studio', exact: true })
+      .getByRole('button', { name: 'Inspect 002', exact: true })
       .locator('canvas'),
   )
   await gallery.screenshot({
@@ -1549,20 +1545,25 @@ test('template gallery supports real previews, cancellation, filtering and respo
     })),
   ).toEqual([])
   await gallery
-    .getByRole('button', { name: 'Inspect Classic', exact: true })
+    .getByRole('button', { name: 'Inspect 001', exact: true })
     .click()
   await expect(
-    gallery.getByRole('heading', { name: 'Classic', exact: true }),
-  ).toBeVisible()
+    gallery.getByRole('button', { name: 'Inspect 001', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
   expect(
     (await gallery.locator('.gallery-header').boundingBox())!.y,
   ).toBeGreaterThanOrEqual((await gallery.boundingBox())!.y)
   await expect(
     gallery.getByRole('region', { name: 'CV preview text' }),
-  ).toContainText('Jordan Gallery')
-  await expect(gallery.locator('.pdf-paper canvas')).toBeVisible({
-    timeout: 20_000,
-  })
+  ).toHaveCount(0)
+  await expect(
+    gallery.getByRole('region', { name: 'Template CV preview' }),
+  ).toHaveCount(0)
+  await expect(gallery.locator('.pdf-paper')).toHaveCount(0)
+  await expect(gallery.locator('.gallery-browser')).toBeVisible()
+  await expect(
+    gallery.getByRole('button', { name: 'Use template' }),
+  ).toBeInViewport()
   await gallery.screenshot({
     path: test.info().outputPath('template-inspection.png'),
   })
@@ -1581,24 +1582,19 @@ test('template gallery supports real previews, cancellation, filtering and respo
       storageKey,
     ),
   ).toEqual(before)
-  if (isMobile) {
-    await gallery.getByRole('button', { name: 'Back to templates' }).click()
-    await expect(
-      gallery.getByRole('button', { name: 'Inspect Classic', exact: true }),
-    ).toBeFocused()
-  }
-  await gallery.getByRole('searchbox').fill('side')
   await gallery
-    .getByRole('button', { name: 'Inspect Sidebar', exact: true })
+    .getByRole('button', { name: 'Inspect 003', exact: true })
     .click()
   await gallery.getByRole('button', { name: 'Close template gallery' }).click()
   await page.getByRole('button', { name: 'Browse templates' }).click()
-  await expect(gallery.getByRole('searchbox')).toHaveValue('')
+  await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
+    6,
+  )
   await expect(
-    gallery.getByRole('button', { name: 'Inspect Studio', exact: true }),
+    gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')
   await gallery
-    .getByRole('button', { name: 'Inspect Sidebar', exact: true })
+    .getByRole('button', { name: 'Inspect 003', exact: true })
     .click()
   await gallery.getByRole('button', { name: 'Use template' }).click()
   await expect(gallery).toHaveCount(0)
@@ -1621,7 +1617,13 @@ test('template gallery supports real previews, cancellation, filtering and respo
   })
   await page.reload()
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await expect(page.locator('.selected-template-details strong')).toHaveText(
-    'Sidebar',
+  await expect(page.locator('.selected-template-details')).toHaveText(
+    'Browse templates',
   )
+  await page.getByRole('button', { name: 'Browse templates' }).click()
+  await expect(
+    page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Inspect 003', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
 })
