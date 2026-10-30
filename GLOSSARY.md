@@ -15,7 +15,17 @@ A permanent, zero-padded catalog label for a template, such as 001. The same lab
 _Avoid_: Template name
 
 **Appearance**:
-The chosen template, accent color, text size, paper size, and document language of a CV.
+The chosen template, color scheme, text size, paper size, and document language of a CV.
+
+**CV color scheme**:
+The chosen colors for a CV's headings, subtitles and details, body text, accents, and colored surfaces. A color scheme belongs to the CV rather than to an individual template.
+
+**CV color role**:
+A named visual purpose within a CV color scheme, such as headings or body text, with a color chosen independently of the other roles.
+_Avoid_: Primary color, secondary color, third color
+
+**CV color palette**:
+A ready-made combination of colors for the CV color roles, used as a starting point for a color scheme.
 
 **Document language**:
 The single language used for the builder interface and generated CV labels. It does not determine or translate the person's written CV content.

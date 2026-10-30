@@ -1,6 +1,6 @@
 import { renderToBuffer } from '@react-pdf/renderer'
 import { PDFDocument } from 'pdf-lib'
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
 import { createDocument, createEmptyCv } from '../domain/cv/defaults'
 import { createExampleCv } from '../domain/cv/example'
@@ -8,6 +8,47 @@ import { translate } from '../i18n/messages'
 import { createTemplateRegistry, templateRegistry } from './registry'
 
 describe('template registry', () => {
+  for (const { id } of templateRegistry.templates) {
+    it(`${id} applies independent color roles to real PDFs`, async () => {
+      const cv = createExampleCv()
+      const appearance = createDocument(id).appearance
+      appearance.colors = {
+        headings: '#913355',
+        details: '#345678',
+        body: '#263947',
+        accent: '#a53b12',
+        surface: '#eeeeee',
+      }
+      const render = await templateRegistry.resolve(id).load()
+      const buffer = await renderToBuffer(render({ cv, appearance }))
+      const task = getDocument({
+        data: new Uint8Array(buffer),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const page = await pdf.getPage(1)
+        const operators = await page.getOperatorList()
+        const fills = operators.argsArray.filter(
+          (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+        )
+        for (const color of ['#913355', '#345678', '#263947']) {
+          expect(JSON.stringify(fills), color).toContain(color)
+        }
+        const strokes = operators.argsArray.filter(
+          (_, index) => operators.fnArray[index] === OPS.setStrokeRGBColor,
+        )
+        if (id !== 'sidebar')
+          expect(JSON.stringify(strokes)).toContain('#a53b12')
+        if (id === 'sidebar' || id === 'traditional') {
+          expect(JSON.stringify(fills)).toContain('#eeeeee')
+        }
+      } finally {
+        await task.destroy()
+      }
+    })
+  }
+
   it('keeps permanent template numbers independent of order and default', () => {
     const expected = {
       classic: '001',

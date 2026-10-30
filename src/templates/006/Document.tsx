@@ -38,10 +38,11 @@ function Section({
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={30}>
         <Text
+          colorRole="headings"
           style={[
             styles.heading,
             {
-              borderBottomColor: appearance.accent,
+              borderBottomColor: appearance.colors?.accent ?? appearance.accent,
               fontSize: appearance.fontSize * 1.15,
             },
           ]}
@@ -60,15 +61,27 @@ function EntryHeader({
   detail,
   dates,
 }: {
-  title: string
+  title: ReactNode
   detail?: string
   dates?: string
 }) {
   return (
     <View style={styles.entryHeader} minPresenceAhead={20}>
-      {title && <Text style={styles.entryTitle}>{title}</Text>}
-      {detail && <Text style={styles.body}>{detail}</Text>}
-      {dates && <Text style={styles.body}>{dates}</Text>}
+      {title && (
+        <Text colorRole="headings" style={styles.entryTitle}>
+          {title}
+        </Text>
+      )}
+      {detail && (
+        <Text colorRole="details" style={styles.body}>
+          {detail}
+        </Text>
+      )}
+      {dates && (
+        <Text colorRole="details" style={styles.body}>
+          {dates}
+        </Text>
+      )}
     </View>
   )
 }
@@ -127,9 +140,20 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
     entry: TemplateProps['cv']['experience'][number],
   ) => (
     <EntryHeader
-      title={[entry.role, entry.employer, entry.location]
-        .filter(Boolean)
-        .join(', ')}
+      title={
+        <>
+          {entry.role || entry.employer || entry.location}
+          <Text colorRole="details" style={{ color: '#222222' }}>
+            {[
+              entry.role ? entry.employer : '',
+              entry.role || entry.employer ? entry.location : '',
+            ]
+              .filter(Boolean)
+              .map((value) => `, ${value}`)
+              .join('')}
+          </Text>
+        </>
+      }
       dates={dateRange(entry.startDate, entry.endDate, entry.current)}
     />
   )
@@ -146,8 +170,9 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
         <Text key={skill.id} style={styles.skill} orphans={2} widows={2}>
           {'\u2022 '}
           {skill.name}
-          {skill.level !== null &&
-            ` (${t(proficiencyLevels[skill.level - 1]!)})`}
+          {skill.level !== null && (
+            <Text colorRole="details">{` (${t(proficiencyLevels[skill.level - 1]!)})`}</Text>
+          )}
         </Text>
       ))}
     </View>
@@ -173,7 +198,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language}>
+      <PdfLanguage language={appearance.language} colors={appearance.colors}>
         <Page
           size={appearance.pageSize}
           style={[
@@ -185,12 +210,15 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
           <View style={styles.header}>
             <View style={styles.identity}>
               <Text
+                colorRole="headings"
                 style={[styles.name, { fontSize: appearance.fontSize * 1.8 }]}
               >
                 {cv.personal.fullName || t('Your name')}
               </Text>
               {cv.personal.jobTitle && (
-                <Text style={styles.jobTitle}>{cv.personal.jobTitle}</Text>
+                <Text colorRole="details" style={styles.jobTitle}>
+                  {cv.personal.jobTitle}
+                </Text>
               )}
               {contact.length > 0 && (
                 <ContactText
@@ -297,6 +325,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           <Text
+            colorRole="details"
             style={styles.pageNumber}
             fixed
             render={({ pageNumber }) =>

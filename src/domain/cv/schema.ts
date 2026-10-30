@@ -80,10 +80,21 @@ export const cvSchema = z.object({
   references: z.array(referenceSchema).max(100).default([]),
 })
 
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
+
 export const appearanceSchema = z.object({
   language: z.enum(['en', 'fr', 'ar']).default('en'),
   templateId: z.string(),
   accent: z.enum(['#177568', '#3456a0', '#8c4255', '#292929']),
+  colors: z
+    .object({
+      headings: hexColor.optional(),
+      details: hexColor.optional(),
+      body: hexColor.optional(),
+      accent: hexColor.optional(),
+      surface: hexColor.optional(),
+    })
+    .optional(),
   fontSize: z.union([z.literal(10), z.literal(11), z.literal(12)]),
   pageSize: z.enum(['A4', 'LETTER']),
 })

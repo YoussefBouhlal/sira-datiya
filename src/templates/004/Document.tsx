@@ -47,9 +47,19 @@ function Section({
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={70}>
         <Text
+          colorRole="headings"
           style={[
             styles.heading,
-            { color: appearance.accent, fontSize: appearance.fontSize * 1.2 },
+            {
+              color: appearance.accent,
+              fontSize: appearance.fontSize * 1.2,
+              ...(appearance.colors?.surface
+                ? { backgroundColor: appearance.colors.surface }
+                : {}),
+              ...(appearance.colors?.accent
+                ? { textDecorationColor: appearance.colors.accent }
+                : {}),
+            },
           ]}
         >
           {t(title)}
@@ -66,28 +76,49 @@ function EntryHeader({
   dates,
   location,
   fontSize,
+  accent,
 }: {
-  title: string
+  title: ReactNode
   dates: string
   location?: string
   fontSize: number
+  accent?: string
 }) {
   return (
     <View style={styles.entryHeader} minPresenceAhead={35}>
       <View style={styles.titleRow}>
-        <View style={styles.marker} />
-        <Text style={[styles.entryTitle, { fontSize: fontSize * 1.1 }]}>
+        <View
+          style={[
+            styles.marker,
+            ...(accent ? [{ backgroundColor: accent }] : []),
+          ]}
+        />
+        <Text
+          colorRole="headings"
+          style={[styles.entryTitle, { fontSize: fontSize * 1.1 }]}
+        >
           {title}
         </Text>
-        <View style={styles.leader} />
+        <View
+          style={[
+            styles.leader,
+            ...(accent ? [{ borderBottomColor: accent }] : []),
+          ]}
+        />
         {dates && (
-          <Text style={[styles.dates, { fontSize: fontSize * 0.8 }]}>
+          <Text
+            colorRole="details"
+            style={[styles.dates, { fontSize: fontSize * 0.8 }]}
+          >
             {dates}
           </Text>
         )}
       </View>
       {location && (
-        <Text style={[styles.location, { fontSize: fontSize * 0.75 }]}>
+        <Text
+          colorRole="details"
+          style={[styles.location, { fontSize: fontSize * 0.75 }]}
+        >
           {location}
         </Text>
       )}
@@ -139,23 +170,48 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
     .join(' | ')
   const ruleStyle = [
     styles.doubleRule,
-    { borderTopColor: appearance.accent, borderBottomColor: appearance.accent },
+    {
+      borderTopColor: appearance.colors?.accent ?? appearance.accent,
+      borderBottomColor: appearance.colors?.accent ?? appearance.accent,
+    },
   ]
   const experienceHeader = (
     entry: TemplateProps['cv']['experience'][number],
   ) => (
     <EntryHeader
-      title={[entry.role, entry.employer].filter(Boolean).join(' - ')}
+      title={
+        <>
+          {entry.role || entry.employer}
+          {entry.role && entry.employer && (
+            <Text
+              colorRole="details"
+              style={{ color: '#171717' }}
+            >{` - ${entry.employer}`}</Text>
+          )}
+        </>
+      }
       dates={dateRange(entry.startDate, entry.endDate, entry.current)}
       location={entry.location}
       fontSize={appearance.fontSize}
+      accent={appearance.colors?.accent}
     />
   )
   const educationHeader = (entry: TemplateProps['cv']['education'][number]) => (
     <EntryHeader
-      title={[entry.degree, entry.school].filter(Boolean).join(', ')}
+      title={
+        <>
+          {entry.degree || entry.school}
+          {entry.degree && entry.school && (
+            <Text
+              colorRole="details"
+              style={{ color: '#171717' }}
+            >{`, ${entry.school}`}</Text>
+          )}
+        </>
+      }
       dates={dateRange(entry.startDate, entry.endDate)}
       fontSize={appearance.fontSize}
+      accent={appearance.colors?.accent}
     />
   )
 
@@ -166,7 +222,7 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language}>
+      <PdfLanguage language={appearance.language} colors={appearance.colors}>
         <Page
           size={appearance.pageSize}
           style={[
@@ -180,27 +236,40 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
               <Image src={cv.personal.portrait} style={styles.portrait} />
             )}
             <Text
+              colorRole="headings"
               style={[styles.name, { fontSize: appearance.fontSize * 2.1 }]}
             >
               {cv.personal.fullName || t('Your name')}
             </Text>
             {cv.personal.jobTitle && (
-              <Text style={styles.jobTitle}>{cv.personal.jobTitle}</Text>
+              <Text colorRole="details" style={styles.jobTitle}>
+                {cv.personal.jobTitle}
+              </Text>
             )}
             {cv.personal.location && (
-              <Text style={styles.contact}>{cv.personal.location}</Text>
+              <Text colorRole="details" style={styles.contact}>
+                {cv.personal.location}
+              </Text>
             )}
             {(cv.personal.phone || cv.personal.email) && (
               <View style={styles.contactRow}>
                 {cv.personal.phone && (
-                  <Text style={styles.phone}>{cv.personal.phone}</Text>
+                  <Text colorRole="details" style={styles.phone}>
+                    {cv.personal.phone}
+                  </Text>
                 )}
                 {cv.personal.email && (
-                  <Text style={styles.email}>{cv.personal.email}</Text>
+                  <Text colorRole="details" style={styles.email}>
+                    {cv.personal.email}
+                  </Text>
                 )}
               </View>
             )}
-            {links && <Text style={styles.links}>{links}</Text>}
+            {links && (
+              <Text colorRole="details" style={styles.links}>
+                {links}
+              </Text>
+            )}
           </View>
           <View style={ruleStyle} />
           {cv.summary.trim() && (
@@ -242,13 +311,15 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
           {skills.length > 0 && (
             <Section title="Skills" appearance={appearance}>
               <Text style={styles.body} orphans={2} widows={2}>
-                {skills
-                  .map((skill) =>
-                    skill.level === null
-                      ? skill.name
-                      : `${skill.name} (${t(proficiencyLevels[skill.level - 1]!)})`,
-                  )
-                  .join(' / ')}
+                {skills.map((skill, index) => (
+                  <Text key={skill.id}>
+                    {index > 0 ? ' / ' : ''}
+                    {skill.name}
+                    {skill.level !== null && (
+                      <Text colorRole="details">{` (${t(proficiencyLevels[skill.level - 1]!)})`}</Text>
+                    )}
+                  </Text>
+                ))}
               </Text>
             </Section>
           )}
@@ -264,11 +335,19 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
               {projects.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
                   {entry.name && (
-                    <Text style={styles.additionalTitle} minPresenceAhead={30}>
+                    <Text
+                      colorRole="headings"
+                      style={styles.additionalTitle}
+                      minPresenceAhead={30}
+                    >
                       {entry.name}
                     </Text>
                   )}
-                  {entry.url && <Text style={styles.body}>{entry.url}</Text>}
+                  {entry.url && (
+                    <Text colorRole="details" style={styles.body}>
+                      {entry.url}
+                    </Text>
+                  )}
                   <Description text={entry.description} />
                 </View>
               ))}
@@ -283,12 +362,16 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
             <Section title="References" appearance={appearance}>
               {references.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
-                  <Text style={styles.additionalTitle} minPresenceAhead={25}>
+                  <Text
+                    colorRole="headings"
+                    style={styles.additionalTitle}
+                    minPresenceAhead={25}
+                  >
                     {[entry.name, entry.jobTitle, entry.organization]
                       .filter(Boolean)
                       .join(' - ')}
                   </Text>
-                  <Text style={styles.body}>
+                  <Text colorRole="details" style={styles.body}>
                     {[entry.email, entry.phone].filter(Boolean).join(' | ')}
                   </Text>
                 </View>

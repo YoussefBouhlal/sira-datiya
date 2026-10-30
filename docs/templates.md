@@ -56,6 +56,37 @@ Treat CV data as read-only. A renderer must not mutate it, access local storage,
 
 Missing optional sections should produce no empty headings. Preserve text rather than truncating it to one page. Avoid wrapping a long section in an unbreakable container. Check long names, URLs, multiline descriptions, and multiple pages. Bundle new fonts and document coverage/attribution; do not claim support for untested scripts.
 
+## Color roles
+
+`appearance.colors` contains optional six-digit hex overrides for `headings`,
+`details`, `body`, `accent`, and `surface`. Missing roles retain the renderer's
+original styling and legacy `appearance.accent`; changing one role must not
+recolor untouched roles. Reset colors removes all overrides, preserving the legacy
+accent and every other appearance setting. Custom schemes carry across templates.
+
+Pass `appearance.colors` to `PdfLanguage`. Shared `Text` defaults to the body
+role; mark names, section headings and entry titles with `colorRole="headings"`,
+and subtitles, employers, secondary school information, dates, contacts,
+proficiency labels and footers with `colorRole="details"`. Mixed lines use nested
+text spans, retaining original colors when the corresponding override is absent.
+`ContactText` applies the details role, including Arabic contact runs. Resolve
+decorative rules, markers and borders from `colors.accent ?? appearance.accent`.
+
+Definitions expose `colorDefaults` for the appearance controls, not renderer
+branching. `headings` and `details` may use the literal `accent` for a legacy
+accent-derived default. The baseline swatches represent a role even when the
+original template uses several shades for its elements. Specify `surface` as
+`sidebar` or `band` only when that template uses a colored surface. The picker
+uses this metadata rather than template-ID conditions.
+
+Paper remains white. Template 003 automatically chooses black or white sidebar
+foregrounds and graphics for the selected surface; main-column roles remain
+independent. Template 004 uses the surface override for heading bands. Other
+templates retain surface choices without exposing an unused control. Low text
+contrast against white paper or heading bands produces a non-blocking warning.
+Palettes replace all five roles; subsequent edits remain independent. Gallery
+thumbnails retain their fixed sample appearance.
+
 ## Document language
 
 Every template supports English, French, and Modern Standard Arabic through `appearance.language`. Keep `<Document>` as the root, set its language metadata, and wrap its page content in `PdfLanguage`. Apply `pageLanguageStyle` after page styles. Use the shared PDF `Text`, `View`, and `Image` components so font selection, RTL rows, and directional spacing remain consistent. Translate generated headings and proficiency labels explicitly; never pass personal content through the message catalogue. Use the common date formatter for full localized month names with Western digits, and `ContactText` when combining Latin contact fields with Arabic text. Do not insert Unicode bidi-control markers: this font/renderer combination can draw them as visible glyphs.

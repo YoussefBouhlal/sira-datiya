@@ -2,6 +2,32 @@ export const languages = ['en', 'fr', 'ar'] as const
 export type Language = (typeof languages)[number]
 
 export const messages = {
+  Colors: ['Couleurs', 'الألوان'],
+  Palette: ['Palette', 'لوحة الألوان'],
+  Custom: ['Personnalisée', 'مخصصة'],
+  Original: ['D’origine', 'الأصلية'],
+  Headings: ['Titres', 'العناوين'],
+  'Subtitles & details': [
+    'Sous-titres et détails',
+    'العناوين الفرعية والتفاصيل',
+  ],
+  'Body text': ['Texte principal', 'النص الأساسي'],
+  Accent: ['Décorations', 'الزخارف'],
+  Surface: ['Fond', 'الخلفية'],
+  'Reset colors': ['Réinitialiser les couleurs', 'إعادة تعيين الألوان'],
+  '{role} color picker': ['Sélecteur de couleur : {role}', 'منتقي لون {role}'],
+  'Enter a six-digit hex color, such as #177568.': [
+    'Saisissez une couleur hexadécimale à six chiffres, comme #177568.',
+    'أدخل لونًا سداسيًا من ست خانات، مثل #177568.',
+  ],
+  'Low contrast on white paper.': [
+    'Contraste faible sur papier blanc.',
+    'تباين منخفض على الورق الأبيض.',
+  ],
+  'Low contrast between headings and the section background.': [
+    'Contraste faible entre les titres et le fond des sections.',
+    'تباين منخفض بين العناوين وخلفية القسم.',
+  ],
   Language: ['Langue', 'اللغة'],
   'Choose your language': ['Choisissez votre langue', 'اختر لغتك'],
   'Skip to languages': ['Aller aux langues', 'الانتقال إلى اللغات'],

@@ -21,7 +21,7 @@ export function ModernDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language}>
+      <PdfLanguage language={appearance.language} colors={appearance.colors}>
         <Page
           size={appearance.pageSize}
           style={[
@@ -30,12 +30,22 @@ export function ModernDocument({ cv, appearance }: TemplateProps) {
             pageLanguageStyle(appearance.language),
           ]}
         >
-          <View style={[styles.header, { borderLeftColor: appearance.accent }]}>
+          <View
+            style={[
+              styles.header,
+              {
+                borderLeftColor: appearance.colors?.accent ?? appearance.accent,
+              },
+            ]}
+          >
             <Portrait cv={cv} />
-            <Text style={styles.name}>
+            <Text colorRole="headings" style={styles.name}>
               {cv.personal.fullName || t('Your name')}
             </Text>
-            <Text style={[styles.title, { color: appearance.accent }]}>
+            <Text
+              colorRole="details"
+              style={[styles.title, { color: appearance.accent }]}
+            >
               {cv.personal.jobTitle || t('Professional title')}
             </Text>
             <ContactLine cv={cv} />
