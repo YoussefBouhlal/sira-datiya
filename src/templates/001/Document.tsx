@@ -44,6 +44,7 @@ function Section({
       ]}
     >
       <Text
+        colorRole="headings"
         style={[styles.heading, ...(inline ? [styles.rail] : [])]}
         minPresenceAhead={40}
       >
@@ -107,7 +108,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language}>
+      <PdfLanguage language={appearance.language} colors={appearance.colors}>
         <Page
           size={appearance.pageSize}
           style={[
@@ -119,11 +120,16 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           <View style={styles.header}>
             <Portrait cv={cv} />
             <Text
+              colorRole="headings"
               style={[styles.name, { fontSize: appearance.fontSize * 1.4 }]}
             >
-              {[cv.personal.fullName || t('Your name'), cv.personal.jobTitle]
-                .filter(Boolean)
-                .join(', ')}
+              {cv.personal.fullName || t('Your name')}
+              {cv.personal.jobTitle && (
+                <Text
+                  colorRole="details"
+                  style={{ color: '#171717' }}
+                >{`, ${cv.personal.jobTitle}`}</Text>
+              )}
             </Text>
             {contact.length > 0 && (
               <ContactText
@@ -143,17 +149,25 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
             )}
           </View>
           {cv.summary.trim() && (
-            <Section title="Profile" accent={appearance.accent} inline>
+            <Section
+              title="Profile"
+              accent={appearance.colors?.accent ?? appearance.accent}
+              inline
+            >
               <Text style={styles.body} orphans={2} widows={2}>
                 {cv.summary}
               </Text>
             </Section>
           )}
           {experience.length > 0 && (
-            <Section title="Experience" accent={appearance.accent}>
+            <Section
+              title="Experience"
+              accent={appearance.colors?.accent ?? appearance.accent}
+            >
               {experience.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
                   <Text
+                    colorRole="details"
                     style={[
                       styles.dates,
                       { fontSize: appearance.fontSize * 0.8 },
@@ -165,17 +179,23 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
                   <View style={styles.content}>
                     <View style={styles.entryHeader} minPresenceAhead={30}>
                       <Text
+                        colorRole="headings"
                         style={[
                           styles.entryTitle,
                           { fontSize: appearance.fontSize * 1.2 },
                         ]}
                       >
-                        {[entry.role, entry.employer]
-                          .filter(Boolean)
-                          .join(' \u2014 ')}
+                        {entry.role || entry.employer}
+                        {entry.role && entry.employer && (
+                          <Text
+                            colorRole="details"
+                            style={{ color: '#171717' }}
+                          >{` \u2014 ${entry.employer}`}</Text>
+                        )}
                       </Text>
                       {entry.location && (
                         <Text
+                          colorRole="details"
                           style={[
                             styles.location,
                             { fontSize: appearance.fontSize * 0.8 },
@@ -192,10 +212,14 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {education.length > 0 && (
-            <Section title="Education" accent={appearance.accent}>
+            <Section
+              title="Education"
+              accent={appearance.colors?.accent ?? appearance.accent}
+            >
               {education.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
                   <Text
+                    colorRole="details"
                     style={[
                       styles.dates,
                       { fontSize: appearance.fontSize * 0.8 },
@@ -207,6 +231,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
                   <View style={styles.content}>
                     <View style={styles.entryHeader} minPresenceAhead={30}>
                       <Text
+                        colorRole="headings"
                         style={[
                           styles.entryTitle,
                           { fontSize: appearance.fontSize * 1.2 },
@@ -216,6 +241,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
                       </Text>
                       {entry.degree && entry.school && (
                         <Text
+                          colorRole="details"
                           style={[
                             styles.location,
                             { fontSize: appearance.fontSize * 0.8 },
@@ -232,20 +258,29 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {skills.length > 0 && (
-            <Section title="Skills" accent={appearance.accent}>
+            <Section
+              title="Skills"
+              accent={appearance.colors?.accent ?? appearance.accent}
+            >
               <Text style={styles.body} orphans={2} widows={2}>
-                {skills
-                  .map((skill) =>
-                    skill.level === null
-                      ? skill.name
-                      : `${skill.name} (${t(proficiencyLevels[skill.level - 1]!)})`,
-                  )
-                  .join(' / ')}
+                {skills.map((skill, index) => (
+                  <Text key={skill.id}>
+                    {index > 0 ? ' / ' : ''}
+                    {skill.name}
+                    {skill.level !== null && (
+                      <Text colorRole="details">{` (${t(proficiencyLevels[skill.level - 1]!)})`}</Text>
+                    )}
+                  </Text>
+                ))}
               </Text>
             </Section>
           )}
           {languages.length > 0 && (
-            <Section title="Languages" accent={appearance.accent} inline>
+            <Section
+              title="Languages"
+              accent={appearance.colors?.accent ?? appearance.accent}
+              inline
+            >
               <View style={styles.languages}>
                 {languages.map((language, index) => (
                   <Text
@@ -261,35 +296,56 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {projects.length > 0 && (
-            <Section title="Projects" accent={appearance.accent}>
+            <Section
+              title="Projects"
+              accent={appearance.colors?.accent ?? appearance.accent}
+            >
               {projects.map((entry) => (
                 <View key={entry.id} style={styles.additionalEntry}>
                   {entry.name && (
-                    <Text style={styles.additionalTitle} minPresenceAhead={30}>
+                    <Text
+                      colorRole="headings"
+                      style={styles.additionalTitle}
+                      minPresenceAhead={30}
+                    >
                       {entry.name}
                     </Text>
                   )}
-                  {entry.url && <Text style={styles.body}>{entry.url}</Text>}
+                  {entry.url && (
+                    <Text colorRole="details" style={styles.body}>
+                      {entry.url}
+                    </Text>
+                  )}
                   <Description text={entry.description} />
                 </View>
               ))}
             </Section>
           )}
           {certifications.length > 0 && (
-            <Section title="Certifications" accent={appearance.accent}>
+            <Section
+              title="Certifications"
+              accent={appearance.colors?.accent ?? appearance.accent}
+            >
               <Description text={certifications.join('\n')} />
             </Section>
           )}
           {references.length > 0 && (
-            <Section title="References" accent={appearance.accent}>
+            <Section
+              title="References"
+              accent={appearance.colors?.accent ?? appearance.accent}
+            >
               {references.map((entry) => (
                 <View key={entry.id} style={styles.additionalEntry}>
-                  <Text style={styles.additionalTitle} minPresenceAhead={25}>
+                  <Text
+                    colorRole="headings"
+                    style={styles.additionalTitle}
+                    minPresenceAhead={25}
+                  >
                     {[entry.name, entry.jobTitle, entry.organization]
                       .filter(Boolean)
                       .join(' - ')}
                   </Text>
-                  <Text style={styles.body}>
+                  <Text colorRole="details" style={styles.body}>
                     {[entry.email, entry.phone].filter(Boolean).join(' | ')}
                   </Text>
                 </View>

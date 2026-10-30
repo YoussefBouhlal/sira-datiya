@@ -5,5 +5,6 @@ export const primeAtsTemplate = {
   name: '005',
   typography: 'sans',
   layout: 'single-column',
+  colorDefaults: { headings: 'accent', details: '#252a30', body: '#252a30' },
   load: () => import('./Document').then((module) => module.PrimeAtsDocument),
 } satisfies TemplateDefinition

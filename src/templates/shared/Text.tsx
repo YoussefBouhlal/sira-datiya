@@ -1,5 +1,7 @@
 import { Text as PdfText, type TextProps } from '@react-pdf/renderer'
-import { Children, type PropsWithChildren } from 'react'
+import { Children, useContext, type PropsWithChildren } from 'react'
+import type { TextColorRole } from '../../domain/cv/colors'
+import { PdfColorContext } from './color-context'
 import { flattenStyle, languageStyle, usePdfTranslation } from './localization'
 
 function breakLongWords(word: string): string[] {
@@ -7,8 +9,12 @@ function breakLongWords(word: string): string[] {
   return word.length > 16 ? Array.from(word) : [word]
 }
 
-export function Text(props: PropsWithChildren<TextProps>) {
+export function Text({
+  colorRole = 'body',
+  ...props
+}: PropsWithChildren<TextProps> & { colorRole?: TextColorRole }) {
   const { language } = usePdfTranslation()
+  const colors = useContext(PdfColorContext)
   const flat = flattenStyle(props.style)
   const hasArabic = Children.toArray(props.children).some(
     (child) => typeof child === 'string' && /[\u0600-\u06ff]/.test(child),
@@ -20,6 +26,7 @@ export function Text(props: PropsWithChildren<TextProps>) {
       {...props}
       style={[
         languageStyle(props.style, language),
+        ...(colors[colorRole] ? [{ color: colors[colorRole] }] : []),
         ...(arabic
           ? [
               {

@@ -7,7 +7,10 @@ import {
   within,
 } from '@testing-library/react'
 import { afterEach, beforeAll, expect, it, vi } from 'vitest'
+import { useState } from 'react'
 import { createDocument } from '../../domain/cv/defaults'
+import { contrastRatio, surfaceForeground } from '../../domain/cv/colors'
+import { ColorSettings } from './ColorSettings'
 import { TemplatePicker, TemplateStart } from './TemplatePicker'
 
 beforeAll(() => {
@@ -20,6 +23,117 @@ beforeAll(() => {
 })
 
 afterEach(cleanup)
+
+it('edits independent roles, validates hex, applies palettes and resets colors', () => {
+  const initial = createDocument('sidebar').appearance
+  initial.accent = '#8c4255'
+  const onChange = vi.fn()
+  function Controls() {
+    const [appearance, setAppearance] = useState(initial)
+    return (
+      <ColorSettings
+        appearance={appearance}
+        template={{
+          id: 'sidebar',
+          name: '003',
+          typography: 'serif',
+          colorDefaults: {
+            headings: '#202020',
+            details: '#626b69',
+            body: '#202020',
+            surface: 'sidebar',
+          },
+        }}
+        onChange={(next) => {
+          setAppearance(next)
+          onChange(next)
+        }}
+      />
+    )
+  }
+  render(<Controls />)
+  expect(screen.getByLabelText('Surface')).toHaveValue('#622e3b')
+  const headings = screen.getByLabelText('Headings')
+  headings.focus()
+  fireEvent.change(headings, { target: { value: '#ab' } })
+  expect(headings).toHaveAttribute('aria-invalid', 'true')
+  expect(onChange).not.toHaveBeenCalled()
+  fireEvent.change(headings, { target: { value: '#abcdef' } })
+  expect(headings).toHaveFocus()
+  expect(onChange).toHaveBeenLastCalledWith({
+    ...initial,
+    colors: { headings: '#abcdef' },
+  })
+  expect(screen.getByText('Low contrast on white paper.')).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText('Body text color picker'), {
+    target: { value: '#123456' },
+  })
+  expect(onChange).toHaveBeenLastCalledWith({
+    ...initial,
+    colors: { headings: '#abcdef', body: '#123456' },
+  })
+  fireEvent.click(screen.getByRole('radio', { name: 'Cobalt' }))
+  expect(screen.getByLabelText('Headings')).toHaveValue('#3456a0')
+  expect(screen.getByLabelText('Surface')).toHaveValue('#eeeeee')
+  expect(screen.getByRole('radio', { name: 'Cobalt' })).toBeChecked()
+  fireEvent.click(screen.getByRole('button', { name: 'Reset colors' }))
+  expect(onChange).toHaveBeenLastCalledWith(initial)
+  expect(screen.getByLabelText('Surface')).toHaveValue('#622e3b')
+  fireEvent.change(screen.getByLabelText('Headings'), {
+    target: { value: '#12' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Reset colors' }))
+  expect(screen.getByLabelText('Headings')).toHaveValue('#202020')
+  expect(screen.getByLabelText('Headings')).toHaveAttribute(
+    'aria-invalid',
+    'false',
+  )
+})
+
+it('only exposes surfaces when supported and warns about heading-band contrast', () => {
+  const appearance = createDocument('classic').appearance
+  const props = {
+    appearance,
+    onChange: vi.fn(),
+    template: { id: 'classic', name: '001', typography: 'serif' as const },
+  }
+  const view = render(<ColorSettings {...props} />)
+  expect(screen.queryByLabelText('Surface')).not.toBeInTheDocument()
+  view.rerender(
+    <ColorSettings
+      {...props}
+      appearance={{
+        ...appearance,
+        colors: { headings: '#eeeeee', surface: '#eeeeee' },
+      }}
+      template={{
+        ...props.template,
+        colorDefaults: {
+          headings: 'accent',
+          details: '#171717',
+          body: '#171717',
+          surface: 'band',
+        },
+      }}
+    />,
+  )
+  expect(
+    screen.getByText(
+      'Low contrast between headings and the section background.',
+    ),
+  ).toBeInTheDocument()
+  for (const surface of [
+    '#ffffff',
+    '#eeeeee',
+    '#000000',
+    '#177568',
+    '#888888',
+  ]) {
+    expect(
+      contrastRatio(surfaceForeground(surface), surface),
+    ).toBeGreaterThanOrEqual(4.5)
+  }
+})
 
 it('offers the default immediately and keeps opening inspection tentative', () => {
   const onApply = vi.fn()

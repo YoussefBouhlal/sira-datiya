@@ -603,7 +603,12 @@ test('appearance-only drafts retain styling through opening template selection',
   await expect(page.locator('.selected-template-details')).toHaveText(
     'Browse templates',
   )
-  await expect(page.getByRole('radio', { name: 'Rose' })).toBeChecked()
+  await expect(page.getByLabel('Accent', { exact: true })).toHaveValue(
+    '#8c4255',
+  )
+  await expect(
+    page.getByText('Palette: Original', { exact: true }),
+  ).toBeVisible()
   await expect(page.getByRole('radio', { name: 'Large' })).toBeChecked()
   await expect(page.getByLabel('Paper size')).toHaveValue('LETTER')
   await expect
@@ -614,6 +619,133 @@ test('appearance-only drafts retain styling through opening template selection',
       ),
     )
     .toEqual({ version: 2, ...document })
+})
+
+test('custom color roles persist across templates, backups, previews and reset', async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example' }).click()
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await expect(page.getByLabel('Surface', { exact: true })).toHaveCount(0)
+  await page.getByLabel('Headings', { exact: true }).fill('#913355')
+  await page.getByLabel('Subtitles & details', { exact: true }).fill('#345678')
+  await page.getByLabel('Body text', { exact: true }).fill('#263947')
+  await page.getByLabel('Accent', { exact: true }).fill('#a53b12')
+  await chooseTemplate(page, '003')
+  await page.getByLabel('Surface', { exact: true }).fill('#eeeeee')
+  await page.getByLabel('Headings', { exact: true }).fill('#ffffff')
+  await expect(page.getByText('Low contrast on white paper.')).toBeVisible()
+  await page.getByLabel('Headings', { exact: true }).fill('#913355')
+  const colors = {
+    headings: '#913355',
+    details: '#345678',
+    body: '#263947',
+    accent: '#a53b12',
+    surface: '#eeeeee',
+  }
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance?.colors,
+        storageKey,
+      ),
+    )
+    .toEqual(colors)
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 })
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    for (const input of await page.locator('.color-inputs input').all()) {
+      const bounds = await input.boundingBox()
+      expect(bounds).not.toBeNull()
+      expect(bounds!.x).toBeGreaterThanOrEqual(0)
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+    }
+    await page.screenshot({
+      path: test.info().outputPath(`color-settings-${width}.png`),
+      fullPage: true,
+    })
+  }
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+  await page.reload()
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await expect(page.getByLabel('Headings', { exact: true })).toHaveValue(
+    colors.headings,
+  )
+  await expect(page.getByLabel('Surface', { exact: true })).toHaveValue(
+    colors.surface,
+  )
+  await chooseTemplate(page, '004')
+  await expect(page.getByLabel('Surface', { exact: true })).toHaveValue(
+    colors.surface,
+  )
+  await page.getByLabel('Document actions', { exact: true }).click()
+  const backupPending = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Download backup', exact: true })
+    .click()
+  const backup = JSON.parse(
+    (await downloadBytes(await backupPending)).toString(),
+  )
+  expect(backup.appearance.colors).toEqual(colors)
+  await preview(page)
+  const pdfPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download PDF', exact: true }).click()
+  const task = getDocument({
+    data: new Uint8Array(await downloadBytes(await pdfPending)),
+    useSystemFonts: true,
+  })
+  try {
+    const pdf = await task.promise
+    const operators = await (await pdf.getPage(1)).getOperatorList()
+    const fills = JSON.stringify(
+      operators.argsArray.filter(
+        (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+      ),
+    )
+    for (const color of [
+      colors.headings,
+      colors.details,
+      colors.body,
+      colors.surface,
+    ])
+      expect(fills).toContain(color)
+    const strokes = JSON.stringify(
+      operators.argsArray.filter(
+        (_, index) => operators.fnArray[index] === OPS.setStrokeRGBColor,
+      ),
+    )
+    expect(strokes).toContain(colors.accent)
+  } finally {
+    await task.destroy()
+  }
+  const switcher = page.getByRole('group', { name: 'Workspace view' })
+  if (await switcher.isVisible())
+    await switcher.getByRole('button', { name: 'Edit', exact: true }).click()
+  await page.getByRole('button', { name: 'Reset colors' }).click()
+  await expect(page.getByLabel('Accent', { exact: true })).toHaveValue(
+    '#177568',
+  )
+  await expect(page.getByLabel('Surface', { exact: true })).toHaveValue(
+    '#dfdfdf',
+  )
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance?.colors ??
+          null,
+        storageKey,
+      ),
+    )
+    .toBeNull()
 })
 
 test('brand stays on one line without crowding header actions', async ({

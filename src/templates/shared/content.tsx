@@ -91,7 +91,7 @@ export function CvSections({
     : {
         ...styles.heading,
         color: appearance.accent,
-        borderBottomColor: appearance.accent,
+        borderBottomColor: appearance.colors?.accent ?? appearance.accent,
       }
   const sectionStyle = sidebar ? { marginTop: 16 } : styles.section
   const experience = cv.experience.filter(
@@ -117,7 +117,7 @@ export function CvSections({
     <>
       {cv.summary.trim() && (
         <View style={sectionStyle}>
-          <Text style={headingStyle} minPresenceAhead={35}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={35}>
             {t('Profile')}
           </Text>
           <Text style={styles.body} orphans={2} widows={2}>
@@ -127,15 +127,23 @@ export function CvSections({
       )}
       {experience.length > 0 && (
         <View style={sectionStyle}>
-          <Text style={headingStyle} minPresenceAhead={65}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={65}>
             {t(sidebar ? 'Employment History' : 'Experience')}
           </Text>
           {experience.map((entry) => (
             <View key={entry.id} style={styles.entry}>
-              <Text style={styles.entryTitle} minPresenceAhead={30}>
+              <Text
+                colorRole="headings"
+                style={styles.entryTitle}
+                minPresenceAhead={30}
+              >
                 {entry.role || entry.employer}
               </Text>
-              <Text style={styles.metadata} minPresenceAhead={20}>
+              <Text
+                colorRole="details"
+                style={styles.metadata}
+                minPresenceAhead={20}
+              >
                 {[
                   entry.role ? entry.employer : '',
                   entry.location,
@@ -151,15 +159,23 @@ export function CvSections({
       )}
       {education.length > 0 && (
         <View style={sectionStyle}>
-          <Text style={headingStyle} minPresenceAhead={55}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={55}>
             {t('Education')}
           </Text>
           {education.map((entry) => (
             <View key={entry.id} style={styles.entry}>
-              <Text style={styles.entryTitle} minPresenceAhead={30}>
+              <Text
+                colorRole="headings"
+                style={styles.entryTitle}
+                minPresenceAhead={30}
+              >
                 {entry.degree || entry.school}
               </Text>
-              <Text style={styles.metadata} minPresenceAhead={20}>
+              <Text
+                colorRole="details"
+                style={styles.metadata}
+                minPresenceAhead={20}
+              >
                 {[
                   entry.degree ? entry.school : '',
                   dateRange(entry.startDate, entry.endDate),
@@ -174,31 +190,41 @@ export function CvSections({
       )}
       {!sidebar && skills.length > 0 && (
         <View style={styles.section}>
-          <Text style={headingStyle} minPresenceAhead={30}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={30}>
             {t('Skills')}
           </Text>
           <Text style={styles.body}>
-            {skills
-              .map((skill) =>
-                skill.level === null
-                  ? skill.name
-                  : `${skill.name} (${t(proficiencyLevels[skill.level - 1]!)})`,
-              )
-              .join('  /  ')}
+            {skills.map((skill, index) => (
+              <Text key={skill.id}>
+                {index > 0 ? '  /  ' : ''}
+                {skill.name}
+                {skill.level !== null && (
+                  <Text colorRole="details">{` (${t(proficiencyLevels[skill.level - 1]!)})`}</Text>
+                )}
+              </Text>
+            ))}
           </Text>
         </View>
       )}
       {projects.length > 0 && (
         <View style={sectionStyle}>
-          <Text style={headingStyle} minPresenceAhead={55}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={55}>
             {t('Projects')}
           </Text>
           {projects.map((entry) => (
             <View key={entry.id} style={styles.entry}>
-              <Text style={styles.entryTitle} minPresenceAhead={30}>
+              <Text
+                colorRole="headings"
+                style={styles.entryTitle}
+                minPresenceAhead={30}
+              >
                 {entry.name}
               </Text>
-              {entry.url && <Text style={styles.metadata}>{entry.url}</Text>}
+              {entry.url && (
+                <Text colorRole="details" style={styles.metadata}>
+                  {entry.url}
+                </Text>
+              )}
               <Description text={entry.description} />
             </View>
           ))}
@@ -206,7 +232,7 @@ export function CvSections({
       )}
       {!sidebar && cv.languages.some((language) => language.trim()) && (
         <View style={styles.section}>
-          <Text style={headingStyle} minPresenceAhead={30}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={30}>
             {t('Languages')}
           </Text>
           <Text style={styles.body}>{cv.languages.join('  /  ')}</Text>
@@ -214,7 +240,7 @@ export function CvSections({
       )}
       {cv.certifications.some((certification) => certification.trim()) && (
         <View style={sectionStyle}>
-          <Text style={headingStyle} minPresenceAhead={30}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={30}>
             {t('Certifications')}
           </Text>
           <Description text={cv.certifications.join('\n')} />
@@ -222,17 +248,21 @@ export function CvSections({
       )}
       {references.length > 0 && (
         <View style={sectionStyle}>
-          <Text style={headingStyle} minPresenceAhead={45}>
+          <Text colorRole="headings" style={headingStyle} minPresenceAhead={45}>
             {t('References')}
           </Text>
           {references.map((entry) => (
             <View key={entry.id} style={styles.entry}>
-              <Text style={styles.entryTitle} minPresenceAhead={20}>
+              <Text
+                colorRole="headings"
+                style={styles.entryTitle}
+                minPresenceAhead={20}
+              >
                 {[entry.name, entry.jobTitle, entry.organization]
                   .filter(Boolean)
                   .join(' - ')}
               </Text>
-              <Text style={styles.body}>
+              <Text colorRole="details" style={styles.body}>
                 {[entry.email, entry.phone].filter(Boolean).join('  |  ')}
               </Text>
             </View>
@@ -246,6 +276,7 @@ export function CvSections({
 export function PageNumber() {
   return (
     <Text
+      colorRole="details"
       fixed
       style={styles.footer}
       render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}

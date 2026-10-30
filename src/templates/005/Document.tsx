@@ -39,12 +39,13 @@ function Section({
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={40}>
         <Text
+          colorRole="headings"
           style={[
             styles.heading,
             {
               color: appearance.accent,
-              borderTopColor: appearance.accent,
-              borderBottomColor: appearance.accent,
+              borderTopColor: appearance.colors?.accent ?? appearance.accent,
+              borderBottomColor: appearance.colors?.accent ?? appearance.accent,
               fontSize: appearance.fontSize * 1.15,
             },
           ]}
@@ -64,7 +65,7 @@ function EntryHeader({
   metadata,
   fontSize,
 }: {
-  title: string
+  title: ReactNode
   dates: string
   metadata?: string
   fontSize: number
@@ -72,14 +73,23 @@ function EntryHeader({
   return (
     <View style={styles.entryHeader} minPresenceAhead={25}>
       <View style={styles.titleRow}>
-        <Text style={styles.entryTitle}>{title}</Text>
+        <Text colorRole="headings" style={styles.entryTitle}>
+          {title}
+        </Text>
         {dates && (
-          <Text style={[styles.dates, { fontSize: fontSize * 0.9 }]}>
+          <Text
+            colorRole="details"
+            style={[styles.dates, { fontSize: fontSize * 0.9 }]}
+          >
             {dates}
           </Text>
         )}
       </View>
-      {metadata && <Text style={styles.metadata}>{metadata}</Text>}
+      {metadata && (
+        <Text colorRole="details" style={styles.metadata}>
+          {metadata}
+        </Text>
+      )}
     </View>
   )
 }
@@ -138,7 +148,17 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
     entry: TemplateProps['cv']['experience'][number],
   ) => (
     <EntryHeader
-      title={[entry.role, entry.employer].filter(Boolean).join(', ')}
+      title={
+        <>
+          {entry.role || entry.employer}
+          {entry.role && entry.employer && (
+            <Text
+              colorRole="details"
+              style={{ color: '#252a30' }}
+            >{`, ${entry.employer}`}</Text>
+          )}
+        </>
+      }
       dates={dateRange(entry.startDate, entry.endDate, entry.current)}
       metadata={entry.location}
       fontSize={appearance.fontSize}
@@ -156,9 +176,10 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
     <View style={styles.skillRow}>
       {row.map((skill) => (
         <Text key={skill.id} style={styles.skill} orphans={2} widows={2}>
-          {skill.level === null
-            ? skill.name
-            : `${skill.name} (${t(proficiencyLevels[skill.level - 1]!)})`}
+          {skill.name}
+          {skill.level !== null && (
+            <Text colorRole="details">{` (${t(proficiencyLevels[skill.level - 1]!)})`}</Text>
+          )}
         </Text>
       ))}
     </View>
@@ -166,11 +187,19 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
   const projectHeader = (entry: TemplateProps['cv']['projects'][number]) => (
     <>
       {entry.name && (
-        <Text style={styles.additionalTitle} minPresenceAhead={25}>
+        <Text
+          colorRole="headings"
+          style={styles.additionalTitle}
+          minPresenceAhead={25}
+        >
           {entry.name}
         </Text>
       )}
-      {entry.url && <Text style={styles.body}>{entry.url}</Text>}
+      {entry.url && (
+        <Text colorRole="details" style={styles.body}>
+          {entry.url}
+        </Text>
+      )}
     </>
   )
 
@@ -181,7 +210,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language}>
+      <PdfLanguage language={appearance.language} colors={appearance.colors}>
         <Page
           size={appearance.pageSize}
           style={[
@@ -193,6 +222,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
           <View style={styles.header}>
             <View style={styles.identity}>
               <Text
+                colorRole="headings"
                 style={[
                   styles.name,
                   {
@@ -205,6 +235,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
               </Text>
               {cv.personal.jobTitle && (
                 <Text
+                  colorRole="details"
                   style={[
                     styles.jobTitle,
                     { fontSize: appearance.fontSize * 1.45 },
@@ -292,14 +323,16 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
               {languages.length > 0 && (
                 <Text style={styles.bullet} orphans={2} widows={2}>
                   {'\u2022 '}
-                  <Text style={styles.additionalTitle}>{t('Languages')}: </Text>
+                  <Text colorRole="headings" style={styles.additionalTitle}>
+                    {t('Languages')}:{' '}
+                  </Text>
                   {languages.join(', ')}
                 </Text>
               )}
               {certifications.length > 0 && (
                 <Text style={styles.bullet} orphans={2} widows={2}>
                   {'\u2022 '}
-                  <Text style={styles.additionalTitle}>
+                  <Text colorRole="headings" style={styles.additionalTitle}>
                     {t('Certifications')}:{' '}
                   </Text>
                   {certifications.join(', ')}
@@ -311,12 +344,16 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
             <Section title="References" appearance={appearance}>
               {references.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
-                  <Text style={styles.additionalTitle} minPresenceAhead={25}>
+                  <Text
+                    colorRole="headings"
+                    style={styles.additionalTitle}
+                    minPresenceAhead={25}
+                  >
                     {[entry.name, entry.jobTitle, entry.organization]
                       .filter(Boolean)
                       .join(' - ')}
                   </Text>
-                  <Text style={styles.body}>
+                  <Text colorRole="details" style={styles.body}>
                     {[entry.email, entry.phone].filter(Boolean).join(' | ')}
                   </Text>
                 </View>

@@ -3,13 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { Appearance } from '../../domain/cv/types'
 import type { TemplateOption } from '../../templates/types'
 import { useTranslation } from '../../i18n/context'
-
-const accents = [
-  { value: '#177568', label: 'Forest' },
-  { value: '#3456a0', label: 'Cobalt' },
-  { value: '#8c4255', label: 'Rose' },
-  { value: '#292929', label: 'Ink' },
-] as const
+import { ColorSettings } from './ColorSettings'
 
 type TemplateGalleryProps = {
   options: readonly TemplateOption[]
@@ -128,35 +122,11 @@ export function TemplatePicker({
           </div>
         </div>
       </fieldset>
-      <fieldset className="plain-fieldset">
-        <legend className="setting-label">{t('Accent color')}</legend>
-        <div className="color-options">
-          {accents.map((accent) => (
-            <label
-              key={accent.value}
-              className="color-option"
-              title={t(accent.label)}
-            >
-              <input
-                className="sr-only"
-                type="radio"
-                name={`${groupId}-accent`}
-                aria-label={t(accent.label)}
-                checked={appearance.accent === accent.value}
-                onChange={() =>
-                  onChange({ ...appearance, accent: accent.value })
-                }
-              />
-              <span
-                className="color-swatch"
-                style={{ background: accent.value }}
-              >
-                {appearance.accent === accent.value && <Check size={17} />}
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <ColorSettings
+        appearance={appearance}
+        template={selected}
+        onChange={onChange}
+      />
       <fieldset className="plain-fieldset">
         <legend className="setting-label">{t('Text size')}</legend>
         <div className="segmented-control">

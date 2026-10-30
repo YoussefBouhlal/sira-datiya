@@ -24,6 +24,41 @@ function memoryStorage(): StoragePort {
 }
 
 describe('CV persistence', () => {
+  it('preserves legacy colors and round trips independent color overrides', () => {
+    const storage = memoryStorage()
+    const document = createDocument('sidebar')
+    document.appearance.accent = '#8c4255'
+    expect(parseBackup(serializeBackup(document))).toEqual(document)
+    expect(document.appearance.colors).toBeUndefined()
+    document.appearance.colors = { body: '#123456' }
+    expect(saveDocument(storage, document)).toEqual({ ok: true })
+    expect(loadDocument(storage)).toEqual({ status: 'ready', document })
+    expect(parseBackup(serializeBackup(document))).toEqual(document)
+    expect(document.appearance.accent).toBe('#8c4255')
+    document.appearance.colors = {
+      headings: '#ABCDEF',
+      details: '#456789',
+      body: '#222222',
+      accent: '#987654',
+      surface: '#eeeeee',
+    }
+    expect(parseBackup(serializeBackup(document))).toEqual(document)
+  })
+
+  it.each(['red', '#fff', '#12345g', 'url(example)', '', '#12345678'])(
+    'preserves unreadable saved data with an invalid color: %s',
+    (color) => {
+      const storage = memoryStorage()
+      const document = createDocument('modern')
+      document.appearance.colors = { headings: color }
+      const raw = JSON.stringify({ version: 2, ...document })
+      storage.setItem(STORAGE_KEY, raw)
+      expect(loadDocument(storage).status).toBe('blocked')
+      expect(storage.getItem(STORAGE_KEY)).toBe(raw)
+      expect(() => parseBackup(raw)).toThrow()
+    },
+  )
+
   it('defaults old drafts to English without writing and preserves language in backups', () => {
     const storage = memoryStorage()
     const document = createDocument('classic', 'ar')
