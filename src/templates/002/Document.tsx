@@ -1,4 +1,5 @@
 import { Document, Page } from '@react-pdf/renderer'
+import { modernTemplate } from './index'
 import { PdfLanguage, View } from '../shared/PdfLayout'
 import { pageLanguageStyle } from '../shared/localization'
 import { translate } from '../../i18n/messages'
@@ -21,7 +22,12 @@ export function ModernDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language} colors={appearance.colors}>
+      <PdfLanguage
+        language={appearance.language}
+        colors={appearance.colors}
+        headings={cv.headings}
+        headingDefaults={modernTemplate.headings}
+      >
         <Page
           size={appearance.pageSize}
           style={[

@@ -67,6 +67,27 @@ to the active template's default without overwriting the saved choice. Templates
 without display metadata remain text only. Unrated skills keep their names only;
 the accessible preview summary retains every supplied rating in all visual modes.
 
+## Custom section headings
+
+Optional `cv.headings` stores plain-text overrides keyed by logical section,
+including `details` and the `additionalInformation` group. These are CV content,
+not appearance or editor navigation labels. Overrides are trimmed, single-line,
+and limited to 80 Unicode code points. Blank values resolve to defaults, never
+hide headings or make empty sections visible. Invalid editor text stays local
+until corrected; the canonical draft retains the last valid heading.
+
+Template metadata declares supported heading keys and their default message
+keys. The editor exposes controls only for those keys, even when the section is
+empty. Overrides follow sections across templates and remain saved when not
+displayed. Custom wording stays literal, including casing and document-language
+changes; only defaults are translated. Group and member headings are independent.
+PDF preview, download, and accessible preview resolve the same heading text.
+Gallery samples continue using fictional content without custom headings.
+
+Existing version 1/2 drafts and backups without headings keep their defaults.
+Overrides autosave and round trip through version 2 backups. Start over and Load
+example replace them along with CV content; color reset leaves them unchanged.
+
 ## Color customization
 
 Color customization is an optional `appearance.colors` object with independent

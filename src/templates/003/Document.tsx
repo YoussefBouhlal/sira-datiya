@@ -6,12 +6,23 @@ import { Text } from '../shared/Text'
 import { proficiencyLevels } from '../../domain/cv/defaults'
 import { darkenColor, surfaceForeground } from '../../domain/cv/colors'
 import { CvSections, PageNumber, Portrait } from '../shared/content'
-import { resolveSkillProficiencyDisplay, type TemplateProps } from '../types'
+import {
+  resolveSectionHeading,
+  resolveSkillProficiencyDisplay,
+  type TemplateProps,
+} from '../types'
 import { sidebarTemplate } from './index'
 import { styles } from './styles'
 
 export function SidebarDocument({ cv, appearance }: TemplateProps) {
   const t = (text: string) => translate(appearance.language, text)
+  const heading = (key: keyof typeof sidebarTemplate.headings) =>
+    resolveSectionHeading(
+      cv.headings,
+      sidebarTemplate.headings,
+      key,
+      appearance.language,
+    )
   const { personal } = cv
   const contact = [
     personal.location,
@@ -36,7 +47,12 @@ export function SidebarDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language} colors={appearance.colors}>
+      <PdfLanguage
+        language={appearance.language}
+        colors={appearance.colors}
+        headings={cv.headings}
+        headingDefaults={sidebarTemplate.headings}
+      >
         <Page
           size={appearance.pageSize}
           style={[
@@ -81,7 +97,7 @@ export function SidebarDocument({ cv, appearance }: TemplateProps) {
                 {contact.length > 0 && (
                   <View style={styles.section}>
                     <Text style={styles.heading} minPresenceAhead={30}>
-                      {t('Details')}
+                      {heading('details')}
                     </Text>
                     {contact.map((value, index) => (
                       <Text
@@ -98,7 +114,7 @@ export function SidebarDocument({ cv, appearance }: TemplateProps) {
                 {skills.length > 0 && (
                   <View style={styles.section}>
                     <Text style={styles.heading} minPresenceAhead={35}>
-                      {t('Skills')}
+                      {heading('skills')}
                     </Text>
                     {skills.map((skill) => (
                       <View key={skill.id} style={styles.skill}>
@@ -151,7 +167,7 @@ export function SidebarDocument({ cv, appearance }: TemplateProps) {
                 {languages.length > 0 && (
                   <View style={styles.section}>
                     <Text style={styles.heading} minPresenceAhead={30}>
-                      {t('Languages')}
+                      {heading('languages')}
                     </Text>
                     {languages.map((language, index) => (
                       <Text key={index} style={styles.contact}>

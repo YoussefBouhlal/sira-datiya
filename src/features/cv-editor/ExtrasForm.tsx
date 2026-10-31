@@ -6,13 +6,19 @@ import {
   createSkill,
   proficiencyLevels,
 } from '../../domain/cv/defaults'
-import type { Appearance, CvData, Project } from '../../domain/cv/types'
+import type {
+  Appearance,
+  CvData,
+  Project,
+  SectionHeadingKey,
+} from '../../domain/cv/types'
 import {
   resolveSkillProficiencyDisplay,
   type TemplateOption,
 } from '../../templates/types'
 import { EntryGroup } from './EntryGroup'
 import { useTranslation } from '../../i18n/context'
+import { SectionHeadingField } from './SectionHeadingField'
 
 export function ExtrasForm({
   cv,
@@ -27,7 +33,16 @@ export function ExtrasForm({
   template: TemplateOption
   onAppearanceChange: (appearance: Appearance) => void
 }) {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
+  const heading = (section: SectionHeadingKey) => (
+    <SectionHeadingField
+      key={`${template.id}-${language}-${section}`}
+      cv={cv}
+      onChange={onChange}
+      template={template}
+      section={section}
+    />
+  )
   const displayModes = template.skillProficiencyDisplay?.modes ?? ['text']
   const displayLabels = {
     bar: 'Bar only',
@@ -45,6 +60,7 @@ export function ExtrasForm({
   return (
     <div className="extras-form">
       <h2 className="subsection-title">{t('Skills')}</h2>
+      {heading('skills')}
       {displayModes.length > 1 && (
         <div className="form-field">
           <label htmlFor="proficiency-display">
@@ -146,6 +162,8 @@ export function ExtrasForm({
         <Plus size={17} />
         {t('Add skill')}
       </button>
+      {heading('additionalInformation')}
+      {heading('languages')}
       <TextArea
         label="Languages"
         rows={3}
@@ -159,6 +177,7 @@ export function ExtrasForm({
         }
         placeholder={'English (native)\nFrench (conversational)'}
       />
+      {heading('certifications')}
       <TextArea
         label="Certifications"
         rows={3}
@@ -172,6 +191,7 @@ export function ExtrasForm({
         }
       />
       <h2 className="subsection-title">{t('Projects')}</h2>
+      {heading('projects')}
       {cv.projects.map((entry, index) => (
         <EntryGroup
           key={entry.id}
@@ -226,6 +246,7 @@ export function ExtrasForm({
         {t('Add project')}
       </button>
       <h2 className="subsection-title">{t('References')}</h2>
+      {heading('references')}
       {cv.references.map((reference, index) => (
         <EntryGroup
           key={reference.id}

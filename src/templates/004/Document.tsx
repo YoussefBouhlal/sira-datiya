@@ -8,6 +8,8 @@ import { PageNumber } from '../shared/content'
 import { Text } from '../shared/Text'
 import type { TemplateProps } from '../types'
 import { styles } from './styles'
+import { traditionalTemplate } from './index'
+import type { SectionHeadingKey } from '../../domain/cv/types'
 
 function Description({ text }: { text: string }) {
   return text
@@ -37,16 +39,17 @@ function Section({
   lead,
   children,
 }: {
-  title: string
+  title: SectionHeadingKey
   appearance: TemplateProps['appearance']
   lead?: ReactNode
   children: ReactNode
 }) {
-  const { t } = usePdfTranslation()
+  const { heading } = usePdfTranslation()
   return (
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={70}>
         <Text
+          section={title}
           colorRole="headings"
           style={[
             styles.heading,
@@ -62,7 +65,7 @@ function Section({
             },
           ]}
         >
-          {t(title)}
+          {heading(title)}
         </Text>
         {lead}
       </View>
@@ -222,7 +225,12 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language} colors={appearance.colors}>
+      <PdfLanguage
+        language={appearance.language}
+        colors={appearance.colors}
+        headings={cv.headings}
+        headingDefaults={traditionalTemplate.headings}
+      >
         <Page
           size={appearance.pageSize}
           style={[
@@ -273,7 +281,7 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
           </View>
           <View style={ruleStyle} />
           {cv.summary.trim() && (
-            <Section title="Profile" appearance={appearance}>
+            <Section title="summary" appearance={appearance}>
               <Text style={styles.profile} orphans={2} widows={2}>
                 {cv.summary}
               </Text>
@@ -282,7 +290,7 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
           )}
           {experience.length > 0 && (
             <Section
-              title="Experience"
+              title="experience"
               appearance={appearance}
               lead={experienceHeader(experience[0]!)}
             >
@@ -296,7 +304,7 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
           )}
           {education.length > 0 && (
             <Section
-              title="Education"
+              title="education"
               appearance={appearance}
               lead={educationHeader(education[0]!)}
             >
@@ -309,7 +317,7 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {skills.length > 0 && (
-            <Section title="Skills" appearance={appearance}>
+            <Section title="skills" appearance={appearance}>
               <Text style={styles.body} orphans={2} widows={2}>
                 {skills.map((skill, index) => (
                   <Text key={skill.id}>
@@ -324,14 +332,14 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {languages.length > 0 && (
-            <Section title="Languages" appearance={appearance}>
+            <Section title="languages" appearance={appearance}>
               <Text style={styles.body} orphans={2} widows={2}>
                 {languages.join(' / ')}
               </Text>
             </Section>
           )}
           {projects.length > 0 && (
-            <Section title="Projects" appearance={appearance}>
+            <Section title="projects" appearance={appearance}>
               {projects.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
                   {entry.name && (
@@ -354,12 +362,12 @@ export function TraditionalDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {certifications.length > 0 && (
-            <Section title="Certifications" appearance={appearance}>
+            <Section title="certifications" appearance={appearance}>
               <Description text={certifications.join('\n')} />
             </Section>
           )}
           {references.length > 0 && (
-            <Section title="References" appearance={appearance}>
+            <Section title="references" appearance={appearance}>
               {references.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
                   <Text

@@ -8,6 +8,8 @@ import { Text } from '../shared/Text'
 import type { TemplateProps } from '../types'
 import { PageNumber, Portrait } from '../shared/content'
 import { styles } from './styles'
+import { classicTemplate } from './index'
+import type { SectionHeadingKey } from '../../domain/cv/types'
 
 function Description({ text }: { text: string }) {
   return text
@@ -29,12 +31,12 @@ function Section({
   children,
   inline = false,
 }: {
-  title: string
+  title: SectionHeadingKey
   accent: string
   children: ReactNode
   inline?: boolean
 }) {
-  const { t } = usePdfTranslation()
+  const { heading } = usePdfTranslation()
   return (
     <View
       style={[
@@ -44,11 +46,12 @@ function Section({
       ]}
     >
       <Text
+        section={title}
         colorRole="headings"
         style={[styles.heading, ...(inline ? [styles.rail] : [])]}
         minPresenceAhead={40}
       >
-        {t(title)}
+        {heading(title)}
       </Text>
       {inline ? <View style={styles.content}>{children}</View> : children}
     </View>
@@ -108,7 +111,12 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language} colors={appearance.colors}>
+      <PdfLanguage
+        language={appearance.language}
+        colors={appearance.colors}
+        headings={cv.headings}
+        headingDefaults={classicTemplate.headings}
+      >
         <Page
           size={appearance.pageSize}
           style={[
@@ -150,7 +158,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           </View>
           {cv.summary.trim() && (
             <Section
-              title="Profile"
+              title="summary"
               accent={appearance.colors?.accent ?? appearance.accent}
               inline
             >
@@ -161,7 +169,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           )}
           {experience.length > 0 && (
             <Section
-              title="Experience"
+              title="experience"
               accent={appearance.colors?.accent ?? appearance.accent}
             >
               {experience.map((entry) => (
@@ -213,7 +221,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           )}
           {education.length > 0 && (
             <Section
-              title="Education"
+              title="education"
               accent={appearance.colors?.accent ?? appearance.accent}
             >
               {education.map((entry) => (
@@ -259,7 +267,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           )}
           {skills.length > 0 && (
             <Section
-              title="Skills"
+              title="skills"
               accent={appearance.colors?.accent ?? appearance.accent}
             >
               <Text style={styles.body} orphans={2} widows={2}>
@@ -277,7 +285,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           )}
           {languages.length > 0 && (
             <Section
-              title="Languages"
+              title="languages"
               accent={appearance.colors?.accent ?? appearance.accent}
               inline
             >
@@ -297,7 +305,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           )}
           {projects.length > 0 && (
             <Section
-              title="Projects"
+              title="projects"
               accent={appearance.colors?.accent ?? appearance.accent}
             >
               {projects.map((entry) => (
@@ -323,7 +331,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           )}
           {certifications.length > 0 && (
             <Section
-              title="Certifications"
+              title="certifications"
               accent={appearance.colors?.accent ?? appearance.accent}
             >
               <Description text={certifications.join('\n')} />
@@ -331,7 +339,7 @@ export function ClassicDocument({ cv, appearance }: TemplateProps) {
           )}
           {references.length > 0 && (
             <Section
-              title="References"
+              title="references"
               accent={appearance.colors?.accent ?? appearance.accent}
             >
               {references.map((entry) => (

@@ -9,6 +9,150 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  for (const template of templateRegistry.templates) {
+    it(`${template.id} wraps long and mixed-script headings within PDF pages`, async () => {
+      const render = await template.load()
+      for (const title of [
+        'Career achievements and selected professional contributions across many projects',
+        'W'.repeat(80),
+        '\u0627\u0644\u062e\u0628\u0631\u0627\u062a \u0627\u0644\u0645\u0647\u0646\u064a\u0629 / Career Journey',
+      ]) {
+        const cv = createExampleCv()
+        cv.headings = { summary: title, experience: title, skills: title }
+        const snapshot = structuredClone(cv)
+        for (const pageSize of ['A4', 'LETTER'] as const) {
+          const appearance = {
+            ...createDocument(template.id).appearance,
+            pageSize,
+          }
+          const buffer = await renderToBuffer(render({ cv, appearance }))
+          const task = getDocument({
+            data: new Uint8Array(buffer),
+            useSystemFonts: true,
+          })
+          try {
+            const pdf = await task.promise
+            const extracted: string[] = []
+            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+              const page = await pdf.getPage(pageNumber)
+              const items = (await page.getTextContent()).items.filter(
+                (item) => 'str' in item,
+              )
+              extracted.push(items.map((item) => item.str).join(' '))
+              for (const item of items.filter((item) => item.str.trim())) {
+                expect(item.transform[4], title).toBeGreaterThanOrEqual(-1)
+                expect(
+                  item.transform[4] + item.width,
+                  title,
+                ).toBeLessThanOrEqual(page.view[2]! + 1)
+                expect(item.transform[5], title).toBeGreaterThan(0)
+                expect(item.transform[5], title).toBeLessThanOrEqual(
+                  page.view[3]!,
+                )
+              }
+            }
+            const text = extracted.join(' ').replace(/[\s-]+/g, '')
+            if (/\p{Script=Arabic}/u.test(title)) {
+              expect(text).toContain('CareerJourney')
+              for (const character of Array.from(
+                title.replace(/\s/g, ''),
+              ).filter((value) => /\p{Script=Arabic}/u.test(value)))
+                expect(text).toContain(character)
+            } else expect(text).toContain(title.replace(/\s+/g, ''))
+          } finally {
+            await task.destroy()
+          }
+          expect(cv).toEqual(snapshot)
+        }
+      }
+    })
+
+    it(`${template.id} renders literal custom headings without adding empty sections`, async () => {
+      const cv = createExampleCv()
+      cv.certifications = ['Example certificate']
+      cv.projects = [
+        { id: 'project', name: 'Example project', url: '', description: '' },
+      ]
+      cv.references = [
+        {
+          id: 'reference',
+          name: 'Jordan Example',
+          jobTitle: '',
+          organization: '',
+          email: '',
+          phone: '',
+        },
+      ]
+      cv.headings = {
+        details: 'Contact me',
+        summary: 'My Profile',
+        experience: 'Career Journey',
+        education: 'My Studies',
+        skills: 'My Toolkit',
+        languages: 'Spoken Words',
+        certifications: 'My Credentials',
+        projects: 'Selected Work',
+        references: 'My Contacts',
+        additionalInformation: 'More About Me',
+      }
+      const render = await template.load()
+      for (const language of ['en', 'fr', 'ar'] as const) {
+        const appearance = createDocument(template.id, language).appearance
+        const buffer = await renderToBuffer(render({ cv, appearance }))
+        const task = getDocument({
+          data: new Uint8Array(buffer),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          const text: string[] = []
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber)
+            text.push(
+              (await page.getTextContent()).items
+                .filter((item) => 'str' in item)
+                .map((item) => item.str)
+                .join(' '),
+            )
+          }
+          const extracted = text.join(' ').replace(/\s+/g, '')
+          for (const key of Object.keys(template.headings ?? {})) {
+            const value = cv.headings[key as keyof typeof cv.headings]
+            expect(extracted, `${template.id} ${language} ${key}`).toContain(
+              value?.replace(/\s+/g, ''),
+            )
+          }
+        } finally {
+          await task.destroy()
+        }
+      }
+      const empty = createEmptyCv()
+      empty.headings = cv.headings
+      const buffer = await renderToBuffer(
+        render({
+          cv: empty,
+          appearance: createDocument(template.id).appearance,
+        }),
+      )
+      const task = getDocument({
+        data: new Uint8Array(buffer),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const page = await pdf.getPage(1)
+        const text = (await page.getTextContent()).items
+          .filter((item) => 'str' in item)
+          .map((item) => item.str)
+          .join(' ')
+        for (const value of Object.values(cv.headings))
+          expect(text).not.toContain(value)
+      } finally {
+        await task.destroy()
+      }
+    })
+  }
+
   it('resolves proficiency display capabilities without changing the preferred mode', () => {
     for (const template of templateRegistry.templates) {
       const appearance = createDocument(template.id).appearance

@@ -1,11 +1,13 @@
 import { Image as PdfImage, View as PdfView } from '@react-pdf/renderer'
-import type { ComponentProps, ReactNode } from 'react'
+import { useContext, type ComponentProps, type ReactNode } from 'react'
 import type { Language } from '../../i18n/messages'
 import type { TextProps } from '@react-pdf/renderer'
 import type { ColorScheme } from '../../domain/cv/colors'
 import { PdfColorContext } from './color-context'
 import { Text } from './Text'
+import type { SectionHeadings } from '../types'
 import {
+  PdfHeadingContext,
   PdfLanguageContext,
   languageStyle,
   usePdfTranslation,
@@ -14,17 +16,30 @@ import {
 export function PdfLanguage({
   language,
   colors,
+  headings,
+  headingDefaults,
   children,
 }: {
   language: Language
   colors?: ColorScheme
+  headings?: Readonly<SectionHeadings>
+  headingDefaults?: Readonly<SectionHeadings>
   children: ReactNode
 }) {
+  const inheritedHeadings = useContext(PdfHeadingContext)
   return (
     <PdfLanguageContext.Provider value={language}>
-      <PdfColorContext.Provider value={colors ?? {}}>
-        {children}
-      </PdfColorContext.Provider>
+      <PdfHeadingContext.Provider
+        value={
+          headingDefaults
+            ? { headings, defaults: headingDefaults }
+            : inheritedHeadings
+        }
+      >
+        <PdfColorContext.Provider value={colors ?? {}}>
+          {children}
+        </PdfColorContext.Provider>
+      </PdfHeadingContext.Provider>
     </PdfLanguageContext.Provider>
   )
 }

@@ -6,8 +6,10 @@ import type { ReactNode } from 'react'
 import { proficiencyLevels } from '../../domain/cv/defaults'
 import { PageNumber } from '../shared/content'
 import { Text } from '../shared/Text'
-import type { TemplateProps } from '../types'
+import { resolveSectionHeading, type TemplateProps } from '../types'
 import { styles } from './styles'
+import { primeAtsTemplate } from './index'
+import type { SectionHeadingKey } from '../../domain/cv/types'
 
 function Description({ text }: { text: string }) {
   return text
@@ -29,16 +31,17 @@ function Section({
   lead,
   children,
 }: {
-  title: string
+  title: SectionHeadingKey
   appearance: TemplateProps['appearance']
   lead?: ReactNode
   children: ReactNode
 }) {
-  const { t } = usePdfTranslation()
+  const { heading } = usePdfTranslation()
   return (
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={40}>
         <Text
+          section={title}
           colorRole="headings"
           style={[
             styles.heading,
@@ -50,7 +53,7 @@ function Section({
             },
           ]}
         >
-          {t(title)}
+          {heading(title)}
         </Text>
         {lead}
       </View>
@@ -210,7 +213,12 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language} colors={appearance.colors}>
+      <PdfLanguage
+        language={appearance.language}
+        colors={appearance.colors}
+        headings={cv.headings}
+        headingDefaults={primeAtsTemplate.headings}
+      >
         <Page
           size={appearance.pageSize}
           style={[
@@ -259,7 +267,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
             )}
           </View>
           {cv.summary.trim() && (
-            <Section title="Summary" appearance={appearance}>
+            <Section title="summary" appearance={appearance}>
               <Text style={styles.body} orphans={2} widows={2}>
                 {cv.summary}
               </Text>
@@ -267,7 +275,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {experience.length > 0 && (
             <Section
-              title="Professional Experience"
+              title="experience"
               appearance={appearance}
               lead={experienceHeader(experience[0]!)}
             >
@@ -281,7 +289,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {education.length > 0 && (
             <Section
-              title="Education"
+              title="education"
               appearance={appearance}
               lead={educationHeader(education[0]!)}
             >
@@ -295,7 +303,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {skills.length > 0 && (
             <Section
-              title="Technical Skills"
+              title="skills"
               appearance={appearance}
               lead={skillRow(skillRows[0]!)}
             >
@@ -306,7 +314,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {projects.length > 0 && (
             <Section
-              title="Projects"
+              title="projects"
               appearance={appearance}
               lead={projectHeader(projects[0]!)}
             >
@@ -319,12 +327,18 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {(languages.length > 0 || certifications.length > 0) && (
-            <Section title="Additional Information" appearance={appearance}>
+            <Section title="additionalInformation" appearance={appearance}>
               {languages.length > 0 && (
                 <Text style={styles.bullet} orphans={2} widows={2}>
                   {'\u2022 '}
                   <Text colorRole="headings" style={styles.additionalTitle}>
-                    {t('Languages')}:{' '}
+                    {resolveSectionHeading(
+                      cv.headings,
+                      primeAtsTemplate.headings,
+                      'languages',
+                      appearance.language,
+                    )}
+                    :{' '}
                   </Text>
                   {languages.join(', ')}
                 </Text>
@@ -333,7 +347,13 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
                 <Text style={styles.bullet} orphans={2} widows={2}>
                   {'\u2022 '}
                   <Text colorRole="headings" style={styles.additionalTitle}>
-                    {t('Certifications')}:{' '}
+                    {resolveSectionHeading(
+                      cv.headings,
+                      primeAtsTemplate.headings,
+                      'certifications',
+                      appearance.language,
+                    )}
+                    :{' '}
                   </Text>
                   {certifications.join(', ')}
                 </Text>
@@ -341,7 +361,7 @@ export function PrimeAtsDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {references.length > 0 && (
-            <Section title="References" appearance={appearance}>
+            <Section title="references" appearance={appearance}>
               {references.map((entry) => (
                 <View key={entry.id} style={styles.entry}>
                   <Text

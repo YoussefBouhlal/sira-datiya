@@ -7,6 +7,7 @@ import { ExtrasForm } from './ExtrasForm'
 import { PortraitField } from './PortraitField'
 import type { EditorStep } from './steps'
 import { useTranslation } from '../../i18n/context'
+import { SectionHeadingField } from './SectionHeadingField'
 
 export function CvEditor({
   cv,
@@ -24,19 +25,36 @@ export function CvEditor({
   onAppearanceChange: (appearance: Appearance) => void
 }) {
   const { t, language } = useTranslation()
+  const heading = (
+    section: 'details' | 'summary' | 'experience' | 'education',
+  ) => (
+    <SectionHeadingField
+      key={`${template.id}-${language}-${section}`}
+      cv={cv}
+      onChange={onChange}
+      template={template}
+      section={section}
+    />
+  )
   if (step === 'experience')
     return (
-      <ExperienceForm
-        entries={cv.experience}
-        onChange={(experience) => onChange({ ...cv, experience })}
-      />
+      <>
+        {heading('experience')}
+        <ExperienceForm
+          entries={cv.experience}
+          onChange={(experience) => onChange({ ...cv, experience })}
+        />
+      </>
     )
   if (step === 'education')
     return (
-      <EducationForm
-        entries={cv.education}
-        onChange={(education) => onChange({ ...cv, education })}
-      />
+      <>
+        {heading('education')}
+        <EducationForm
+          entries={cv.education}
+          onChange={(education) => onChange({ ...cv, education })}
+        />
+      </>
     )
   if (step === 'skills')
     return (
@@ -51,6 +69,7 @@ export function CvEditor({
   if (step === 'summary')
     return (
       <div className="summary-form">
+        {heading('summary')}
         <TextArea
           label="Professional summary"
           rows={12}
@@ -69,6 +88,7 @@ export function CvEditor({
     onChange({ ...cv, personal: { ...cv.personal, [field]: value } })
   return (
     <div className="field-grid">
+      {heading('details')}
       <Field
         label="Full name"
         autoComplete="name"

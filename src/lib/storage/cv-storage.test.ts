@@ -24,6 +24,53 @@ function memoryStorage(): StoragePort {
 }
 
 describe('CV persistence', () => {
+  it('round trips custom headings and normalizes surrounding whitespace', () => {
+    const storage = memoryStorage()
+    const document = createDocument('sidebar', 'ar')
+    document.cv.headings = {
+      summary: '  My profile  ',
+      experience: '\u062e\u0628\u0631\u0627\u062a\u064a / Career',
+      additionalInformation: 'More about me',
+    }
+    const normalized = {
+      ...document,
+      cv: {
+        ...document.cv,
+        headings: { ...document.cv.headings, summary: 'My profile' },
+      },
+    }
+    expect(parseBackup(serializeBackup(document))).toEqual(normalized)
+    expect(saveDocument(storage, document)).toEqual({ ok: true })
+    expect(loadDocument(storage)).toEqual({
+      status: 'ready',
+      document: normalized,
+    })
+    document.cv.headings = { summary: '\u{1f600}'.repeat(80) }
+    expect(parseBackup(serializeBackup(document))).toEqual(document)
+  })
+
+  it.each([
+    'x'.repeat(81),
+    'First\nSecond',
+    'First\rSecond',
+    'First\u2028Second',
+  ])(
+    'preserves unreadable saved data with an invalid heading: %s',
+    (heading) => {
+      const storage = memoryStorage()
+      const document = createDocument('modern')
+      const raw = JSON.stringify({
+        version: 2,
+        ...document,
+        cv: { ...document.cv, headings: { summary: heading } },
+      })
+      storage.setItem(STORAGE_KEY, raw)
+      expect(loadDocument(storage).status).toBe('blocked')
+      expect(storage.getItem(STORAGE_KEY)).toBe(raw)
+      expect(() => parseBackup(raw)).toThrow()
+    },
+  )
+
   it.each(['bar', 'text', 'both'] as const)(
     'round trips proficiency display %s without changing skill ratings',
     (mode) => {

@@ -80,7 +80,7 @@ export function CvSections({
   appearance,
   variant = 'standard',
 }: TemplateProps & { variant?: 'standard' | 'sidebar' }) {
-  const { t, dates: dateRange } = usePdfTranslation()
+  const { t, heading, dates: dateRange } = usePdfTranslation()
   const sidebar = variant === 'sidebar'
   const headingStyle = sidebar
     ? {
@@ -117,8 +117,13 @@ export function CvSections({
     <>
       {cv.summary.trim() && (
         <View style={sectionStyle}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={35}>
-            {t('Profile')}
+          <Text
+            section="summary"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={35}
+          >
+            {heading('summary')}
           </Text>
           <Text style={styles.body} orphans={2} widows={2}>
             {cv.summary}
@@ -127,8 +132,13 @@ export function CvSections({
       )}
       {experience.length > 0 && (
         <View style={sectionStyle}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={65}>
-            {t(sidebar ? 'Employment History' : 'Experience')}
+          <Text
+            section="experience"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={65}
+          >
+            {heading('experience')}
           </Text>
           {experience.map((entry) => (
             <View key={entry.id} style={styles.entry}>
@@ -159,8 +169,13 @@ export function CvSections({
       )}
       {education.length > 0 && (
         <View style={sectionStyle}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={55}>
-            {t('Education')}
+          <Text
+            section="education"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={55}
+          >
+            {heading('education')}
           </Text>
           {education.map((entry) => (
             <View key={entry.id} style={styles.entry}>
@@ -190,8 +205,13 @@ export function CvSections({
       )}
       {!sidebar && skills.length > 0 && (
         <View style={styles.section}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={30}>
-            {t('Skills')}
+          <Text
+            section="skills"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={30}
+          >
+            {heading('skills')}
           </Text>
           <Text style={styles.body}>
             {skills.map((skill, index) => (
@@ -208,8 +228,13 @@ export function CvSections({
       )}
       {projects.length > 0 && (
         <View style={sectionStyle}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={55}>
-            {t('Projects')}
+          <Text
+            section="projects"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={55}
+          >
+            {heading('projects')}
           </Text>
           {projects.map((entry) => (
             <View key={entry.id} style={styles.entry}>
@@ -232,24 +257,39 @@ export function CvSections({
       )}
       {!sidebar && cv.languages.some((language) => language.trim()) && (
         <View style={styles.section}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={30}>
-            {t('Languages')}
+          <Text
+            section="languages"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={30}
+          >
+            {heading('languages')}
           </Text>
           <Text style={styles.body}>{cv.languages.join('  /  ')}</Text>
         </View>
       )}
       {cv.certifications.some((certification) => certification.trim()) && (
         <View style={sectionStyle}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={30}>
-            {t('Certifications')}
+          <Text
+            section="certifications"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={30}
+          >
+            {heading('certifications')}
           </Text>
           <Description text={cv.certifications.join('\n')} />
         </View>
       )}
       {references.length > 0 && (
         <View style={sectionStyle}>
-          <Text colorRole="headings" style={headingStyle} minPresenceAhead={45}>
-            {t('References')}
+          <Text
+            section="references"
+            colorRole="headings"
+            style={headingStyle}
+            minPresenceAhead={45}
+          >
+            {heading('references')}
           </Text>
           {references.map((entry) => (
             <View key={entry.id} style={styles.entry}>

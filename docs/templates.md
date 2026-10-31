@@ -87,6 +87,24 @@ contrast against white paper or heading bands produces a non-blocking warning.
 Palettes replace all five roles; subsequent edits remain independent. Gallery
 thumbnails retain their fixed sample appearance.
 
+## Section headings
+
+Definitions declare `headings`, a map from supported logical section keys to
+default English message keys. Reuse `defaultSectionHeadings` for the common
+sections and override wording or add supported keys explicitly. Omitted keys
+have no editor control; do not introduce new layout headings for saved overrides.
+Template 003 supports `details`; 005 additionally supports the independent
+`additionalInformation` group and its `languages`/`certifications` member labels.
+
+Pass `cv.headings` and the definition's `headings` as `headings` and
+`headingDefaults` to the outer `PdfLanguage`. Shared PDF components resolve
+logical keys with `usePdfTranslation().heading`. Nested `PdfLanguage` providers
+inherit heading settings. Use the shared `Text` component's `section` prop for
+headings with case transforms so custom casing stays literal. Renderers outside
+that provider's context can call `resolveSectionHeading` with document language.
+Never translate the resolved custom text again. Preserve existing conditional
+section rendering and allow long headings to wrap without clipping.
+
 ## Skill proficiency display
 
 `appearance.skillProficiencyDisplay` optionally stores `bar`, `text`, or `both`.
