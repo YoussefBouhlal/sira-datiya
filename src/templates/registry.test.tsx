@@ -6,8 +6,98 @@ import { createDocument, createEmptyCv } from '../domain/cv/defaults'
 import { createExampleCv } from '../domain/cv/example'
 import { translate } from '../i18n/messages'
 import { createTemplateRegistry, templateRegistry } from './registry'
+import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it('resolves proficiency display capabilities without changing the preferred mode', () => {
+    for (const template of templateRegistry.templates) {
+      const appearance = createDocument(template.id).appearance
+      expect(resolveSkillProficiencyDisplay(template, undefined)).toBe(
+        template.id === 'sidebar' ? 'both' : 'text',
+      )
+      for (const preferred of ['bar', 'text', 'both'] as const) {
+        appearance.skillProficiencyDisplay = preferred
+        expect(resolveSkillProficiencyDisplay(template, preferred)).toBe(
+          template.id === 'sidebar' ? preferred : 'text',
+        )
+        expect(appearance.skillProficiencyDisplay).toBe(preferred)
+      }
+      if (template.skillProficiencyDisplay)
+        expect(template.skillProficiencyDisplay.modes).toContain(
+          template.skillProficiencyDisplay.defaultMode,
+        )
+    }
+  })
+
+  it.each(['en', 'fr', 'ar'] as const)(
+    'renders proficiency display labels and bar geometry in %s PDFs',
+    async (language) => {
+      const template = templateRegistry.resolve('sidebar')
+      const render = await template.load()
+      const cv = createEmptyCv()
+      cv.personal.fullName = 'Avery Example'
+      cv.skills = [
+        { id: 'rated', name: 'Rated capability', level: 3 },
+        { id: 'unrated', name: 'Unrated capability', level: null },
+        { id: 'blank', name: ' ', level: 5 },
+      ]
+      const snapshot = structuredClone(cv)
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const drawings: number[] = []
+        for (const mode of ['text', 'bar', 'both', undefined] as const) {
+          const appearance = {
+            ...createDocument(template.id, language).appearance,
+            pageSize,
+            skillProficiencyDisplay: mode,
+          }
+          const buffer = await renderToBuffer(render({ cv, appearance }))
+          const task = getDocument({
+            data: new Uint8Array(buffer),
+            useSystemFonts: true,
+          })
+          try {
+            const pdf = await task.promise
+            expect(pdf.numPages).toBe(1)
+            const page = await pdf.getPage(1)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            const text = items.map((item) => item.str).join(' ')
+            expect(text).toContain('Rated capability')
+            expect(text).toContain('Unrated capability')
+            const label = translate(language, 'Intermediate')
+            if (mode === 'bar') expect(text).not.toContain(label)
+            else expect(text.match(new RegExp(label, 'g'))).toHaveLength(1)
+            expect(text).not.toContain(translate(language, 'Expert'))
+            expect(
+              items.some(
+                (item) => item.str.trim() === translate(language, 'Unrated'),
+              ),
+            ).toBe(false)
+            for (const item of items.filter((item) => item.str.trim())) {
+              expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+              expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                page.view[2]! + 1,
+              )
+              expect(item.transform[5]).toBeGreaterThan(0)
+            }
+            const operators = await page.getOperatorList()
+            drawings.push(
+              operators.fnArray.filter((value) => value === OPS.constructPath)
+                .length,
+            )
+          } finally {
+            await task.destroy()
+          }
+          expect(cv).toEqual(snapshot)
+        }
+        expect(drawings[1]).toBe(drawings[0]! + 4)
+        expect(drawings[2]).toBe(drawings[1])
+        expect(drawings[3]).toBe(drawings[2])
+      }
+    },
+  )
+
   for (const { id } of templateRegistry.templates) {
     it(`${id} applies independent color roles to real PDFs`, async () => {
       const cv = createExampleCv()

@@ -6,7 +6,8 @@ import { Text } from '../shared/Text'
 import { proficiencyLevels } from '../../domain/cv/defaults'
 import { darkenColor, surfaceForeground } from '../../domain/cv/colors'
 import { CvSections, PageNumber, Portrait } from '../shared/content'
-import type { TemplateProps } from '../types'
+import { resolveSkillProficiencyDisplay, type TemplateProps } from '../types'
+import { sidebarTemplate } from './index'
 import { styles } from './styles'
 
 export function SidebarDocument({ cv, appearance }: TemplateProps) {
@@ -20,6 +21,10 @@ export function SidebarDocument({ cv, appearance }: TemplateProps) {
     personal.linkedin,
   ].filter((value) => value.trim())
   const skills = cv.skills.filter((skill) => skill.name.trim())
+  const proficiencyDisplay = resolveSkillProficiencyDisplay(
+    sidebarTemplate,
+    appearance.skillProficiencyDisplay,
+  )
   const languages = cv.languages.filter((language) => language.trim())
   const backgroundColor =
     appearance.colors?.surface ?? darkenColor(appearance.accent)
@@ -106,31 +111,37 @@ export function SidebarDocument({ cv, appearance }: TemplateProps) {
                         </Text>
                         {skill.level !== null && (
                           <View wrap={false}>
-                            <Text
-                              style={[
-                                styles.level,
-                                ...(appearance.colors?.surface
-                                  ? [{ opacity: 1 }]
-                                  : []),
-                              ]}
-                            >
-                              {t(proficiencyLevels[skill.level - 1]!)}
-                            </Text>
-                            <View
-                              style={[
-                                styles.track,
-                                { backgroundColor: foreground },
-                              ]}
-                            />
-                            <View
-                              style={[
-                                styles.fill,
-                                {
-                                  width: `${skill.level * 20}%`,
-                                  backgroundColor: foreground,
-                                },
-                              ]}
-                            />
+                            {proficiencyDisplay !== 'bar' && (
+                              <Text
+                                style={[
+                                  styles.level,
+                                  ...(appearance.colors?.surface
+                                    ? [{ opacity: 1 }]
+                                    : []),
+                                ]}
+                              >
+                                {t(proficiencyLevels[skill.level - 1]!)}
+                              </Text>
+                            )}
+                            {proficiencyDisplay !== 'text' && (
+                              <>
+                                <View
+                                  style={[
+                                    styles.track,
+                                    { backgroundColor: foreground },
+                                  ]}
+                                />
+                                <View
+                                  style={[
+                                    styles.fill,
+                                    {
+                                      width: `${skill.level * 20}%`,
+                                      backgroundColor: foreground,
+                                    },
+                                  ]}
+                                />
+                              </>
+                            )}
                           </View>
                         )}
                       </View>

@@ -16,6 +16,9 @@ export type Project = z.infer<typeof projectSchema>
 export type Skill = z.infer<typeof skillSchema>
 export type Reference = z.infer<typeof referenceSchema>
 export type Appearance = z.infer<typeof appearanceSchema>
+export type SkillProficiencyDisplay = NonNullable<
+  Appearance['skillProficiencyDisplay']
+>
 export type CvDocument = { cv: CvData; appearance: Appearance }
 export type DeepReadonly<Value> = {
   readonly [Key in keyof Value]: Value[Key] extends object

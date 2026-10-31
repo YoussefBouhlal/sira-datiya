@@ -60,6 +60,13 @@ The app sets HTML language and direction from that canonical setting and supplie
 
 Skills have stable IDs and optional five-level proficiency ratings. References have stable IDs and an explicit user-controlled order. Portraits are optional local PNG/JPEG uploads, center-cropped and resized to 512 square pixels and re-encoded as JPEG data URLs of at most 270,000 characters before entering the canonical draft. No remote image sources are accepted. Portraits and references are CV content, so backups and all templates preserve them.
 
+Skill proficiency display is an optional appearance preference, independent of
+the ratings. Template metadata declares supported modes and the default; the
+Skills editor exposes only meaningful choices. Unsupported preferences resolve
+to the active template's default without overwriting the saved choice. Templates
+without display metadata remain text only. Unrated skills keep their names only;
+the accessible preview summary retains every supplied rating in all visual modes.
+
 ## Color customization
 
 Color customization is an optional `appearance.colors` object with independent

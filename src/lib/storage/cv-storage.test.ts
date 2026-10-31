@@ -24,6 +24,36 @@ function memoryStorage(): StoragePort {
 }
 
 describe('CV persistence', () => {
+  it.each(['bar', 'text', 'both'] as const)(
+    'round trips proficiency display %s without changing skill ratings',
+    (mode) => {
+      const storage = memoryStorage()
+      const document = createDocument('sidebar')
+      document.cv.skills = [{ id: 'skill-1', name: 'Research', level: 3 }]
+      expect(parseBackup(serializeBackup(document))).toEqual(document)
+      expect(document.appearance.skillProficiencyDisplay).toBeUndefined()
+      document.appearance.skillProficiencyDisplay = mode
+      expect(saveDocument(storage, document)).toEqual({ ok: true })
+      expect(loadDocument(storage)).toEqual({ status: 'ready', document })
+      expect(parseBackup(serializeBackup(document))).toEqual(document)
+      expect(document.cv.skills[0]?.level).toBe(3)
+    },
+  )
+
+  it('preserves unreadable data with an invalid proficiency display', () => {
+    const storage = memoryStorage()
+    const document = createDocument('sidebar')
+    const raw = JSON.stringify({
+      version: 2,
+      ...document,
+      appearance: { ...document.appearance, skillProficiencyDisplay: 'hidden' },
+    })
+    storage.setItem(STORAGE_KEY, raw)
+    expect(loadDocument(storage).status).toBe('blocked')
+    expect(storage.getItem(STORAGE_KEY)).toBe(raw)
+    expect(() => parseBackup(raw)).toThrow()
+  })
+
   it('preserves legacy colors and round trips independent color overrides', () => {
     const storage = memoryStorage()
     const document = createDocument('sidebar')
