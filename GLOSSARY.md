@@ -62,6 +62,9 @@ A template that prioritizes readable CV text for applicant-tracking systems. The
 **Portrait**:
 An optional image of the person whose CV is being prepared.
 
+**Sample portrait**:
+A neutral image placeholder in a template sample that demonstrates where a portrait can appear, separate from the person's own CV.
+
 **Skill proficiency**:
 An optional self-assessed skill level: Beginner, Elementary, Intermediate, Advanced, or Expert. An unrated skill has no proficiency assessment.
 _Avoid_: Skill percentage

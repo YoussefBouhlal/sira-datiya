@@ -38,7 +38,7 @@ export const editorialTemplate = {
 } satisfies TemplateDefinition
 ```
 
-Keep IDs stable: they are persisted. `typography` describes the design, not a renderer branch. The gallery, preview, and download flow consume definitions automatically. Gallery thumbnails are generated locally from each actual renderer using consistent fictional content; no separate illustration or thumbnail asset needs to be maintained.
+Keep IDs stable: they are persisted. `typography` describes the design, not a renderer branch. The gallery, preview, and download flow consume definitions automatically. Gallery thumbnails are generated locally from each actual renderer using consistent fictional content and a neutral gray sample portrait in the template's existing portrait layout; no separate illustration or thumbnail asset needs to be maintained. The sample portrait belongs only to gallery thumbnails, never to Load example, the person's CV preview, or their downloaded PDF.
 
 Optional `layout` metadata (`single-column` or `two-column`) describes the design; it is not displayed in the selected-template summary. That summary shows only the thumbnail and Browse templates button, without a template number or layout label. Omitted layout means single-column. Keep this metadata consistent with the actual design; the renderer still owns the column layout. Sidebar uses `two-column`. Its sidebar background repeats on every PDF page, while identity and contact content flow once. Both columns may continue onto later pages. It renders skill proficiency as bars with named levels; Classic and Studio use named text levels. All templates render portraits and references when supplied.
 

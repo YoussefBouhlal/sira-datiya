@@ -7,6 +7,9 @@ import { PdfCanvas } from './PdfCanvas'
 import { generatePdfDocument } from './use-pdf-document'
 import { useTranslation } from '../../i18n/context'
 
+const samplePortrait =
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAAAAADmVT4XAAABKElEQVR4nO3YyxGDMAxFUfrvgCZTQ7aZBH2eUJA9c7039+yQfLyGzwEAAAAAAAAAAAAAAID61fPzPA84v8+zgJ98mVACXOaLhArA7FcEBYDTLwh0gNvXBTIg6MsCFRD2VcFugERfFGwGSPU1wV6AZF8SAAAAAAAAAHv9DecB4xPRPGB8Kp4HjG9G87vh/HY8/z4w/0Iy/0Z0SSh+BwAAAAAAAABQBfz0q4L9RjKnXjJstZql6qpBAAh9QZAGSHmBkATI+TQhByj1c4IUoNhPCTKAcj8jiAE38hlCCLjZDwUR4HY/EqwOaOgHAh/Q0vcFLqCp7wqWBrT1PYEDaOw7goUBrX1bsC6guW8KAFiA9r4lAGAA/tA3BAAAAAAAAAAAAKtORACe2wvepVWsQGAXKeQAAAAASUVORK5CYII='
+
 const sampleDocuments = new WeakMap<
   TemplateDefinition,
   Map<string, Promise<Blob>>
@@ -60,11 +63,9 @@ export function TemplateThumbnail({
         fontSize: 11,
         pageSize: 'A4',
       }
-      pending = generatePdfDocument(
-        createExampleCv(language),
-        appearance,
-        template,
-      )
+      const sample = createExampleCv(language)
+      sample.personal.portrait = samplePortrait
+      pending = generatePdfDocument(sample, appearance, template)
       documents.set(language, pending)
     }
     void pending.then(
