@@ -4,6 +4,25 @@ const shortText = z.string().max(500)
 const longText = z.string().max(20_000)
 const month = z.string().regex(/^(?:\d{4}-(?:0[1-9]|1[0-2]))?$/)
 
+export const sectionHeadingKeys = [
+  'details',
+  'summary',
+  'experience',
+  'education',
+  'skills',
+  'languages',
+  'certifications',
+  'projects',
+  'references',
+  'additionalInformation',
+] as const
+
+export const sectionHeadingSchema = z
+  .string()
+  .regex(/^[^\r\n\u2028\u2029]*$/u)
+  .trim()
+  .refine((text) => Array.from(text).length <= 80)
+
 export const experienceSchema = z.object({
   id: z.string().min(1),
   role: shortText,
@@ -47,6 +66,9 @@ export const referenceSchema = z.object({
 })
 
 export const cvSchema = z.object({
+  headings: z
+    .partialRecord(z.enum(sectionHeadingKeys), sectionHeadingSchema)
+    .optional(),
   personal: z.object({
     fullName: shortText,
     jobTitle: shortText,

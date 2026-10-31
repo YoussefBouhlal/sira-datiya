@@ -7,6 +7,16 @@ A CV presents a person's professional background. Its content is independent of 
 **CV content**:
 The personal details, profile, experience, education, skills, languages, certifications, projects, and references included in a CV.
 
+**CV section heading**:
+The text that labels a section of the CV, distinct from editor navigation labels and the person's professional title.
+_Avoid_: Section title
+
+**Custom section heading**:
+A person's own wording for a CV section heading, used in the preview and exported CV. It belongs to the CV rather than a particular template and remains as written when the document language changes.
+
+**CV section group**:
+Related CV sections presented together under a shared heading, such as languages and certifications under Additional Information. The group's heading is distinct from the headings of its member sections.
+
 **Template**:
 A visual presentation of CV content. Choosing a different template does not change the content.
 
@@ -28,7 +38,7 @@ _Avoid_: Primary color, secondary color, third color
 A ready-made combination of colors for the CV color roles, used as a starting point for a color scheme.
 
 **Document language**:
-The single language used for the builder interface and generated CV labels. It does not determine or translate the person's written CV content.
+The single language used for the builder interface and default CV labels. It does not determine or translate the person's written CV content or custom section headings.
 _Avoid_: Interface language, CV language
 
 **Initial language choice**:

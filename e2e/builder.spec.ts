@@ -621,6 +621,178 @@ test('appearance-only drafts retain styling through opening template selection',
     .toEqual({ version: 2, ...document })
 })
 
+test('custom section headings persist, validate, export, restore and reset', async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example', exact: true }).click()
+  async function edit() {
+    const switcher = page.getByRole('group', { name: 'Workspace view' })
+    if (await switcher.isVisible())
+      await switcher.getByRole('button', { name: 'Edit', exact: true }).click()
+  }
+  async function savedHeadings() {
+    return page.evaluate(
+      (key) =>
+        JSON.parse(localStorage.getItem(key) ?? '{}').cv?.headings ?? null,
+      storageKey,
+    )
+  }
+  await page.getByRole('button', { name: /Summary/ }).click()
+  const disclosure = page.getByText('Edit heading: Profile', { exact: true })
+  await disclosure.focus()
+  await page.keyboard.press('Enter')
+  const input = page.getByLabel('Profile heading', { exact: true })
+  await input.fill('  My Profile  ')
+  await input.blur()
+  await expect(input).toHaveValue('My Profile')
+  await expect.poll(savedHeadings).toEqual({ summary: 'My Profile' })
+  await input.fill('x'.repeat(81))
+  await expect(page.getByRole('alert')).toHaveText(
+    'Use a single line of up to 80 characters.',
+  )
+  await expect.poll(savedHeadings).toEqual({ summary: 'My Profile' })
+  await input.fill('My Profile')
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    const bounds = await input.boundingBox()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+    await page.screenshot({
+      path: test.info().outputPath(`heading-editor-${width}.png`),
+      fullPage: true,
+    })
+  }
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+  await page.reload()
+  await page.getByRole('button', { name: /Summary/ }).click()
+  await page.getByText('Edit heading: Profile', { exact: true }).click()
+  await expect(input).toHaveValue('My Profile')
+  await page
+    .getByRole('combobox', { name: 'Language', exact: true })
+    .selectOption('fr')
+  await page.getByText('Modifier le titre : Profil', { exact: true }).click()
+  await expect(page.getByLabel('Titre : Profil', { exact: true })).toHaveValue(
+    'My Profile',
+  )
+  await page
+    .getByRole('combobox', { name: 'Langue', exact: true })
+    .selectOption('en')
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '005')
+  await page.getByRole('button', { name: /Summary/ }).click()
+  await page.getByText('Edit heading: Summary', { exact: true }).click()
+  await expect(page.getByLabel('Summary heading', { exact: true })).toHaveValue(
+    'My Profile',
+  )
+  await page.getByRole('button', { name: /Skills & extras/ }).click()
+  for (const [label, value] of [
+    ['Additional Information', 'More About Me'],
+    ['Languages', 'Spoken Words'],
+    ['Certifications', 'My Credentials'],
+  ] as const) {
+    await page.getByText(`Edit heading: ${label}`, { exact: true }).click()
+    await page.getByLabel(`${label} heading`, { exact: true }).fill(value)
+  }
+  await page
+    .getByLabel('Certifications', { exact: true })
+    .fill('Example certificate')
+  const headings = {
+    summary: 'My Profile',
+    additionalInformation: 'More About Me',
+    languages: 'Spoken Words',
+    certifications: 'My Credentials',
+  }
+  await expect.poll(savedHeadings).toEqual(headings)
+  await page.getByLabel('Document actions', { exact: true }).click()
+  const backupPending = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Download backup', exact: true })
+    .click()
+  const backupBytes = await downloadBytes(await backupPending)
+  expect(JSON.parse(backupBytes.toString()).cv.headings).toEqual(headings)
+  await preview(page)
+  const pdfPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download PDF', exact: true }).click()
+  const task = getDocument({
+    data: new Uint8Array(await downloadBytes(await pdfPending)),
+    useSystemFonts: true,
+  })
+  try {
+    const pdf = await task.promise
+    const text: string[] = []
+    for (let number = 1; number <= pdf.numPages; number++) {
+      const pdfPage = await pdf.getPage(number)
+      text.push(
+        (await pdfPage.getTextContent()).items
+          .filter((item) => 'str' in item)
+          .map((item) => item.str)
+          .join(' '),
+      )
+    }
+    for (const value of Object.values(headings))
+      expect(text.join(' ')).toContain(value)
+  } finally {
+    await task.destroy()
+  }
+  await edit()
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await page.getByLabel('Headings', { exact: true }).fill('#913355')
+  await page.getByRole('button', { name: 'Reset colors', exact: true }).click()
+  await expect.poll(savedHeadings).toEqual(headings)
+  await chooseTemplate(page, '002')
+  await page.getByRole('button', { name: /Skills & extras/ }).click()
+  await expect(
+    page.getByText('Edit heading: Additional Information', { exact: true }),
+  ).toHaveCount(0)
+  await page.getByRole('button', { name: 'Load example', exact: true }).click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Use example', exact: true })
+    .click()
+  await expect.poll(savedHeadings).toBeNull()
+  await page.getByLabel('CV backup file').setInputFiles({
+    name: 'headings-backup.json',
+    mimeType: 'application/json',
+    buffer: backupBytes,
+  })
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Restore backup', exact: true })
+    .click()
+  await expect.poll(savedHeadings).toEqual(headings)
+  await page.getByRole('button', { name: /Summary/ }).click()
+  await page.getByText('Edit heading: Summary', { exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Use default heading: Summary', exact: true })
+    .click()
+  await expect(page.getByLabel('Summary heading', { exact: true })).toHaveValue(
+    '',
+  )
+  await expect.poll(savedHeadings).toEqual({
+    additionalInformation: 'More About Me',
+    languages: 'Spoken Words',
+    certifications: 'My Credentials',
+  })
+  await page.getByLabel('Document actions', { exact: true }).click()
+  await page.getByRole('button', { name: 'Start over', exact: true }).click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Start over', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Choose a template' }),
+  ).toBeVisible()
+  await expect.poll(savedHeadings).toBeNull()
+})
+
 test('custom color roles persist across templates, backups, previews and reset', async ({
   page,
 }) => {

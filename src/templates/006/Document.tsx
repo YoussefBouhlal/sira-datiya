@@ -7,6 +7,8 @@ import { proficiencyLevels } from '../../domain/cv/defaults'
 import { Text } from '../shared/Text'
 import type { TemplateProps } from '../types'
 import { styles } from './styles'
+import { pureAtsTemplate } from './index'
+import type { SectionHeadingKey } from '../../domain/cv/types'
 
 function Description({ text }: { text: string }) {
   return text
@@ -28,16 +30,17 @@ function Section({
   lead,
   children,
 }: {
-  title: string
+  title: SectionHeadingKey
   appearance: TemplateProps['appearance']
   lead?: ReactNode
   children?: ReactNode
 }) {
-  const { t } = usePdfTranslation()
+  const { heading } = usePdfTranslation()
   return (
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={30}>
         <Text
+          section={title}
           colorRole="headings"
           style={[
             styles.heading,
@@ -47,7 +50,7 @@ function Section({
             },
           ]}
         >
-          {t(title)}
+          {heading(title)}
         </Text>
         {lead}
       </View>
@@ -198,7 +201,12 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
       creator="Sira Datiya CV"
       language={appearance.language}
     >
-      <PdfLanguage language={appearance.language} colors={appearance.colors}>
+      <PdfLanguage
+        language={appearance.language}
+        colors={appearance.colors}
+        headings={cv.headings}
+        headingDefaults={pureAtsTemplate.headings}
+      >
         <Page
           size={appearance.pageSize}
           style={[
@@ -235,7 +243,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
             )}
           </View>
           {cv.summary.trim() && (
-            <Section title="Profile" appearance={appearance}>
+            <Section title="summary" appearance={appearance}>
               <Text style={styles.body} orphans={2} widows={2}>
                 {cv.summary}
               </Text>
@@ -243,7 +251,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {experience.length > 0 && (
             <Section
-              title="Professional Experience"
+              title="experience"
               appearance={appearance}
               lead={experienceHeader(experience[0]!)}
             >
@@ -257,7 +265,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {education.length > 0 && (
             <Section
-              title="Education"
+              title="education"
               appearance={appearance}
               lead={educationHeader(education[0]!)}
             >
@@ -271,7 +279,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {skills.length > 0 && (
             <Section
-              title="Areas of Expertise"
+              title="skills"
               appearance={appearance}
               lead={skillRow(skillRows[0]!)}
             >
@@ -282,7 +290,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {projects.length > 0 && (
             <Section
-              title="Projects"
+              title="projects"
               appearance={appearance}
               lead={projectHeader(projects[0]!)}
             >
@@ -295,8 +303,8 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
             </Section>
           )}
           {[
-            { title: 'Languages', values: languages },
-            { title: 'Certifications', values: certifications },
+            { title: 'languages' as const, values: languages },
+            { title: 'certifications' as const, values: certifications },
           ].map(({ title, values }) =>
             values.length > 0 ? (
               <Section
@@ -313,7 +321,7 @@ export function PureAtsDocument({ cv, appearance }: TemplateProps) {
           )}
           {references.length > 0 && (
             <Section
-              title="References"
+              title="references"
               appearance={appearance}
               lead={referenceHeader(references[0]!)}
             >

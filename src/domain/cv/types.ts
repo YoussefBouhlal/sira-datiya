@@ -6,10 +6,12 @@ import type {
   experienceSchema,
   projectSchema,
   referenceSchema,
+  sectionHeadingKeys,
   skillSchema,
 } from './schema'
 
 export type CvData = z.infer<typeof cvSchema>
+export type SectionHeadingKey = (typeof sectionHeadingKeys)[number]
 export type Experience = z.infer<typeof experienceSchema>
 export type Education = z.infer<typeof educationSchema>
 export type Project = z.infer<typeof projectSchema>

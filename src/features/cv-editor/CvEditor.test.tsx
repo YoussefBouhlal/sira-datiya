@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { useState } from 'react'
-import { cleanup, render, screen } from '@testing-library/react'
+import { useEffect, useState } from 'react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, expect, it } from 'vitest'
 import {
@@ -12,8 +12,123 @@ import {
 } from '../../domain/cv/defaults'
 import { CvEditor } from './CvEditor'
 import { templateRegistry } from '../../templates/registry'
+import type { CvData } from '../../domain/cv/types'
+import { LanguageProvider } from '../../i18n/react'
 
 afterEach(cleanup)
+
+it('edits, validates, trims and resets headings without changing section content', async () => {
+  const user = userEvent.setup()
+  let latest: CvData = createEmptyCv()
+  function Harness() {
+    const [cv, setCv] = useState(latest)
+    useEffect(() => {
+      latest = cv
+    }, [cv])
+    return (
+      <CvEditor
+        cv={cv}
+        step="summary"
+        onChange={setCv}
+        appearance={createDocument('modern').appearance}
+        template={templateRegistry.resolve('modern')}
+        onAppearanceChange={() => {}}
+      />
+    )
+  }
+  render(<Harness />)
+  await user.click(screen.getByText('Edit heading: Profile'))
+  const input = screen.getByLabelText('Profile heading')
+  fireEvent.change(input, { target: { value: '  My Profile  ' } })
+  expect(latest.headings?.summary).toBe('My Profile')
+  await user.tab()
+  expect(input).toHaveValue('My Profile')
+  fireEvent.change(input, { target: { value: 'x'.repeat(81) } })
+  expect(input).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByRole('alert')).toHaveTextContent('up to 80 characters')
+  expect(latest.headings?.summary).toBe('My Profile')
+  await user.click(
+    screen.getByRole('button', { name: 'Use default heading: Profile' }),
+  )
+  expect(latest.headings).toBeUndefined()
+  expect(latest.summary).toBe('')
+  expect(input).toHaveValue('')
+  expect(input).toHaveAttribute('placeholder', 'Profile')
+  fireEvent.change(input, {
+    target: { value: '\u062e\u0628\u0631\u0627\u062a\u064a / Career' },
+  })
+  expect(latest.headings?.summary).toBe(
+    '\u062e\u0628\u0631\u0627\u062a\u064a / Career',
+  )
+  fireEvent.change(input, { target: { value: '   ' } })
+  expect(latest.headings).toBeUndefined()
+})
+
+it('offers only supported headings and keeps literal overrides across templates and languages', async () => {
+  const user = userEvent.setup()
+  const document = createDocument('sidebar')
+  document.cv.headings = {
+    details: 'Contact me',
+    skills: 'My toolkit',
+    additionalInformation: 'More about me',
+  }
+  const props = {
+    cv: document.cv,
+    onChange: () => {},
+    appearance: document.appearance,
+    onAppearanceChange: () => {},
+  }
+  const { rerender } = render(
+    <CvEditor
+      {...props}
+      step="personal"
+      template={templateRegistry.resolve('modern')}
+    />,
+  )
+  expect(screen.queryByText('Edit heading: Details')).not.toBeInTheDocument()
+  rerender(
+    <CvEditor
+      {...props}
+      step="personal"
+      template={templateRegistry.resolve('sidebar')}
+    />,
+  )
+  await user.click(screen.getByText('Edit heading: Details'))
+  expect(screen.getByLabelText('Details heading')).toHaveValue('Contact me')
+  rerender(
+    <CvEditor
+      {...props}
+      step="skills"
+      template={templateRegistry.resolve('prime-ats')}
+    />,
+  )
+  await user.click(screen.getByText('Edit heading: Additional Information'))
+  expect(screen.getByLabelText('Additional Information heading')).toHaveValue(
+    'More about me',
+  )
+  await user.click(screen.getByText('Edit heading: Technical Skills'))
+  expect(screen.getByLabelText('Technical Skills heading')).toHaveValue(
+    'My toolkit',
+  )
+  rerender(
+    <LanguageProvider language="fr">
+      <CvEditor
+        {...props}
+        step="skills"
+        template={templateRegistry.resolve('pure-ats')}
+      />
+    </LanguageProvider>,
+  )
+  await user.click(
+    screen.getByText('Modifier le titre : Domaines de comp\u00e9tence'),
+  )
+  expect(
+    screen.getByLabelText('Titre : Domaines de comp\u00e9tence'),
+  ).toHaveValue('My toolkit')
+  expect(
+    screen.queryByText(/Modifier le titre : Informations compl/),
+  ).not.toBeInTheDocument()
+})
 
 it('keeps skill ratings attached to their entries and supports unrated skills', async () => {
   const user = userEvent.setup()

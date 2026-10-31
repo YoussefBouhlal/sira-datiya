@@ -4,9 +4,33 @@ import type {
   Appearance,
   CvData,
   DeepReadonly,
+  SectionHeadingKey,
   SkillProficiencyDisplay,
 } from '../domain/cv/types'
 import type { TemplateColorDefaults } from '../domain/cv/colors'
+import { translate, type Language } from '../i18n/messages'
+
+export const defaultSectionHeadings = {
+  summary: 'Profile',
+  experience: 'Experience',
+  education: 'Education',
+  skills: 'Skills',
+  languages: 'Languages',
+  certifications: 'Certifications',
+  projects: 'Projects',
+  references: 'References',
+} as const
+
+export type SectionHeadings = Partial<Record<SectionHeadingKey, string>>
+
+export function resolveSectionHeading(
+  headings: Readonly<SectionHeadings> | undefined,
+  defaults: Readonly<SectionHeadings>,
+  key: SectionHeadingKey,
+  language: Language,
+): string {
+  return headings?.[key]?.trim() || translate(language, defaults[key] ?? '')
+}
 
 export type TemplateProps = {
   cv: DeepReadonly<CvData>
@@ -19,6 +43,7 @@ export type TemplateDefinition = {
   readonly typography: 'serif' | 'sans'
   readonly layout?: 'single-column' | 'two-column'
   readonly colorDefaults?: TemplateColorDefaults
+  readonly headings?: Readonly<SectionHeadings>
   readonly skillProficiencyDisplay?: {
     readonly modes: readonly SkillProficiencyDisplay[]
     readonly defaultMode: SkillProficiencyDisplay
@@ -35,6 +60,7 @@ export type TemplateOption = Pick<
   | 'typography'
   | 'layout'
   | 'colorDefaults'
+  | 'headings'
   | 'skillProficiencyDisplay'
 >
 

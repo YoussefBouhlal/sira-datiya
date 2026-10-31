@@ -2,6 +2,26 @@ export const languages = ['en', 'fr', 'ar'] as const
 export type Language = (typeof languages)[number]
 
 export const messages = {
+  'Edit heading: {section}': [
+    'Modifier le titre : {section}',
+    '\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0639\u0646\u0648\u0627\u0646: {section}',
+  ],
+  '{section} heading': [
+    'Titre : {section}',
+    '\u0639\u0646\u0648\u0627\u0646 {section}',
+  ],
+  'Use default heading': [
+    'Utiliser le titre par d\u00e9faut',
+    '\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a',
+  ],
+  'Use default heading: {section}': [
+    'Utiliser le titre par d\u00e9faut : {section}',
+    '\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a: {section}',
+  ],
+  'Use a single line of up to 80 characters.': [
+    'Saisissez une seule ligne de 80 caract\u00e8res maximum.',
+    '\u0627\u0633\u062a\u062e\u062f\u0645 \u0633\u0637\u0631\u064b\u0627 \u0648\u0627\u062d\u062f\u064b\u0627 \u0644\u0627 \u064a\u062a\u062c\u0627\u0648\u0632 80 \u062d\u0631\u0641\u064b\u0627.',
+  ],
   Colors: ['Couleurs', 'الألوان'],
   Palette: ['Palette', 'لوحة الألوان'],
   Custom: ['Personnalisée', 'مخصصة'],

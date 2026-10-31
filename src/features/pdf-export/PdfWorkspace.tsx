@@ -9,7 +9,10 @@ import { useState } from 'react'
 import type { Appearance, CvData } from '../../domain/cv/types'
 import { proficiencyLevels } from '../../domain/cv/defaults'
 import { documentFilename, downloadBlob } from '../../lib/download'
-import type { TemplateDefinition } from '../../templates/types'
+import {
+  resolveSectionHeading,
+  type TemplateDefinition,
+} from '../../templates/types'
 import { PdfCanvas } from './PdfCanvas'
 import { usePdfDocument } from './use-pdf-document'
 import { useTranslation } from '../../i18n/context'
@@ -26,6 +29,20 @@ export function PdfWorkspace({
   downloadable?: boolean
 }) {
   const { t } = useTranslation()
+  const heading = (
+    key: keyof NonNullable<CvData['headings']>,
+    visible: boolean,
+  ) =>
+    visible && template.headings?.[key] ? (
+      <h3>
+        {resolveSectionHeading(
+          cv.headings,
+          template.headings,
+          key,
+          appearance.language,
+        )}
+      </h3>
+    ) : null
   const { blob, loading, error } = usePdfDocument(cv, appearance, template)
   const [page, setPage] = useState(1)
   const [pageCount, setPageCount] = useState(1)
@@ -126,12 +143,29 @@ export function PdfWorkspace({
       </div>
       <section className="sr-only" aria-label={t('CV preview text')}>
         <h2>{cv.personal.fullName || t('Your name')}</h2>
+        {heading(
+          'details',
+          [
+            cv.personal.location,
+            cv.personal.email,
+            cv.personal.phone,
+            cv.personal.website,
+            cv.personal.linkedin,
+          ].some((value) => Boolean(value.trim())),
+        )}
         {Object.entries(cv.personal)
           .filter(([key]) => key !== 'fullName' && key !== 'portrait')
           .map(([key, value]) => (
             <p key={key}>{value}</p>
           ))}
+        {heading('summary', Boolean(cv.summary.trim()))}
         <p>{cv.summary}</p>
+        {heading(
+          'experience',
+          cv.experience.some((entry) =>
+            Boolean(entry.role || entry.employer || entry.description),
+          ),
+        )}
         {cv.experience.map((entry) => (
           <p key={entry.id}>
             {[
@@ -146,6 +180,12 @@ export function PdfWorkspace({
               .join('. ')}
           </p>
         ))}
+        {heading(
+          'education',
+          cv.education.some((entry) =>
+            Boolean(entry.degree || entry.school || entry.description),
+          ),
+        )}
         {cv.education.map((entry) => (
           <p key={entry.id}>
             {[
@@ -169,6 +209,10 @@ export function PdfWorkspace({
             height={64}
           />
         )}
+        {heading(
+          'skills',
+          cv.skills.some((skill) => Boolean(skill.name.trim())),
+        )}
         <p>
           {cv.skills
             .map((skill) =>
@@ -178,14 +222,45 @@ export function PdfWorkspace({
             )
             .join(', ')}
         </p>
+        {heading(
+          'additionalInformation',
+          [...cv.languages, ...cv.certifications].some((value) =>
+            Boolean(value.trim()),
+          ),
+        )}
+        {heading(
+          'languages',
+          cv.languages.some((value) => Boolean(value.trim())),
+        )}
         <p>{cv.languages.join(', ')}</p>
+        {heading(
+          'certifications',
+          cv.certifications.some((value) => Boolean(value.trim())),
+        )}
         <p>{cv.certifications.join(', ')}</p>
+        {heading(
+          'projects',
+          cv.projects.some((entry) =>
+            Boolean(entry.name || entry.url || entry.description),
+          ),
+        )}
         {cv.projects.map((entry) => (
           <p key={entry.id}>
             {entry.name}. {entry.url}. {entry.description}
           </p>
         ))}
-        {cv.references.length > 0 && <h3>{t('References')}</h3>}
+        {heading(
+          'references',
+          cv.references.some((entry) =>
+            [
+              entry.name,
+              entry.jobTitle,
+              entry.organization,
+              entry.email,
+              entry.phone,
+            ].some((value) => Boolean(value.trim())),
+          ),
+        )}
         {cv.references.map((entry) => (
           <p key={entry.id}>
             {[

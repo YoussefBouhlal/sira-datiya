@@ -1,9 +1,10 @@
-import type { TemplateDefinition } from '../types'
+import { defaultSectionHeadings, type TemplateDefinition } from '../types'
 
 export const traditionalTemplate = {
   id: 'traditional',
   name: '004',
   typography: 'serif',
+  headings: defaultSectionHeadings,
   colorDefaults: {
     headings: 'accent',
     details: '#171717',

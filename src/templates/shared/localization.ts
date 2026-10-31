@@ -2,8 +2,14 @@ import { Font } from '@react-pdf/renderer'
 import type { Style } from '@react-pdf/types'
 import { createContext, useContext } from 'react'
 import { dateRange, translate, type Language } from '../../i18n/messages'
+import { resolveSectionHeading, type SectionHeadings } from '../types'
+import type { SectionHeadingKey } from '../../domain/cv/types'
 
 export const PdfLanguageContext = createContext<Language>('en')
+export const PdfHeadingContext = createContext<{
+  headings?: Readonly<SectionHeadings>
+  defaults: Readonly<SectionHeadings>
+}>({ defaults: {} })
 const nodeFontDirectory = '../../../public/fonts/amiri/'
 const fontRoot =
   typeof window === 'undefined'
@@ -26,8 +32,11 @@ Font.register({
 
 export function usePdfTranslation() {
   const language = useContext(PdfLanguageContext)
+  const { headings, defaults } = useContext(PdfHeadingContext)
   return {
     language,
+    heading: (key: SectionHeadingKey) =>
+      resolveSectionHeading(headings, defaults, key, language),
     t: (message: string, values?: Record<string, string | number>) =>
       translate(language, message, values),
     dates: (start: string, end: string, current = false) =>
