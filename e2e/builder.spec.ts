@@ -1167,7 +1167,10 @@ test('personal details place portrait beside full name and stack below 360px', a
       }, state)
       const pendingChooser = page.waitForEvent('filechooser')
       if (state === 'uploaded') await portrait.press('Enter')
-      else await page.locator('.portrait-upload').click()
+      else
+        await page
+          .getByRole('button', { name: 'Replace portrait', exact: true })
+          .click()
       await (
         await pendingChooser
       ).setFiles({
@@ -1175,6 +1178,7 @@ test('personal details place portrait beside full name and stack below 360px', a
         mimeType: 'image/png',
         buffer: Buffer.from(image, 'base64'),
       })
+      await page.getByRole('button', { name: 'Apply', exact: true }).click()
       await expect(
         page.getByRole('img', { name: 'Your portrait' }),
       ).toBeVisible()
@@ -1551,6 +1555,292 @@ test('proficiency display persists, restores and follows template capabilities',
   }
 })
 
+test('portrait framing supports apply, cancel, touch, keyboard, templates and backups', async ({
+  page,
+  isMobile,
+}) => {
+  test.setTimeout(90_000)
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example' }).click()
+  const source = await page.evaluate(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 900
+    canvas.height = 300
+    const context = canvas.getContext('2d')!
+    for (const [index, color] of ['#e02020', '#20b040', '#2040e0'].entries()) {
+      context.fillStyle = color
+      context.fillRect(index * 300, 0, 300, 300)
+    }
+    return canvas.toDataURL('image/png').split(',')[1]!
+  })
+  const upload = () =>
+    page.getByLabel('Portrait', { exact: true }).setInputFiles({
+      name: 'fictional-landscape.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(source, 'base64'),
+    })
+  const dialog = page.getByRole('dialog', {
+    name: 'Adjust portrait',
+    exact: true,
+  })
+  const horizontal = dialog.getByLabel('Horizontal position', { exact: true })
+  const vertical = dialog.getByLabel('Vertical position', { exact: true })
+  const zoom = dialog.getByLabel('Portrait zoom', { exact: true })
+  const portrait = page.getByRole('img', { name: 'Your portrait', exact: true })
+  const saved = () =>
+    page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key) ?? '{}'),
+      storageKey,
+    )
+  const sample = () =>
+    portrait.evaluate((element) => {
+      const image = element as HTMLImageElement
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d')!
+      context.drawImage(image, -255, -255)
+      return Array.from(context.getImageData(0, 0, 1, 1).data)
+    })
+
+  await upload()
+  await expect(horizontal).toBeEnabled()
+  await expect(vertical).toBeDisabled()
+  await expect(
+    dialog.getByRole('button', { name: 'Close dialog' }),
+  ).toBeFocused()
+  await page.keyboard.press('Shift+Tab')
+  await expect(
+    dialog.getByRole('button', { name: 'Apply', exact: true }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
+    dialog.getByRole('button', { name: 'Close dialog' }),
+  ).toBeFocused()
+  await expect(page.locator('.portrait-crop')).toHaveAttribute(
+    'data-shape',
+    'circle',
+  )
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 844 })
+    const bounds = await dialog.boundingBox()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+    await expect(
+      dialog.getByRole('button', { name: 'Apply', exact: true }),
+    ).toBeInViewport()
+    await page.screenshot({
+      path: test.info().outputPath(`portrait-framing-${width}.png`),
+    })
+  }
+  const accessibility = await new AxeBuilder({ page })
+    .include('.portrait-dialog')
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+  await expect(portrait).toHaveCount(0)
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(portrait).toHaveCount(0)
+
+  await upload()
+  await horizontal.focus()
+  await horizontal.press('End')
+  await expect(horizontal).toHaveValue('1')
+  await dialog.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect
+    .poll(async () => (await saved()).cv?.personal?.portraitFraming?.x)
+    .toBe(1)
+  expect((await sample())[2]).toBeGreaterThan(200)
+  expect((await sample())[0]).toBeLessThan(60)
+  const firstPortrait = await portrait.getAttribute('src')
+
+  await upload()
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(portrait).toHaveAttribute('src', firstPortrait!)
+  const adjust = page.getByRole('button', {
+    name: 'Adjust portrait',
+    exact: true,
+  })
+  await adjust.click()
+  const frame = await page.locator('.portrait-crop').boundingBox()
+  if (!frame) throw new Error('Portrait frame must be visible')
+  const startX = frame.x + frame.width / 3
+  const startY = frame.y + frame.height / 2
+  if (isMobile) {
+    const session = await page.context().newCDPSession(page)
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: startX, y: startY }],
+    })
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x: startX + 60, y: startY }],
+    })
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    })
+    await session.detach()
+  } else {
+    await page.mouse.move(startX, startY)
+    await page.mouse.down()
+    await page.mouse.move(startX + 60, startY, { steps: 5 })
+    await page.mouse.up()
+  }
+  expect(Number(await horizontal.inputValue())).toBeLessThan(1)
+  await expect(portrait).toHaveAttribute('src', firstPortrait!)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  await expect(adjust).toBeFocused()
+  await expect(portrait).toHaveAttribute('src', firstPortrait!)
+
+  await adjust.click()
+  await dialog.getByRole('button', { name: 'Reset portrait framing' }).click()
+  await expect(horizontal).toHaveValue('0.5')
+  await expect(vertical).toHaveValue('0.5')
+  await expect(zoom).toHaveValue('1')
+  await zoom.focus()
+  await zoom.press('End')
+  await expect(zoom).toHaveValue('4')
+  await horizontal.focus()
+  await horizontal.press('Home')
+  await vertical.focus()
+  await vertical.press('End')
+  await dialog.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect
+    .poll(async () => (await saved()).cv?.personal?.portraitFraming?.zoom)
+    .toBe(4)
+  expect((await sample())[0]).toBeGreaterThan(200)
+  expect((await sample())[2]).toBeLessThan(60)
+  const applied = (await saved()).cv.personal
+  expect(applied.portraitFraming).toMatchObject({ x: 0, y: 1, zoom: 4 })
+  expect(applied.portraitFraming.source.length).toBeLessThanOrEqual(600_000)
+  expect(
+    await page.evaluate(async (data) => {
+      const image = new Image()
+      image.src = data
+      await image.decode()
+      return image.naturalWidth / image.naturalHeight
+    }, applied.portraitFraming.source),
+  ).toBe(3)
+  await page.reload()
+  await adjust.click()
+  await expect(horizontal).toHaveValue('0')
+  await expect(vertical).toHaveValue('1')
+  await expect(zoom).toHaveValue('4')
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+
+  await page.getByRole('button', { name: /Template & style/ }).click()
+  await chooseTemplate(page, '005')
+  await page.getByRole('button', { name: /About you/ }).click()
+  await adjust.click()
+  await expect(page.locator('.portrait-crop')).toHaveAttribute(
+    'data-shape',
+    'square',
+  )
+  await expect(zoom).toHaveValue('4')
+  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await expect(portrait).toHaveAttribute('src', applied.portrait)
+
+  await page.getByLabel('Document actions', { exact: true }).click()
+  const pending = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Download backup', exact: true })
+    .click()
+  const backup = await downloadBytes(await pending)
+  expect(JSON.parse(backup.toString()).cv.personal).toEqual(applied)
+  await page
+    .getByRole('button', { name: 'Remove portrait', exact: true })
+    .click()
+  await expect
+    .poll(async () => (await saved()).cv?.personal?.portraitFraming)
+    .toBeUndefined()
+  await page.getByLabel('CV backup file').setInputFiles({
+    name: 'portrait-backup.json',
+    mimeType: 'application/json',
+    buffer: backup,
+  })
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Restore backup', exact: true })
+    .click()
+  await expect(portrait).toHaveAttribute('src', applied.portrait)
+  await adjust.click()
+  await expect(horizontal).toHaveValue('0')
+  await expect(zoom).toHaveValue('4')
+  await expect.poll(async () => (await saved()).cv?.personal).toEqual(applied)
+  await page.evaluate((storageKey) => {
+    const original = Storage.prototype.setItem
+    Storage.prototype.setItem = function (key, value) {
+      if (key === storageKey)
+        throw new DOMException('Quota exceeded', 'QuotaExceededError')
+      original.call(this, key, value)
+    }
+  }, storageKey)
+  await horizontal.focus()
+  await horizontal.press('End')
+  await dialog.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect(
+    page.getByText(
+      'Your changes could not be saved in this browser. Keep this tab open and download a backup.',
+      { exact: true },
+    ),
+  ).toBeVisible()
+  expect((await saved()).cv.personal).toEqual(applied)
+  await expect(portrait).not.toHaveAttribute('src', applied.portrait)
+})
+
+test('legacy portraits retain their appearance and can be reframed without reuploading', async ({
+  page,
+}) => {
+  await page.goto('./')
+  const portrait = await page.evaluate(() => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 512
+    const context = canvas.getContext('2d')!
+    context.fillStyle = '#3456a0'
+    context.fillRect(0, 0, 512, 512)
+    return canvas.toDataURL('image/png')
+  })
+  const draft = createDocument('modern')
+  draft.cv.personal.fullName = 'Legacy Example'
+  draft.cv.personal.portrait = portrait
+  await page.evaluate(
+    ({ key, document }) =>
+      localStorage.setItem(key, JSON.stringify({ version: 2, ...document })),
+    { key: storageKey, document: draft },
+  )
+  await page.reload()
+  await expect(
+    page.getByRole('img', { name: 'Your portrait' }),
+  ).toHaveAttribute('src', portrait)
+  await page
+    .getByRole('button', { name: 'Adjust portrait', exact: true })
+    .click()
+  const dialog = page.getByRole('dialog', {
+    name: 'Adjust portrait',
+    exact: true,
+  })
+  await expect(dialog.getByLabel('Horizontal position')).toBeDisabled()
+  await expect(dialog.getByLabel('Vertical position')).toBeDisabled()
+  await dialog.getByLabel('Portrait zoom').focus()
+  await dialog.getByLabel('Portrait zoom').press('End')
+  await expect(dialog.getByLabel('Horizontal position')).toBeEnabled()
+  await dialog.getByRole('button', { name: 'Apply', exact: true }).click()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').cv?.personal
+            ?.portraitFraming,
+        storageKey,
+      ),
+    )
+    .toEqual({ source: portrait, x: 0.5, y: 0.5, zoom: 4 })
+})
+
 test('portrait, rated skills and ordered references persist and render in every template', async ({
   page,
 }) => {
@@ -1578,6 +1868,7 @@ test('portrait, rated skills and ordered references persist and render in every 
     mimeType: 'image/png',
     buffer: Buffer.from(portrait, 'base64'),
   })
+  await page.getByRole('button', { name: 'Apply', exact: true }).click()
   await expect(
     page.getByRole('img', { name: 'Your portrait', exact: true }),
   ).toBeVisible()

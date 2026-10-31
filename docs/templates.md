@@ -52,6 +52,13 @@ Pure ATS uses a compact single-column Helvetica layout with a left-aligned mixed
 
 ## Boundaries
 
+Optional `portraitShape` metadata declares `circle` or `square` for the portrait
+adjustment dialog; omission means `circle`. Keep it consistent with the rendered
+frame. All current frames have a square aspect ratio, regardless of their mask.
+Templates render the already-framed `cv.personal.portrait` image as before; they
+do not reinterpret `portraitFraming` or read adjustment state. One framing choice
+follows the portrait across templates, and preview/download use the same image.
+
 Treat CV data as read-only. A renderer must not mutate it, access local storage, fetch remote assets, inspect editor state, or import another concrete template. Template-specific fonts/styles/assets belong with the template. Introduce shared PDF primitives in `templates/shared/` only for real common behavior. Existing shared content can be reused or a template can supply its own layout using the same CV model.
 
 Missing optional sections should produce no empty headings. Preserve text rather than truncating it to one page. Avoid wrapping a long section in an unbreakable container. Check long names, URLs, multiline descriptions, and multiple pages. Bundle new fonts and document coverage/attribution; do not claim support for untested scripts.

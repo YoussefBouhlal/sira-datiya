@@ -155,9 +155,9 @@ export function PdfWorkspace({
         )}
         {Object.entries(cv.personal)
           .filter(([key]) => key !== 'fullName' && key !== 'portrait')
-          .map(([key, value]) => (
-            <p key={key}>{value}</p>
-          ))}
+          .map(([key, value]) =>
+            typeof value === 'string' ? <p key={key}>{value}</p> : null,
+          )}
         {heading('summary', Boolean(cv.summary.trim()))}
         <p>{cv.summary}</p>
         {heading(

@@ -4,6 +4,7 @@ export const pureAtsTemplate = {
   id: 'pure-ats',
   name: '006',
   typography: 'sans',
+  portraitShape: 'square',
   headings: {
     ...defaultSectionHeadings,
     experience: 'Professional Experience',

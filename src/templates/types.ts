@@ -42,6 +42,7 @@ export type TemplateDefinition = {
   readonly name: string
   readonly typography: 'serif' | 'sans'
   readonly layout?: 'single-column' | 'two-column'
+  readonly portraitShape?: 'circle' | 'square'
   readonly colorDefaults?: TemplateColorDefaults
   readonly headings?: Readonly<SectionHeadings>
   readonly skillProficiencyDisplay?: {
@@ -59,6 +60,7 @@ export type TemplateOption = Pick<
   | 'name'
   | 'typography'
   | 'layout'
+  | 'portraitShape'
   | 'colorDefaults'
   | 'headings'
   | 'skillProficiencyDisplay'
