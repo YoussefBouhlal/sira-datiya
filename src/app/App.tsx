@@ -368,6 +368,11 @@ export default function App() {
                         step={step}
                         cv={document.cv}
                         onChange={(cv) => update({ ...document, cv })}
+                        appearance={document.appearance}
+                        template={template}
+                        onAppearanceChange={(appearance) =>
+                          update({ ...document, appearance })
+                        }
                       />
                     )}
                   </div>

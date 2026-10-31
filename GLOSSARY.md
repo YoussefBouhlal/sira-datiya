@@ -15,7 +15,7 @@ A permanent, zero-padded catalog label for a template, such as 001. The same lab
 _Avoid_: Template name
 
 **Appearance**:
-The chosen template, color scheme, text size, paper size, and document language of a CV.
+The chosen template, color scheme, text size, paper size, document language, and proficiency display of a CV.
 
 **CV color scheme**:
 The chosen colors for a CV's headings, subtitles and details, body text, accents, and colored surfaces. A color scheme belongs to the CV rather than to an individual template.
@@ -55,6 +55,10 @@ An optional image of the person whose CV is being prepared.
 **Skill proficiency**:
 An optional self-assessed skill level: Beginner, Elementary, Intermediate, Advanced, or Expert. An unrated skill has no proficiency assessment.
 _Avoid_: Skill percentage
+
+**Proficiency display**:
+The presentation of rated skills as a bar, a named level, or both, according to the chosen template's supported presentations. It does not change the skill's proficiency assessment; unrated skills show only their names.
+_Avoid_: Skill rating, skill percentage
 
 **Reference**:
 A person offered as a professional contact, together with any supplied job title, organization, email, and phone number.

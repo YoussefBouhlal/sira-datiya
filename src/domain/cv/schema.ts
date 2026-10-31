@@ -85,6 +85,7 @@ const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
 export const appearanceSchema = z.object({
   language: z.enum(['en', 'fr', 'ar']).default('en'),
   templateId: z.string(),
+  skillProficiencyDisplay: z.enum(['bar', 'text', 'both']).optional(),
   accent: z.enum(['#177568', '#3456a0', '#8c4255', '#292929']),
   colors: z
     .object({

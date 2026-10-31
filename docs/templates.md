@@ -87,6 +87,26 @@ contrast against white paper or heading bands produces a non-blocking warning.
 Palettes replace all five roles; subsequent edits remain independent. Gallery
 thumbnails retain their fixed sample appearance.
 
+## Skill proficiency display
+
+`appearance.skillProficiencyDisplay` optionally stores `bar`, `text`, or `both`.
+It applies to all rated skills without changing their ratings. Unrated skills
+show only their names. Missing preferences preserve each template's original
+presentation; existing drafts and version 1/2 backups remain readable.
+
+Definitions may declare `skillProficiencyDisplay` metadata with supported `modes`
+and a `defaultMode` contained in that list. Omitted metadata means text only.
+Template 003 supports all three modes and defaults to both; the other templates
+remain text only. `resolveSkillProficiencyDisplay` resolves a supported preference
+or the template default without modifying the saved preference. Switching back
+to a supporting template restores the user's choice.
+
+The Skills section exposes a native selector only when multiple modes are
+supported, using metadata rather than template IDs. Renderers use the same
+resolution rule. The preference autosaves and survives backup export/import;
+preview and download share the generated PDF. The app's accessible text summary
+continues exposing rated levels even when their visible labels are hidden.
+
 ## Document language
 
 Every template supports English, French, and Modern Standard Arabic through `appearance.language`. Keep `<Document>` as the root, set its language metadata, and wrap its page content in `PdfLanguage`. Apply `pageLanguageStyle` after page styles. Use the shared PDF `Text`, `View`, and `Image` components so font selection, RTL rows, and directional spacing remain consistent. Translate generated headings and proficiency labels explicitly; never pass personal content through the message catalogue. Use the common date formatter for full localized month names with Western digits, and `ContactText` when combining Latin contact fields with Arabic text. Do not insert Unicode bidi-control markers: this font/renderer combination can draw them as visible glyphs.

@@ -6,18 +6,34 @@ import {
   createSkill,
   proficiencyLevels,
 } from '../../domain/cv/defaults'
-import type { CvData, Project } from '../../domain/cv/types'
+import type { Appearance, CvData, Project } from '../../domain/cv/types'
+import {
+  resolveSkillProficiencyDisplay,
+  type TemplateOption,
+} from '../../templates/types'
 import { EntryGroup } from './EntryGroup'
 import { useTranslation } from '../../i18n/context'
 
 export function ExtrasForm({
   cv,
   onChange,
+  appearance,
+  template,
+  onAppearanceChange,
 }: {
   cv: CvData
   onChange: (cv: CvData) => void
+  appearance: Appearance
+  template: TemplateOption
+  onAppearanceChange: (appearance: Appearance) => void
 }) {
   const { t } = useTranslation()
+  const displayModes = template.skillProficiencyDisplay?.modes ?? ['text']
+  const displayLabels = {
+    bar: 'Bar only',
+    text: 'Text only',
+    both: 'Both',
+  }
   function updateProject(id: string, patch: Partial<Project>) {
     onChange({
       ...cv,
@@ -29,6 +45,36 @@ export function ExtrasForm({
   return (
     <div className="extras-form">
       <h2 className="subsection-title">{t('Skills')}</h2>
+      {displayModes.length > 1 && (
+        <div className="form-field">
+          <label htmlFor="proficiency-display">
+            {t('Proficiency display')}
+          </label>
+          <select
+            id="proficiency-display"
+            value={resolveSkillProficiencyDisplay(
+              template,
+              appearance.skillProficiencyDisplay,
+            )}
+            onChange={(event) => {
+              const mode = template.skillProficiencyDisplay?.modes.find(
+                (value) => value === event.target.value,
+              )
+              if (mode)
+                onAppearanceChange({
+                  ...appearance,
+                  skillProficiencyDisplay: mode,
+                })
+            }}
+          >
+            {template.skillProficiencyDisplay?.modes.map((mode) => (
+              <option key={mode} value={mode}>
+                {t(displayLabels[mode])}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {cv.skills.map((skill, index) => (
         <EntryGroup
           key={skill.id}

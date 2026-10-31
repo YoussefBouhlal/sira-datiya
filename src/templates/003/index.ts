@@ -5,6 +5,10 @@ export const sidebarTemplate = {
   name: '003',
   typography: 'serif',
   layout: 'two-column',
+  skillProficiencyDisplay: {
+    modes: ['bar', 'text', 'both'],
+    defaultMode: 'both',
+  },
   colorDefaults: {
     headings: '#202020',
     details: '#626b69',

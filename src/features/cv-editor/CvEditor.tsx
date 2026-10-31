@@ -1,5 +1,6 @@
 import { Field, TextArea } from '../../components/ui/Field'
-import type { CvData } from '../../domain/cv/types'
+import type { Appearance, CvData } from '../../domain/cv/types'
+import type { TemplateOption } from '../../templates/types'
 import { EducationForm } from './EducationForm'
 import { ExperienceForm } from './ExperienceForm'
 import { ExtrasForm } from './ExtrasForm'
@@ -11,10 +12,16 @@ export function CvEditor({
   cv,
   step,
   onChange,
+  appearance,
+  template,
+  onAppearanceChange,
 }: {
   cv: CvData
   step: Exclude<EditorStep, 'design'>
   onChange: (cv: CvData) => void
+  appearance: Appearance
+  template: TemplateOption
+  onAppearanceChange: (appearance: Appearance) => void
 }) {
   const { t, language } = useTranslation()
   if (step === 'experience')
@@ -31,7 +38,16 @@ export function CvEditor({
         onChange={(education) => onChange({ ...cv, education })}
       />
     )
-  if (step === 'skills') return <ExtrasForm cv={cv} onChange={onChange} />
+  if (step === 'skills')
+    return (
+      <ExtrasForm
+        cv={cv}
+        onChange={onChange}
+        appearance={appearance}
+        template={template}
+        onAppearanceChange={onAppearanceChange}
+      />
+    )
   if (step === 'summary')
     return (
       <div className="summary-form">

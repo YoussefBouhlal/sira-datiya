@@ -1226,6 +1226,159 @@ test('backup, confirmed reset, and restore preserve the document', async ({
   await preview(page)
 })
 
+test('proficiency display persists, restores and follows template capabilities', async ({
+  page,
+}) => {
+  test.setTimeout(90_000)
+  const document = createDocument('sidebar')
+  document.cv.personal.fullName = 'Avery Example'
+  document.cv.skills = [
+    { id: 'rated', name: 'Service design', level: 3 },
+    { id: 'unrated', name: 'Research', level: null },
+  ]
+  await page.addInitScript(
+    ({ key, value }) => {
+      if (!localStorage.getItem(key)) localStorage.setItem(key, value)
+    },
+    { key: storageKey, value: JSON.stringify({ version: 2, ...document }) },
+  )
+  async function edit() {
+    const switcher = page.getByRole('group', { name: 'Workspace view' })
+    if (await switcher.isVisible())
+      await switcher.getByRole('button', { name: 'Edit', exact: true }).click()
+  }
+  async function skills() {
+    await edit()
+    await page.getByRole('button', { name: /Skills & extras/ }).click()
+  }
+  async function pdfText() {
+    await preview(page)
+    const pending = page.waitForEvent('download')
+    await page.getByRole('button', { name: 'Download PDF' }).click()
+    const task = getDocument({
+      data: new Uint8Array(await downloadBytes(await pending)),
+      useSystemFonts: true,
+    })
+    try {
+      const pdf = await task.promise
+      const content = await (await pdf.getPage(1)).getTextContent()
+      return content.items
+        .filter((item) => 'str' in item)
+        .map((item) => item.str)
+        .join(' ')
+    } finally {
+      await task.destroy()
+    }
+  }
+  await page.goto('./')
+  await skills()
+  const display = page.getByRole('combobox', { name: 'Proficiency display' })
+  await expect(display).toHaveValue('both')
+  await expect(display.getByRole('option')).toHaveText([
+    'Bar only',
+    'Text only',
+    'Both',
+  ])
+  await display.selectOption('bar')
+  await display.focus()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByRole('button', { name: 'Remove skill 1' }),
+  ).toBeFocused()
+  await page.keyboard.press('Tab')
+  await expect(
+    page.getByLabel('Skill name', { exact: true }).first(),
+  ).toBeFocused()
+  const viewport = page.viewportSize()!
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await expect(display).toBeVisible()
+    const bounds = (await display.boundingBox())!
+    expect(bounds.x).toBeGreaterThanOrEqual(0)
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width)
+    expect(
+      await page.evaluate(() => window.document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    if (width === 320)
+      await page.screenshot({
+        path: test.info().outputPath('proficiency-editor-320.png'),
+        fullPage: true,
+      })
+  }
+  await page.setViewportSize(viewport)
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+  expect(await pdfText()).not.toContain('Intermediate')
+  await expect(
+    page.getByRole('region', { name: 'CV preview text' }),
+  ).toContainText('Service design: Intermediate')
+  await page.screenshot({
+    path: test.info().outputPath('proficiency-bar.png'),
+    fullPage: true,
+  })
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance
+            ?.skillProficiencyDisplay,
+        storageKey,
+      ),
+    )
+    .toBe('bar')
+  await page.reload()
+  await skills()
+  await expect(display).toHaveValue('bar')
+  await page.getByLabel('Document actions', { exact: true }).click()
+  const pending = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Download backup', exact: true })
+    .click()
+  const backup = await downloadBytes(await pending)
+  expect(JSON.parse(backup.toString()).appearance.skillProficiencyDisplay).toBe(
+    'bar',
+  )
+  await display.selectOption('text')
+  await page.getByLabel('CV backup file').setInputFiles({
+    name: 'proficiency-backup.json',
+    mimeType: 'application/json',
+    buffer: backup,
+  })
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Restore backup', exact: true })
+    .click()
+  await skills()
+  await expect(display).toHaveValue('bar')
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '001')
+  await skills()
+  await expect(display).toHaveCount(0)
+  await expect(
+    page.getByLabel('Proficiency', { exact: true }).first(),
+  ).toHaveValue('3')
+  expect(await pdfText()).toContain('Intermediate')
+  await edit()
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '003')
+  await skills()
+  await expect(display).toHaveValue('bar')
+  for (const mode of ['text', 'both']) {
+    await display.selectOption(mode)
+    const text = await pdfText()
+    expect(text).toContain('Intermediate')
+    expect(text).toContain('Research')
+    expect(text).not.toContain('Unrated')
+    await page.screenshot({
+      path: test.info().outputPath(`proficiency-${mode}.png`),
+      fullPage: true,
+    })
+    await skills()
+  }
+})
+
 test('portrait, rated skills and ordered references persist and render in every template', async ({
   page,
 }) => {
