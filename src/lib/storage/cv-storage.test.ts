@@ -24,6 +24,50 @@ function memoryStorage(): StoragePort {
 }
 
 describe('CV persistence', () => {
+  it('round trips portrait sources and framing without changing legacy portraits', () => {
+    const storage = memoryStorage()
+    const document = createDocument('modern')
+    document.cv.personal.portrait = 'data:image/jpeg;base64,YWJj'
+    expect(parseBackup(serializeBackup(document))).toEqual(document)
+    expect(document.cv.personal.portraitFraming).toBeUndefined()
+    document.cv.personal.portraitFraming = {
+      source: 'data:image/png;base64,YWJj',
+      x: 0.2,
+      y: 0.8,
+      zoom: 2,
+    }
+    expect(saveDocument(storage, document)).toEqual({ ok: true })
+    expect(loadDocument(storage)).toEqual({ status: 'ready', document })
+    expect(parseBackup(serializeBackup(document))).toEqual(document)
+  })
+
+  it.each([
+    { source: 'https://example.com/photo.jpg', x: 0.5, y: 0.5, zoom: 1 },
+    { source: 'data:image/svg+xml;base64,YWJj', x: 0.5, y: 0.5, zoom: 1 },
+    { source: 'data:image/jpeg;base64,YWJj', x: -0.1, y: 0.5, zoom: 1 },
+    { source: 'data:image/jpeg;base64,YWJj', x: 0.5, y: 1.1, zoom: 1 },
+    { source: 'data:image/jpeg;base64,YWJj', x: 0.5, y: 0.5, zoom: 0.9 },
+    { source: 'data:image/jpeg;base64,YWJj', x: 0.5, y: 0.5, zoom: 4.1 },
+  ])(
+    'preserves unreadable data with invalid portrait framing: %j',
+    (framing) => {
+      const storage = memoryStorage()
+      const document = createDocument('modern')
+      const raw = JSON.stringify({
+        version: 2,
+        ...document,
+        cv: {
+          ...document.cv,
+          personal: { ...document.cv.personal, portraitFraming: framing },
+        },
+      })
+      storage.setItem(STORAGE_KEY, raw)
+      expect(loadDocument(storage).status).toBe('blocked')
+      expect(storage.getItem(STORAGE_KEY)).toBe(raw)
+      expect(() => parseBackup(raw)).toThrow()
+    },
+  )
+
   it('round trips custom headings and normalizes surrounding whitespace', () => {
     const storage = memoryStorage()
     const document = createDocument('sidebar', 'ar')

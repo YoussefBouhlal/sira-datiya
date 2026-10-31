@@ -62,6 +62,12 @@ A template that prioritizes readable CV text for applicant-tracking systems. The
 **Portrait**:
 An optional image of the person whose CV is being prepared.
 
+**Portrait frame**:
+The area and shape in a template through which the portrait is visible.
+
+**Portrait framing**:
+The chosen position and zoom of the portrait within its frame. The choice belongs to the portrait and remains the same across templates.
+
 **Sample portrait**:
 A neutral image placeholder in a template sample that demonstrates where a portrait can appear, separate from the person's own CV.
 

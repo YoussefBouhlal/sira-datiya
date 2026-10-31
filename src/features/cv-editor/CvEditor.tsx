@@ -98,7 +98,14 @@ export function CvEditor({
       />
       <PortraitField
         value={cv.personal.portrait}
-        onChange={(value) => update('portrait', value)}
+        framing={cv.personal.portraitFraming}
+        shape={template.portraitShape}
+        onChange={(portrait, portraitFraming) =>
+          onChange({
+            ...cv,
+            personal: { ...cv.personal, portrait, portraitFraming },
+          })
+        }
       />
       <Field
         className="full-width"

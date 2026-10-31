@@ -4,6 +4,7 @@ export const primeAtsTemplate = {
   id: 'prime-ats',
   name: '005',
   typography: 'sans',
+  portraitShape: 'square',
   headings: {
     ...defaultSectionHeadings,
     summary: 'Summary',

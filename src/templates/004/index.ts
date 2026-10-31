@@ -4,6 +4,7 @@ export const traditionalTemplate = {
   id: 'traditional',
   name: '004',
   typography: 'serif',
+  portraitShape: 'square',
   headings: defaultSectionHeadings,
   colorDefaults: {
     headings: 'accent',

@@ -759,7 +759,7 @@ button {
 }
 .portrait-controls {
   display: grid;
-  grid-template-columns: 42px 34px;
+  grid-template-columns: 42px 34px 34px;
   align-items: center;
   gap: 12px;
   height: 42px;
@@ -793,11 +793,113 @@ button {
 .portrait-upload .portrait-input:disabled {
   cursor: progress;
 }
+.portrait-adjust {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+.portrait-adjust:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 .portrait-preview {
   width: 42px;
   height: 42px;
   border-radius: 50%;
   object-fit: cover;
+}
+.portrait-upload[data-shape='square'],
+.portrait-upload[data-shape='square'] .portrait-preview {
+  border-radius: 0;
+}
+.portrait-dialog {
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  overflow: auto;
+}
+.portrait-dialog::backdrop {
+  background: #1c292478;
+}
+.portrait-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.portrait-dialog-header h2 {
+  margin: 0;
+  font-family: 'Newsreader', serif;
+  font-size: 24px;
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+.portrait-dialog-body {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+}
+.portrait-crop {
+  position: relative;
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  justify-self: center;
+  overflow: hidden;
+  background: #edf1ed;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.portrait-crop[data-shape='circle'] {
+  border-radius: 50%;
+}
+.portrait-crop:active {
+  cursor: grabbing;
+}
+.portrait-crop img {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+}
+.portrait-sliders {
+  display: grid;
+  gap: 16px;
+}
+.portrait-slider {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.portrait-slider input {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+.portrait-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+}
+.portrait-dialog-actions > :first-child {
+  margin-inline-end: auto;
 }
 .field-error {
   width: 100%;

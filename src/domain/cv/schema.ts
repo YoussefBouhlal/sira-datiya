@@ -82,6 +82,17 @@ export const cvSchema = z.object({
       .max(300_000)
       .regex(/^(?:data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2})?$/)
       .default(''),
+    portraitFraming: z
+      .object({
+        source: z
+          .string()
+          .max(600_000)
+          .regex(/^data:image\/(?:png|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/),
+        x: z.number().min(0).max(1),
+        y: z.number().min(0).max(1),
+        zoom: z.number().min(1).max(4),
+      })
+      .optional(),
   }),
   summary: longText,
   experience: z.array(experienceSchema).max(100),
