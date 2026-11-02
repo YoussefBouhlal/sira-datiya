@@ -82,14 +82,20 @@ it('opens empty CVs with samples and applies appearance without inserting sample
     screen.queryByRole('group', { name: 'Workspace view' }),
   ).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Inspect 001' }))
-  const gallery = screen.getByRole('dialog')
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   expect(
-    within(gallery).queryByText(createExampleCv().personal.fullName),
+    screen.queryByText(createExampleCv().personal.fullName),
   ).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Inspect 001' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(screen.queryByLabelText('Full name')).not.toBeInTheDocument()
+  window.dispatchEvent(new Event('pagehide'))
   expect(
-    within(gallery).getByRole('button', { name: 'Inspect 001' }),
-  ).toHaveAttribute('aria-pressed', 'true')
-  fireEvent.click(within(gallery).getByRole('button', { name: 'Use template' }))
+    JSON.parse(localStorage.getItem(STORAGE_KEY)!).appearance.templateId,
+  ).toBe('modern')
+  fireEvent.click(screen.getByRole('button', { name: 'Use this template' }))
   expect(
     screen.getByRole('heading', { name: 'Personal details' }),
   ).toHaveFocus()
@@ -112,7 +118,7 @@ it.each([
     expect(screen.getByRole('heading', { name: heading })).toHaveFocus()
     expect(window.document.documentElement).toHaveAttribute('lang', language)
     expect(window.document.documentElement).toHaveAttribute('dir', direction)
-    for (const number of ['001', '002', '003', '004', '005', '006']) {
+    for (const number of ['001', '002', '003', '004', '005', '006', '007']) {
       expect(
         screen.getByRole('button', { name: `${inspect} ${number}` }),
       ).not.toHaveTextContent(number)

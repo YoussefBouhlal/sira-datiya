@@ -135,7 +135,7 @@ it('only exposes surfaces when supported and warns about heading-band contrast',
   }
 })
 
-it('offers the default immediately and keeps opening inspection tentative', () => {
+it('offers the default immediately and selects inline until confirmation', () => {
   const onApply = vi.fn()
   render(
     <TemplateStart
@@ -167,19 +167,29 @@ it('offers the default immediately and keeps opening inspection tentative', () =
   onApply.mockClear()
   screen.getByRole('button', { name: 'Inspect 002' }).focus()
   fireEvent.click(screen.getByRole('button', { name: 'Inspect 002' }))
-  let gallery = screen.getByRole('dialog')
-  expect(
-    within(gallery).getByRole('button', { name: 'Inspect 002' }),
-  ).toHaveAttribute('aria-pressed', 'true')
-  expect(
-    within(gallery).queryByRole('region', { name: 'Template CV preview' }),
-  ).not.toBeInTheDocument()
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Inspect 002' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(screen.getByRole('button', { name: 'Inspect 001' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
   expect(onApply).not.toHaveBeenCalled()
-  fireEvent(gallery, new Event('cancel', { bubbles: true }))
   expect(screen.getByRole('button', { name: 'Inspect 002' })).toHaveFocus()
+  fireEvent.click(screen.getByRole('button', { name: 'Inspect 001' }))
+  expect(screen.getByRole('button', { name: 'Inspect 001' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  expect(screen.getByRole('button', { name: 'Inspect 002' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
   fireEvent.click(screen.getByRole('button', { name: 'Inspect 002' }))
-  gallery = screen.getByRole('dialog')
-  fireEvent.click(within(gallery).getByRole('button', { name: 'Use template' }))
+  expect(onApply).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Use this template' }))
   expect(onApply).toHaveBeenCalledExactlyOnceWith('modern')
 })
 

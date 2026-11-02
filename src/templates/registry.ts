@@ -2,6 +2,7 @@ import { classicTemplate } from './001'
 import { modernTemplate } from './002'
 import { primeAtsTemplate } from './005'
 import { pureAtsTemplate } from './006'
+import { executiveTemplate } from './007'
 import { sidebarTemplate } from './003'
 import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
@@ -46,6 +47,7 @@ export const templateRegistry = createTemplateRegistry(
     traditionalTemplate,
     primeAtsTemplate,
     pureAtsTemplate,
+    executiveTemplate,
   ],
   'modern',
 )

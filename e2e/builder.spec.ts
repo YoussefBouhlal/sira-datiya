@@ -198,7 +198,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
   const canvas = page.getByRole('img', {
     name: /معاينة السيرة الذاتية، الصفحة/,
   })
-  for (const name of ['001', '002', '003', '004', '005', '006']) {
+  for (const name of ['001', '002', '003', '004', '005', '006', '007']) {
     const switcher = page.getByRole('group', { name: 'عرض مساحة العمل' })
     if (await switcher.isVisible())
       await switcher.getByRole('button', { name: 'تحرير', exact: true }).click()
@@ -438,7 +438,7 @@ test('empty CVs start with template samples before editing and resume entered co
   await expect(
     page.getByRole('heading', { name: 'Choose a template' }),
   ).toBeFocused()
-  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(6)
+  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(7)
   await expect(page.getByRole('group', { name: 'Workspace view' })).toHaveCount(
     0,
   )
@@ -483,53 +483,53 @@ test('empty CVs start with template samples before editing and resume entered co
       targets: issue.nodes.map((node) => node.target),
     })),
   ).toEqual([])
-  await entry.getByRole('button', { name: 'Inspect 001', exact: true }).click()
-  let gallery = page.getByRole('dialog', { name: /Templates/ })
-  await expect(
-    gallery.getByRole('button', { name: 'Inspect 001', exact: true }),
-  ).toHaveAttribute('aria-pressed', 'true')
-  await expect(
-    gallery.getByRole('region', { name: 'CV preview text' }),
-  ).toHaveCount(0)
-  await expect(
-    gallery.getByRole('button', { name: 'Download PDF' }),
-  ).toHaveCount(0)
-  await expect(gallery.locator('.pdf-paper')).toHaveCount(0)
-  await expectThumbnailInk(
-    gallery
-      .getByRole('button', { name: 'Inspect 001', exact: true })
-      .locator('canvas'),
-  )
-  if (isMobile) {
-    expect(await gallery.boundingBox()).toMatchObject({
-      x: 0,
-      y: 0,
-      width: 320,
-      height: 844,
-    })
-    await expect(
-      gallery.getByRole('button', { name: 'Close template gallery' }),
-    ).toBeFocused()
-  }
-  await expect(
-    gallery.getByRole('button', { name: 'Use template', exact: true }),
-  ).toBeInViewport()
-  await gallery.screenshot({
-    path: test.info().outputPath('template-start-inspection.png'),
+  const candidate = entry.getByRole('button', {
+    name: 'Inspect 001',
+    exact: true,
   })
-  const inspectionResults = await new AxeBuilder({ page })
+  await candidate.focus()
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(candidate).toHaveAttribute('aria-pressed', 'true')
+  await expect(candidate).toBeFocused()
+  await expect(defaultChoice).toHaveAttribute('aria-pressed', 'false')
+  await expect(
+    entry.getByRole('region', { name: 'CV preview text' }),
+  ).toHaveCount(0)
+  await expect(entry.getByRole('button', { name: 'Download PDF' })).toHaveCount(
+    0,
+  )
+  await expect(entry.locator('.pdf-paper')).toHaveCount(0)
+  await expectThumbnailInk(candidate.locator('canvas'))
+  await expect(
+    entry.getByRole('button', { name: 'Use this template', exact: true }),
+  ).toBeInViewport()
+  await page.screenshot({
+    path: test.info().outputPath('template-start-selection.png'),
+    fullPage: true,
+  })
+  const selectionResults = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
     .analyze()
   expect(
-    inspectionResults.violations.map((issue) => ({
+    selectionResults.violations.map((issue) => ({
       id: issue.id,
       targets: issue.nodes.map((node) => node.target),
     })),
   ).toEqual([])
   await page.keyboard.press('Escape')
-  await expect(
-    entry.getByRole('button', { name: 'Inspect 001', exact: true }),
-  ).toBeFocused()
+  await expect(candidate).toBeFocused()
+  await expect(candidate).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByLabel('Full name', { exact: true })).toHaveCount(0)
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance?.templateId,
+        storageKey,
+      ),
+    )
+    .toBe('modern')
   await expect
     .poll(() =>
       page.evaluate(
@@ -538,10 +538,8 @@ test('empty CVs start with template samples before editing and resume entered co
       ),
     )
     .toEqual(createEmptyCv())
-  await entry.getByRole('button', { name: 'Inspect 001', exact: true }).click()
-  gallery = page.getByRole('dialog', { name: /Templates/ })
-  await gallery
-    .getByRole('button', { name: 'Use template', exact: true })
+  await entry
+    .getByRole('button', { name: 'Use this template', exact: true })
     .click()
   await expect(
     page.getByRole('heading', { name: 'Personal details' }),
@@ -1952,7 +1950,7 @@ test('portrait, rated skills and ordered references persist and render in every 
   await page.getByRole('button', { name: /06 Template & style/ }).click()
   await chooseTemplate(page, '003')
   await page.getByLabel('Paper size').selectOption('LETTER')
-  for (const template of ['003', '001', '002', '004', '005', '006']) {
+  for (const template of ['003', '001', '002', '004', '005', '006', '007']) {
     if (template !== '003') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
       await chooseTemplate(page, template)
@@ -1993,7 +1991,8 @@ test('portrait, rated skills and ordered references persist and render in every 
             if (
               template === '004' ||
               template === '005' ||
-              template === '006'
+              template === '006' ||
+              template === '007'
             ) {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
@@ -2034,7 +2033,7 @@ test('portrait, rated skills and ordered references persist and render in every 
         fullPage: true,
       })
     }
-    if (template === '006') {
+    if (template === '006' || template === '007') {
       const samples = await page
         .getByRole('img', { name: /CV preview, page/ })
         .evaluate((element) => {
@@ -2059,7 +2058,13 @@ test('portrait, rated skills and ordered references persist and render in every 
         })
       expect(samples).toBeGreaterThan(500)
       await page.screenshot({
-        path: test.info().outputPath('pure-ats-portrait-preview.png'),
+        path: test
+          .info()
+          .outputPath(
+            template === '007'
+              ? 'executive-portrait-preview.png'
+              : 'pure-ats-portrait-preview.png',
+          ),
         fullPage: true,
       })
     }
@@ -2228,7 +2233,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   ).toHaveText('Templates')
   await expect(gallery.getByText(/^\d+ templates?$/)).toHaveCount(0)
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    6,
+    7,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
@@ -2336,7 +2341,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   await gallery.getByRole('button', { name: 'Close template gallery' }).click()
   await page.getByRole('button', { name: 'Browse templates' }).click()
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    6,
+    7,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
