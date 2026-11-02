@@ -20,6 +20,7 @@ src/
     004/                     Template 004 definition, document and styles
     005/                     Template 005 definition, document and styles
     006/                     Template 006 definition, document and styles
+    007/                     Template 007 definition, document and styles
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing
@@ -36,7 +37,7 @@ The application composes features. Features consume domain data, public contract
 
 The template picker receives a thumbnail render slot from the app. The app supplies the PDF feature through that slot; the picker never imports PDF generation or concrete templates. The gallery shows every template in a full-width thumbnail grid without a preview pane, filters, or totals. Tentative selection is local to the picker. Only an explicit Use template action in the persistent footer updates canonical appearance; closing the gallery discards the tentative choice. Opening the gallery highlights the current template and focuses the close button on desktop and mobile.
 
-The app opens empty CVs in a dedicated template-selection screen before the six editor sections. This screen shares template choices and the selection popup with the styling gallery, but exposes no appearance controls. Applying a template changes only appearance and opens personal details. The existing Template & style section remains last and allows later changes without losing content.
+The app opens empty CVs in a dedicated template-selection screen before the six editor sections. This screen shares template choices with the styling gallery, but exposes no appearance controls. Clicking a thumbnail highlights a local candidate inline without opening a popup or changing canonical appearance. The persistent Use this template action applies that candidate and opens personal details. The existing Template & style section remains last and uses its gallery dialog for later changes without losing content.
 
 Domain schema/defaults/types do not import React, browser storage, features, or templates. Types are inferred from Zod schemas to avoid two drifting versions of the model. Templates import domain types, the PDF library, and template-shared primitives, never forms or application state. HTML UI and PDF primitives are intentionally separate.
 

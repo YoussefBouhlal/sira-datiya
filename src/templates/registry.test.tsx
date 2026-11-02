@@ -272,7 +272,7 @@ describe('template registry', () => {
         const strokes = operators.argsArray.filter(
           (_, index) => operators.fnArray[index] === OPS.setStrokeRGBColor,
         )
-        if (id !== 'sidebar')
+        if (id !== 'sidebar' && id !== 'executive')
           expect(JSON.stringify(strokes)).toContain('#a53b12')
         if (id === 'sidebar' || id === 'traditional') {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -291,6 +291,7 @@ describe('template registry', () => {
       traditional: '004',
       'prime-ats': '005',
       'pure-ats': '006',
+      executive: '007',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -897,7 +898,199 @@ describe('template registry', () => {
     })
   }
 
-  it.each(['classic', 'traditional', 'prime-ats', 'pure-ats'])(
+  for (const pageSize of ['A4', 'LETTER'] as const) {
+    it(`executive follows the reference header, expertise grid and footer on ${pageSize}`, async () => {
+      const cv = createExampleCv()
+      cv.headings = { summary: 'Hidden profile label' }
+      cv.experience[0]!.description =
+        'Plain achievement\n\u2022 Existing bullet\n- Existing dash\n1. Numbered achievement'
+      cv.skills = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot'].map(
+        (name, index) => ({
+          id: name,
+          name: `${name} capability`,
+          level: index === 0 ? 5 : null,
+        }),
+      )
+      const appearance = {
+        ...createDocument('executive').appearance,
+        pageSize,
+        fontSize: pageSize === 'A4' ? (10 as const) : (12 as const),
+      }
+      const render = await templateRegistry.resolve('executive').load()
+      const task = getDocument({
+        data: new Uint8Array(await renderToBuffer(render({ cv, appearance }))),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const pages = await Promise.all(
+          Array.from({ length: pdf.numPages }, async (_, index) => {
+            const page = await pdf.getPage(index + 1)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            const footer = items.find(
+              (item) => item.str === `Page ${index + 1} | ${pdf.numPages}`,
+            )
+            expect(footer).toBeDefined()
+            expect(footer!.transform[5]).toBeGreaterThan(20)
+            expect(footer!.transform[5]).toBeLessThan(40)
+            expect(footer!.transform[4] + footer!.width).toBeCloseTo(
+              page.view[2]! - 35,
+              0,
+            )
+            const body = items.filter(
+              (item) => item.str.trim() && item.transform[5] > 40,
+            )
+            expect(body.at(-1)?.str).not.toMatch(
+              /^(Professional Experience|Education|Areas of Expertise|Languages)$/,
+            )
+            return body
+          }),
+        )
+        const items = pages.flat()
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const firstPage = await pdf.getPage(1)
+        const name = find('Alex Morgan')
+        expect(name.transform[4]).toBeCloseTo(35, 0)
+        expect(name.height).toBeCloseTo(appearance.fontSize * 2.2, 0)
+        const contact = find('alex@example.com')
+        expect(contact.transform[4]).toBeGreaterThan(
+          name.transform[4] + name.width,
+        )
+        expect(contact.transform[4] + contact.width).toBeCloseTo(
+          firstPage.view[2]! - 35,
+          0,
+        )
+        const employer = find('Forma Studio')
+        const role = find('Senior Product Designer')
+        const date = find('March 2022 - Present')
+        expect(role.transform[4]).toBeCloseTo(employer.transform[4], 0)
+        expect(role.transform[5]).toBeLessThan(employer.transform[5])
+        expect(date.transform[5]).toBeCloseTo(employer.transform[5], 0)
+        expect(date.transform[4] + date.width).toBeCloseTo(
+          firstPage.view[2]! - 35,
+          0,
+        )
+        expect(find('California College').transform[5]).toBeLessThan(
+          find('BFA, Communication Design').transform[5],
+        )
+        const alpha = find('Alpha capability')
+        for (const [index, label] of ['Alpha', 'Bravo', 'Charlie'].entries()) {
+          const skill = find(`${label} capability`)
+          expect(skill.transform[4]).toBeCloseTo(
+            50 + (index * (firstPage.view[2]! - 70)) / 3,
+            0,
+          )
+          expect(skill.transform[5]).toBeCloseTo(alpha.transform[5], 0)
+        }
+        expect(find('Delta capability').transform[4]).toBeCloseTo(
+          alpha.transform[4],
+          0,
+        )
+        expect(find('Delta capability').transform[5]).toBeLessThan(
+          alpha.transform[5],
+        )
+        const text = items
+          .map((item) => item.str)
+          .join(' ')
+          .replace(/\s+/g, ' ')
+        expect(text).not.toContain('Hidden profile label')
+        expect(text).not.toContain('Profile')
+        expect(text).toContain('Expert')
+        expect(text).toContain('\u2022 Plain achievement')
+        expect(text).toContain('- Existing dash')
+        expect(text).toContain('1. Numbered achievement')
+        expect(text).not.toContain('\u2022 \u2022')
+        expect(text).not.toContain('\u2022 -')
+        expect(text).not.toContain('\\u00b7')
+        expect(text).toContain('\u00b7')
+        expect(text.indexOf('Professional Experience')).toBeLessThan(
+          text.indexOf('Education'),
+        )
+        expect(text.indexOf('Education')).toBeLessThan(
+          text.indexOf('Areas of Expertise'),
+        )
+      } finally {
+        await task.destroy()
+      }
+    })
+  }
+
+  it('executive mirrors its header, date column, expertise and footer in Arabic', async () => {
+    const cv = createEmptyCv()
+    cv.personal.fullName = 'Avery Example'
+    cv.personal.email = 'avery@example.com'
+    cv.personal.phone = '+1 202 555 0140'
+    cv.experience = [
+      {
+        id: 'work',
+        employer: 'Example Works',
+        role: 'Engineer',
+        location: '',
+        startDate: '2020-01',
+        endDate: '',
+        current: true,
+        description: 'Built a useful service.',
+      },
+    ]
+    cv.skills = ['Alpha', 'Bravo', 'Charlie'].map((name) => ({
+      id: name,
+      name,
+      level: null,
+    }))
+    const render = await templateRegistry.resolve('executive').load()
+    const task = getDocument({
+      data: new Uint8Array(
+        await renderToBuffer(
+          render({
+            cv,
+            appearance: createDocument('executive', 'ar').appearance,
+          }),
+        ),
+      ),
+      useSystemFonts: true,
+    })
+    try {
+      const pdf = await task.promise
+      const page = await pdf.getPage(1)
+      const items = (await page.getTextContent()).items.filter(
+        (item) => 'str' in item,
+      )
+      const find = (value: string) =>
+        items.find((item) => item.str.includes(value))!
+      expect(find('Avery Example').transform[4]).toBeGreaterThan(
+        find('avery@example.com').transform[4],
+      )
+      expect(find('Example Works').transform[4]).toBeGreaterThan(
+        page.view[2]! / 2,
+      )
+      expect(find('2020').transform[4]).toBeLessThan(page.view[2]! / 2)
+      expect(find('Alpha').transform[4]).toBeGreaterThan(
+        find('Bravo').transform[4],
+      )
+      expect(find('Bravo').transform[4]).toBeGreaterThan(
+        find('Charlie').transform[4],
+      )
+      const footer = items.filter((item) => item.transform[5] < 40)
+      expect(footer.length).toBeGreaterThan(0)
+      expect(Math.min(...footer.map((item) => item.transform[4]))).toBeCloseTo(
+        35,
+        0,
+      )
+      expect(items.map((item) => item.str).join(' ')).toContain(
+        cv.personal.phone,
+      )
+    } finally {
+      await task.destroy()
+    }
+  })
+
+  it.each(['classic', 'traditional', 'prime-ats', 'pure-ats', 'executive'])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
       const cv = createEmptyCv()

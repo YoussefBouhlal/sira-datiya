@@ -11,7 +11,6 @@ type TemplateGalleryProps = {
   renderThumbnail: (template: TemplateOption) => ReactNode
   onClose: () => void
   onApply: (id: string) => void
-  inspectionId?: string
 }
 
 export function TemplateStart({
@@ -19,37 +18,27 @@ export function TemplateStart({
   selectedId,
   renderThumbnail,
   onApply,
-}: Omit<TemplateGalleryProps, 'onClose' | 'inspectionId'>) {
+}: Omit<TemplateGalleryProps, 'onClose'>) {
   const { t } = useTranslation()
-  const [inspectionId, setInspectionId] = useState<string | null>(null)
+  const [candidateId, setCandidateId] = useState(selectedId)
   return (
     <div className="template-start">
       <TemplateChoices
         options={options}
-        candidateId={selectedId}
+        candidateId={candidateId}
         renderThumbnail={renderThumbnail}
-        onInspect={setInspectionId}
+        onInspect={setCandidateId}
       />
       <footer className="template-start-footer">
         <button
           type="button"
           className="button button-primary"
-          onClick={() => onApply(selectedId)}
+          onClick={() => onApply(candidateId)}
         >
           <Check size={16} />
           {t('Use this template')}
         </button>
       </footer>
-      {inspectionId && (
-        <TemplateGallery
-          options={options}
-          selectedId={selectedId}
-          inspectionId={inspectionId}
-          renderThumbnail={renderThumbnail}
-          onClose={() => setInspectionId(null)}
-          onApply={onApply}
-        />
-      )}
     </div>
   )
 }
@@ -182,13 +171,12 @@ function TemplateGallery({
   renderThumbnail,
   onClose,
   onApply,
-  inspectionId,
 }: TemplateGalleryProps) {
   const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
   const closeButton = useRef<HTMLButtonElement>(null)
   const titleId = useId()
-  const [candidateId, setCandidateId] = useState(inspectionId ?? selectedId)
+  const [candidateId, setCandidateId] = useState(selectedId)
 
   useEffect(() => {
     const element = dialog.current

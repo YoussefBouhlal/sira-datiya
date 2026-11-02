@@ -50,6 +50,9 @@ The on-screen representation of the CV with its current content and appearance.
 **Template gallery**:
 The collection of available templates presented for browsing and comparison.
 
+**Candidate template**:
+A template highlighted for consideration but not yet confirmed as the CV's chosen appearance.
+
 **Template sample**:
 A representation of a template populated with fictional CV content, separate from the person's own CV.
 

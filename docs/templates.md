@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 006 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 007 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -14,12 +14,13 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 004    | `traditional` |
 | 005    | `prime-ats`   |
 | 006    | `pure-ats`    |
+| 007    | `executive`   |
 
-Assign the next unused number explicitly in the definition, starting with 007. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 008. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `007`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `008`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -32,7 +33,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: '007',
+  name: '008',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -49,6 +50,8 @@ Traditional uses a centered serif name, job title, and location, with phone left
 Prime ATS uses a compact single-column sans-serif layout, uppercase accent-colored identity, an optional square portrait at the top right, a horizontal contact line, and uppercase headings framed by thin accent rules. Experience and education have right-aligned dates and bulleted description lines, preserving existing bullet and numbered-list markers. Technical skills use four columns in row-major reading order with named proficiency labels. Projects follow skills; Additional Information groups existing languages and certifications, followed by References. Empty sections are omitted. The selected accent, font size, A4/Letter paper size, page numbers, and flowing multi-page content remain supported; Cobalt gives the closest match to the visual reference. ATS-oriented means a text-first design with selectable PDF text and tested extraction order, not guaranteed compatibility with every applicant-tracking system. No awards field or sample identity is inferred from the reference.
 
 Pure ATS uses a compact single-column Helvetica layout with a left-aligned mixed-case name, optional job title and square portrait, and a horizontal contact line ordered location, email, phone, website, and LinkedIn. Mixed-case Profile, Professional Experience, Education, and Areas of Expertise headings have thin bottom rules in the selected accent. Experience combines role, employer, and location in a bold header with dates below; education leads with the school, then degree and dates. Description lines become bullets without duplicating existing bullet or numbered markers. Skills use four columns in row-major reading order with named proficiency when supplied. Projects, Languages, Certifications, and References follow as separate sections, with empty sections omitted. The bottom-right footer reads Page 1, Page 2, and so on. Existing text-size and A4/Letter settings are honored, and long content flows across pages rather than being truncated. Ink gives the closest match to the reference. Like Prime ATS, this is a selectable, text-first PDF design, not a guarantee of compatibility with every applicant-tracking system.
+
+Executive (007) uses a spacious single-column Helvetica layout on white paper, with a mixed-case name and job title on the left and right-aligned contacts opposite. An optional square portrait sits beside the name. The profile has no heading, so this template does not expose a profile-heading control; saved profile headings remain intact for other templates. Accent-colored Professional Experience, Education, and Areas of Expertise headings have no rules. Experience leads with employer and location, then role, with dates aligned opposite; education leads with degree, then school. Description lines become bullets without duplicating supplied bullet or numbered markers. Expertise uses three columns in row-major order, retaining named proficiency levels. Projects, Languages, Certifications, and References follow when populated. A localized bottom-right footer reads Page 1 | 1, including the total page count. Arabic mirrors the directional layout and footer. Existing color roles, text sizes, and A4/Letter settings remain supported, and long content flows across pages. Cobalt is the closest existing accent to the reference; selecting the template never changes the person's colors or content.
 
 ## Boundaries
 
