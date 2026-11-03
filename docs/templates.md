@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 007 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 008 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -15,12 +15,13 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 005    | `prime-ats`   |
 | 006    | `pure-ats`    |
 | 007    | `executive`   |
+| 008    | `timeline`    |
 
-Assign the next unused number explicitly in the definition, starting with 008. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 009. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `008`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `009`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -33,7 +34,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: '008',
+  name: '009',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -52,6 +53,10 @@ Prime ATS uses a compact single-column sans-serif layout, uppercase accent-color
 Pure ATS uses a compact single-column Helvetica layout with a left-aligned mixed-case name, optional job title and square portrait, and a horizontal contact line ordered location, email, phone, website, and LinkedIn. Mixed-case Profile, Professional Experience, Education, and Areas of Expertise headings have thin bottom rules in the selected accent. Experience combines role, employer, and location in a bold header with dates below; education leads with the school, then degree and dates. Description lines become bullets without duplicating existing bullet or numbered markers. Skills use four columns in row-major reading order with named proficiency when supplied. Projects, Languages, Certifications, and References follow as separate sections, with empty sections omitted. The bottom-right footer reads Page 1, Page 2, and so on. Existing text-size and A4/Letter settings are honored, and long content flows across pages rather than being truncated. Ink gives the closest match to the reference. Like Prime ATS, this is a selectable, text-first PDF design, not a guarantee of compatibility with every applicant-tracking system.
 
 Executive (007) uses a spacious single-column Helvetica layout on white paper, with a mixed-case name and job title on the left and right-aligned contacts opposite. An optional square portrait sits beside the name. The profile has no heading, so this template does not expose a profile-heading control; saved profile headings remain intact for other templates. Accent-colored Professional Experience, Education, and Areas of Expertise headings have no rules. Experience leads with employer and location, then role, with dates aligned opposite; education leads with degree, then school. Description lines become bullets without duplicating supplied bullet or numbered markers. Expertise uses three columns in row-major order, retaining named proficiency levels. Projects, Languages, Certifications, and References follow when populated. A localized bottom-right footer reads Page 1 | 1, including the total page count. Arabic mirrors the directional layout and footer. Existing color roles, text sizes, and A4/Letter settings remain supported, and long content flows across pages. Cobalt is the closest existing accent to the reference; selecting the template never changes the person's colors or content.
+
+Timeline (008) uses a centered identity header with an optional square portrait, condensed Oswald name and headings, and a compact job-title/location/phone line. Without a portrait, its space collapses. A narrow white sidebar holds Details, Skills, and Languages with small circular heading ornaments. The main column holds Profile, Experience, and Education with section icons and thin vertical timeline rails; Projects, Certifications, and References follow when populated. Description lines remain paragraphs and preserve supplied list markers. Rated skills support bars, named text, or both, defaulting to both; unrated skills show names only. Languages remain literal text without inferred ratings. Hobbies are omitted because the CV model has no hobbies field. Ink gives the closest monochrome match; choosing the template does not change existing colors or content. Color roles, custom headings, text sizes, A4/Letter paper, page numbers, optional portraits, and flowing multi-page content remain supported. Arabic uses Amiri and mirrors the sidebar, icons, and timeline rails.
+
+Oswald Regular is bundled exclusively for 008 in `src/templates/008/assets/`, alongside its original `OFL.txt`. It is Copyright 2016 The Oswald Project Authors and distributed under the SIL Open Font License 1.1, sourced from the `googlefonts/OswaldFont` repository. English/French headings use Oswald; body text uses Helvetica. Arabic and mixed-script headings use the shared Amiri fallback. The font is served locally and embedded in PDFs, never requested from a font service.
 
 ## Boundaries
 
@@ -124,7 +129,7 @@ presentation; existing drafts and version 1/2 backups remain readable.
 
 Definitions may declare `skillProficiencyDisplay` metadata with supported `modes`
 and a `defaultMode` contained in that list. Omitted metadata means text only.
-Template 003 supports all three modes and defaults to both; the other templates
+Templates 003 and 008 support all three modes and default to both; the other templates
 remain text only. `resolveSkillProficiencyDisplay` resolves a supported preference
 or the template default without modifying the saved preference. Switching back
 to a supporting template restores the user's choice.

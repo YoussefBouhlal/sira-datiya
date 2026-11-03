@@ -271,9 +271,12 @@ it('offers supported proficiency displays and retains the preference across temp
     (entry) => entry.id !== 'sidebar',
   )) {
     await user.click(screen.getByRole('button', { name: template.id }))
-    expect(
-      screen.queryByRole('combobox', { name: 'Proficiency display' }),
-    ).not.toBeInTheDocument()
+    const selector = screen.queryByRole('combobox', {
+      name: 'Proficiency display',
+    })
+    if ((template.skillProficiencyDisplay?.modes.length ?? 0) > 1)
+      expect(selector).toHaveValue('bar')
+    else expect(selector).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'sidebar' }))
     expect(screen.getByLabelText('Proficiency display')).toHaveValue('bar')
   }

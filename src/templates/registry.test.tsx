@@ -157,12 +157,14 @@ describe('template registry', () => {
     for (const template of templateRegistry.templates) {
       const appearance = createDocument(template.id).appearance
       expect(resolveSkillProficiencyDisplay(template, undefined)).toBe(
-        template.id === 'sidebar' ? 'both' : 'text',
+        template.skillProficiencyDisplay?.defaultMode ?? 'text',
       )
       for (const preferred of ['bar', 'text', 'both'] as const) {
         appearance.skillProficiencyDisplay = preferred
         expect(resolveSkillProficiencyDisplay(template, preferred)).toBe(
-          template.id === 'sidebar' ? preferred : 'text',
+          template.skillProficiencyDisplay?.modes.includes(preferred)
+            ? preferred
+            : 'text',
         )
         expect(appearance.skillProficiencyDisplay).toBe(preferred)
       }
@@ -173,10 +175,14 @@ describe('template registry', () => {
     }
   })
 
-  it.each(['en', 'fr', 'ar'] as const)(
-    'renders proficiency display labels and bar geometry in %s PDFs',
-    async (language) => {
-      const template = templateRegistry.resolve('sidebar')
+  it.each(
+    ['sidebar', 'timeline'].flatMap((id) =>
+      (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
+    ),
+  )(
+    '%s renders proficiency display labels and bar geometry in %s PDFs',
+    async (id, language) => {
+      const template = templateRegistry.resolve(id)
       const render = await template.load()
       const cv = createEmptyCv()
       cv.personal.fullName = 'Avery Example'
@@ -292,6 +298,7 @@ describe('template registry', () => {
       'prime-ats': '005',
       'pure-ats': '006',
       executive: '007',
+      timeline: '008',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -310,6 +317,75 @@ describe('template registry', () => {
     )
     expect(reduced.resolve('sidebar').name).toBe('003')
   })
+
+  it.each(['A4', 'LETTER'] as const)(
+    'timeline centers its identity above separate details and career columns on %s',
+    async (pageSize) => {
+      const template = templateRegistry.resolve('timeline')
+      expect(template.name).toBe('008')
+      const cv = createExampleCv()
+      cv.skills = [
+        { id: 'rated', name: 'Rated capability', level: 3 },
+        { id: 'unrated', name: 'Unrated capability', level: null },
+      ]
+      const snapshot = structuredClone(cv)
+      const render = await template.load()
+      const appearance = { ...createDocument(template.id).appearance, pageSize }
+      const task = getDocument({
+        data: new Uint8Array(await renderToBuffer(render({ cv, appearance }))),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const page = await pdf.getPage(1)
+        const items = (await page.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const name = find('Alex Morgan')
+        expect(name.transform[4] + name.width / 2).toBeCloseTo(
+          page.view[2]! / 2,
+          0,
+        )
+        const email = find('alex@example.com')
+        const profile = find('PROFILE')
+        expect(email.transform[4] + email.width).toBeLessThan(
+          profile.transform[4],
+        )
+        expect(profile.transform[5]).toBeLessThan(name.transform[5])
+        expect(find('Rated capability').transform[4]).toBeLessThan(
+          profile.transform[4],
+        )
+        expect(find('March 2022 - Present').transform[5]).toBeLessThan(
+          find('Senior Product Designer').transform[5],
+        )
+        const allText: string[] = []
+        for (let number = 1; number <= pdf.numPages; number++) {
+          const current = await pdf.getPage(number)
+          const content = (await current.getTextContent()).items.filter(
+            (item) => 'str' in item,
+          )
+          allText.push(content.map((item) => item.str).join(' '))
+          for (const item of content.filter((item) => item.str.trim())) {
+            expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+            expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+              current.view[2]! + 1,
+            )
+            expect(item.transform[5]).toBeGreaterThan(0)
+          }
+        }
+        expect(allText.join(' ')).toContain('Unrated capability')
+        expect(allText.join(' ')).toContain('California College')
+      } finally {
+        await task.destroy()
+      }
+      expect(cv).toEqual(snapshot)
+    },
+  )
 
   it('rejects duplicate or non-numeric template numbers', () => {
     const first = templateRegistry.templates[0]!
@@ -1090,7 +1166,14 @@ describe('template registry', () => {
     }
   })
 
-  it.each(['classic', 'traditional', 'prime-ats', 'pure-ats', 'executive'])(
+  it.each([
+    'classic',
+    'traditional',
+    'prime-ats',
+    'pure-ats',
+    'executive',
+    'timeline',
+  ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
       const cv = createEmptyCv()

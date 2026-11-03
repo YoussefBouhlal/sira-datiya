@@ -18,7 +18,7 @@ Open the local address printed by Vite. For an example document, choose **Load e
 ## Available workflows
 
 - Personal details, optional local portrait, summary, experience, education, skills with optional proficiency ratings, languages, certifications, projects, and ordered references.
-- Templates 001 through 007 with permanent numbers across all languages; accent, text size, and A4/US Letter settings.
+- Templates 001 through 008 with permanent numbers across all languages; accent, text size, and A4/US Letter settings.
 - A first-visit English, French, or Arabic choice before templates, plus the existing header language selector for later changes, with right-to-left Arabic layouts and localized fictional examples.
 - Preview generated PDF pages and download the exact PDF being previewed.
 - Browser autosave and JSON backup/restore under the document actions menu.
@@ -77,3 +77,5 @@ One CV per browser profile. No cloud sync, account recovery, rich text, portrait
 No project license has been selected yet. Before publishing as open source, the owner must select a license, add its full text, and confirm the attribution requirements of bundled dependencies and fonts. No permission to reuse this project's code should be inferred from the absence of a license.
 
 Bundled Amiri font files are Copyright 2010-2022 The Amiri Project Authors and distributed under the SIL Open Font License 1.1. Their original license is included at [public/fonts/amiri/OFL.txt](public/fonts/amiri/OFL.txt).
+
+Template 008's bundled Oswald Regular font is Copyright 2016 The Oswald Project Authors and distributed under the SIL Open Font License 1.1. Its original license is included at [src/templates/008/assets/OFL.txt](src/templates/008/assets/OFL.txt).
