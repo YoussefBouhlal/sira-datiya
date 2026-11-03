@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 008 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 009 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -16,12 +16,13 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 006    | `pure-ats`    |
 | 007    | `executive`   |
 | 008    | `timeline`    |
+| 009    | `columnar`    |
 
-Assign the next unused number explicitly in the definition, starting with 009. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 010. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `009`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `010`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -34,7 +35,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: '009',
+  name: '010',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -56,7 +57,11 @@ Executive (007) uses a spacious single-column Helvetica layout on white paper, w
 
 Timeline (008) uses a centered identity header with an optional square portrait, condensed Oswald name and headings, and a compact job-title/location/phone line. Without a portrait, its space collapses. A narrow white sidebar holds Details, Skills, and Languages with small circular heading ornaments. The main column holds Profile, Experience, and Education with section icons and thin vertical timeline rails; Projects, Certifications, and References follow when populated. Description lines remain paragraphs and preserve supplied list markers. Rated skills support bars, named text, or both, defaulting to both; unrated skills show names only. Languages remain literal text without inferred ratings. Hobbies are omitted because the CV model has no hobbies field. Ink gives the closest monochrome match; choosing the template does not change existing colors or content. Color roles, custom headings, text sizes, A4/Letter paper, page numbers, optional portraits, and flowing multi-page content remain supported. Arabic uses Amiri and mirrors the sidebar, icons, and timeline rails.
 
-Oswald Regular is bundled exclusively for 008 in `src/templates/008/assets/`, alongside its original `OFL.txt`. It is Copyright 2016 The Oswald Project Authors and distributed under the SIL Open Font License 1.1, sourced from the `googlefonts/OswaldFont` repository. English/French headings use Oswald; body text uses Helvetica. Arabic and mixed-script headings use the shared Amiri fallback. The font is served locally and embedded in PDFs, never requested from a font service.
+008 bundles its own Oswald Regular in `src/templates/008/assets/`, alongside its original `OFL.txt`. It is Copyright 2016 The Oswald Project Authors and distributed under the SIL Open Font License 1.1, sourced from the `googlefonts/OswaldFont` repository. English/French headings use Oswald; body text uses Helvetica. Arabic and mixed-script headings use the shared Amiri fallback. The font is served locally and embedded in PDFs, never requested from a font service.
+
+Columnar (009) uses a white 68% main column and a full-height navy 32% right sidebar. Its left-aligned identity pairs an optional circular portrait with a condensed Oswald name and small uppercase job title; portrait space collapses when absent. Profile, Employment History, Education, Projects, Certifications, and References occupy the main column. Employment and education combine titles with employer/school and location where supplied, with small uppercase dates below. Ordinary employment description lines become bullets without duplicating supplied bullet or numbered markers; other descriptions preserve their lines. Details, Skills, and Languages occupy the sidebar. Rated skills default to bars, support all three proficiency display modes, and honor a saved supported preference; unrated skills show names only. Empty sections are omitted. The navy surface repeats on every page while both columns flow once, without truncating content. Arabic mirrors the sidebar and identity and uses Amiri. Existing color overrides, custom headings, text sizes, A4/Letter paper, and page numbers remain supported. The pale backdrop and rounded corners of the visual reference are not part of the PDF paper.
+
+009 owns a separate copy of Oswald Regular and its original `OFL.txt` under `src/templates/009/assets/`, with the same source and attribution as 008. It registers its own font family and never imports another concrete template's assets or implementation.
 
 ## Boundaries
 
@@ -94,6 +99,11 @@ original template uses several shades for its elements. Specify `surface` as
 `sidebar` or `band` only when that template uses a colored surface. The picker
 uses this metadata rather than template-ID conditions.
 
+Optional `colorDefaults.surfaceColor` declares a fixed baseline surface color,
+as used by 009's navy sidebar. Without it, sidebar defaults retain their
+darkened legacy accent. The renderer and color controls use the same resolution;
+saved surface overrides take precedence and resetting colors restores the baseline.
+
 Paper remains white. Template 003 automatically chooses black or white sidebar
 foregrounds and graphics for the selected surface; main-column roles remain
 independent. Template 004 uses the surface override for heading bands. Other
@@ -129,8 +139,9 @@ presentation; existing drafts and version 1/2 backups remain readable.
 
 Definitions may declare `skillProficiencyDisplay` metadata with supported `modes`
 and a `defaultMode` contained in that list. Omitted metadata means text only.
-Templates 003 and 008 support all three modes and default to both; the other templates
-remain text only. `resolveSkillProficiencyDisplay` resolves a supported preference
+Templates 003, 008, and 009 support all three modes. 003 and 008 default to both;
+009 defaults to bars. The other templates remain text only.
+`resolveSkillProficiencyDisplay` resolves a supported preference
 or the template default without modifying the saved preference. Switching back
 to a supporting template restores the user's choice.
 

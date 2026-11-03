@@ -22,6 +22,7 @@ src/
     006/                     Template 006 definition, document and styles
     007/                     Template 007 definition, document and styles
     008/                     Template 008 definition, document, styles and font
+    009/                     Template 009 definition, document, styles and font
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing

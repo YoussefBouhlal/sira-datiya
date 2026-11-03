@@ -9,6 +9,7 @@ export type TemplateColorDefaults = {
   details: string
   body: string
   surface?: 'sidebar' | 'band'
+  surfaceColor?: string
 }
 
 export function effectiveColors(
@@ -27,9 +28,10 @@ export function effectiveColors(
     body: defaults?.body ?? '#222222',
     accent: appearance.accent,
     surface:
-      defaults?.surface === 'sidebar'
+      defaults?.surfaceColor ??
+      (defaults?.surface === 'sidebar'
         ? darkenColor(appearance.accent)
-        : '#dfdfdf',
+        : '#dfdfdf'),
     ...appearance.colors,
   }
 }
