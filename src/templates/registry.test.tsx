@@ -3,6 +3,7 @@ import { PDFDocument } from 'pdf-lib'
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
 import { createDocument, createEmptyCv } from '../domain/cv/defaults'
+import { effectiveColors } from '../domain/cv/colors'
 import { createExampleCv } from '../domain/cv/example'
 import { translate } from '../i18n/messages'
 import { createTemplateRegistry, templateRegistry } from './registry'
@@ -176,7 +177,7 @@ describe('template registry', () => {
   })
 
   it.each(
-    ['sidebar', 'timeline'].flatMap((id) =>
+    ['sidebar', 'timeline', 'columnar'].flatMap((id) =>
       (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
     ),
   )(
@@ -216,7 +217,10 @@ describe('template registry', () => {
             expect(text).toContain('Rated capability')
             expect(text).toContain('Unrated capability')
             const label = translate(language, 'Intermediate')
-            if (mode === 'bar') expect(text).not.toContain(label)
+            if (
+              (mode ?? template.skillProficiencyDisplay?.defaultMode) === 'bar'
+            )
+              expect(text).not.toContain(label)
             else expect(text.match(new RegExp(label, 'g'))).toHaveLength(1)
             expect(text).not.toContain(translate(language, 'Expert'))
             expect(
@@ -278,9 +282,9 @@ describe('template registry', () => {
         const strokes = operators.argsArray.filter(
           (_, index) => operators.fnArray[index] === OPS.setStrokeRGBColor,
         )
-        if (id !== 'sidebar' && id !== 'executive')
+        if (id !== 'sidebar' && id !== 'executive' && id !== 'columnar')
           expect(JSON.stringify(strokes)).toContain('#a53b12')
-        if (id === 'sidebar' || id === 'traditional') {
+        if (id === 'sidebar' || id === 'traditional' || id === 'columnar') {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
         }
       } finally {
@@ -299,6 +303,7 @@ describe('template registry', () => {
       'pure-ats': '006',
       executive: '007',
       timeline: '008',
+      columnar: '009',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -399,6 +404,108 @@ describe('template registry', () => {
     }
   })
 
+  it.each(
+    (['en', 'ar'] as const).flatMap((language) =>
+      (['A4', 'LETTER'] as const).map(
+        (pageSize) => [language, pageSize] as const,
+      ),
+    ),
+  )(
+    'columnar separates its identity and navy sidebar in %s on %s',
+    async (language, pageSize) => {
+      const template = templateRegistry.resolve('columnar')
+      const cv = createExampleCv()
+      cv.summary =
+        'Thoughtful professional creating useful services.\nSecond profile line.'
+      cv.headings = { summary: 'Profile label', details: 'Contact label' }
+      cv.experience = [
+        {
+          ...cv.experience[0]!,
+          role: 'Designer',
+          employer: 'Example Studio',
+          location: 'Remote',
+          description:
+            'First achievement.\n\u2022 Second achievement.\n1. Third achievement.',
+        },
+      ]
+      cv.education = []
+      cv.skills = [
+        { id: 'rated', name: 'Rated capability', level: 3 },
+        { id: 'unrated', name: 'Unrated capability', level: null },
+      ]
+      const appearance = {
+        ...createDocument(template.id, language).appearance,
+        pageSize,
+      }
+      const snapshot = structuredClone({ cv, appearance })
+      expect(effectiveColors(appearance, template.colorDefaults).surface).toBe(
+        '#0c2d4d',
+      )
+      expect(
+        effectiveColors(
+          { ...appearance, colors: { surface: '#eeeeee' } },
+          template.colorDefaults,
+        ).surface,
+      ).toBe('#eeeeee')
+      const render = await template.load()
+      const task = getDocument({
+        data: new Uint8Array(await renderToBuffer(render({ cv, appearance }))),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        expect(pdf.numPages).toBe(1)
+        const page = await pdf.getPage(1)
+        const items = (await page.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const name = find('Alex Morgan')
+        const summary = find('Thoughtful professional')
+        expect(
+          summary.transform[5] - find('Second profile line.').transform[5],
+        ).toBeCloseTo((appearance.fontSize - 2) * 1.5, 1)
+        const email = find('alex@example.com')
+        const profile = find('Profile label')
+        const details = find('Contact label')
+        const boundary = page.view[2]! * (language === 'ar' ? 0.32 : 0.68)
+        for (const item of [name, summary, profile, find('Designer,')]) {
+          if (language === 'ar')
+            expect(item.transform[4]).toBeGreaterThan(boundary)
+          else expect(item.transform[4] + item.width).toBeLessThan(boundary)
+        }
+        for (const item of [email, details, find('Rated capability')]) {
+          if (language === 'ar')
+            expect(item.transform[4] + item.width).toBeLessThan(boundary)
+          else expect(item.transform[4]).toBeGreaterThan(boundary)
+        }
+        expect(profile.transform[5]).toBeLessThan(name.transform[5])
+        if (language === 'ar') expect(name.fontName).toBe(summary.fontName)
+        else expect(name.fontName).not.toBe(summary.fontName)
+        const text = items.map((item) => item.str).join(' ')
+        expect(text).toContain('\u2022 First achievement.')
+        expect(text).toContain('\u2022 Second achievement.')
+        expect(text).not.toContain('\u2022 \u2022')
+        expect(text).toContain('1. Third achievement.')
+        expect(text).not.toContain('\u2022 1.')
+        expect(text).not.toContain(translate(language, 'Intermediate'))
+        const operators = await page.getOperatorList()
+        const fills = operators.argsArray.filter(
+          (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+        )
+        expect(JSON.stringify(fills)).toContain('#0c2d4d')
+        expect(JSON.stringify(fills)).toContain('#ffffff')
+      } finally {
+        await task.destroy()
+      }
+      expect({ cv, appearance }).toEqual(snapshot)
+    },
+  )
+
   for (const language of ['fr', 'ar'] as const) {
     for (const pageSize of ['A4', 'LETTER'] as const) {
       for (const { id } of templateRegistry.templates) {
@@ -466,7 +573,9 @@ describe('template registry', () => {
             expect(text.toLowerCase()).toContain(
               language === 'fr' ? 'camille martin' : 'ليلى',
             )
-            expect(text).toContain(language === 'fr' ? 'mars 2022' : '2022')
+            expect(text.toLowerCase()).toContain(
+              language === 'fr' ? 'mars 2022' : '2022',
+            )
             expect(text).not.toContain('Present')
             expect(text).not.toContain('\uFFFD')
             expect(text).not.toMatch(/[\u2066-\u2069]/)
@@ -476,7 +585,13 @@ describe('template registry', () => {
             expect(text).toContain(cv.personal.phone)
             expect(text).toContain('Figma Toolkit')
             expect(text).toContain('reference@example.com')
-            expect(text).toContain(translate(language, 'Advanced'))
+            if (
+              resolveSkillProficiencyDisplay(
+                templateRegistry.resolve(id),
+                appearance.skillProficiencyDisplay,
+              ) !== 'bar'
+            )
+              expect(text).toContain(translate(language, 'Advanced'))
             expect(text.toLowerCase()).not.toMatch(
               /\b(profile|education|present|references)\b/,
             )
@@ -1173,6 +1288,7 @@ describe('template registry', () => {
     'pure-ats',
     'executive',
     'timeline',
+    'columnar',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
@@ -1289,6 +1405,13 @@ describe('template registry', () => {
             const page = await pdf.getPage(index + 1)
             const content = await page.getTextContent()
             const items = content.items.filter((item) => 'str' in item)
+            if (template.id === 'columnar') {
+              const operators = await page.getOperatorList()
+              const fills = operators.argsArray.filter(
+                (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+              )
+              expect(JSON.stringify(fills)).toContain('#0c2d4d')
+            }
             for (const item of items) {
               if (!item.str.trim()) continue
               expect(item.transform[4]).toBeGreaterThanOrEqual(0)
@@ -1304,6 +1427,16 @@ describe('template registry', () => {
                 expect(item.transform[4] + item.width).toBeLessThanOrEqual(
                   page.view[2]! * 0.32 - 20,
                 )
+              if (template.id === 'columnar') {
+                if (item.transform[4] < page.view[2]! * 0.68)
+                  expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                    page.view[2]! * 0.68 - 29,
+                  )
+                else
+                  expect(item.transform[4]).toBeGreaterThanOrEqual(
+                    page.view[2]! * 0.68 + 31,
+                  )
+              }
             }
             return items
               .filter((item) => item.transform[5] > 40)
@@ -1320,7 +1453,9 @@ describe('template registry', () => {
           'Community Toolkit',
           'Accessibility Practitioner',
           'French (conversational)',
-          'Advanced',
+          ...(template.skillProficiencyDisplay?.defaultMode === 'bar'
+            ? []
+            : ['Advanced']),
         ])
           expect(text).toContain(value)
         expect(text.match(/Alex Morgan/gi)).toHaveLength(1)
