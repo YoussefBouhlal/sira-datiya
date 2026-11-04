@@ -177,7 +177,7 @@ describe('template registry', () => {
   })
 
   it.each(
-    ['sidebar', 'timeline', 'columnar'].flatMap((id) =>
+    ['sidebar', 'timeline', 'columnar', 'ruled'].flatMap((id) =>
       (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
     ),
   )(
@@ -304,6 +304,7 @@ describe('template registry', () => {
       executive: '007',
       timeline: '008',
       columnar: '009',
+      ruled: '010',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -499,6 +500,105 @@ describe('template registry', () => {
         )
         expect(JSON.stringify(fills)).toContain('#0c2d4d')
         expect(JSON.stringify(fills)).toContain('#ffffff')
+      } finally {
+        await task.destroy()
+      }
+      expect({ cv, appearance }).toEqual(snapshot)
+    },
+  )
+
+  it.each(
+    (['en', 'ar'] as const).flatMap((language) =>
+      (['A4', 'LETTER'] as const).map((size) => [language, size] as const),
+    ),
+  )(
+    'ruled separates its full-width identity and white columns in %s on %s',
+    async (language, pageSize) => {
+      const template = templateRegistry.resolve('ruled')
+      expect(template.name).toBe('010')
+      expect(template.portraitShape).toBe('square')
+      const cv = createExampleCv()
+      cv.summary = 'First profile line.\nSecond profile line.'
+      cv.headings = { summary: 'Profile label', details: 'Contact label' }
+      cv.education = []
+      cv.experience = [
+        {
+          ...cv.experience[0]!,
+          role: 'Designer',
+          employer: 'Example Studio',
+          location: 'Remote',
+          description:
+            'First achievement.\n\u2022 Second achievement.\n1. Third achievement.',
+        },
+      ]
+      cv.skills = [
+        { id: 'rated', name: 'Rated capability', level: 3 },
+        { id: 'unrated', name: 'Unrated capability', level: null },
+      ]
+      const appearance = {
+        ...createDocument(template.id, language).appearance,
+        pageSize,
+      }
+      const snapshot = structuredClone({ cv, appearance })
+      const render = await template.load()
+      const task = getDocument({
+        data: new Uint8Array(await renderToBuffer(render({ cv, appearance }))),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        expect(pdf.numPages).toBe(1)
+        const page = await pdf.getPage(1)
+        const items = (await page.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const name = find('ALEX MORGAN')
+        const profile = find('Profile label')
+        const details = find('Contact label')
+        const boundary =
+          44 + (page.view[2]! - 88) * (language === 'ar' ? 0.72 : 0.28)
+        for (const item of [
+          profile,
+          find('First profile line.'),
+          find('Designer,'),
+        ]) {
+          if (language === 'ar')
+            expect(item.transform[4] + item.width).toBeLessThan(boundary)
+          else expect(item.transform[4]).toBeGreaterThan(boundary)
+        }
+        for (const item of [
+          details,
+          find('alex@example.com'),
+          find('Rated capability'),
+        ]) {
+          if (language === 'ar')
+            expect(item.transform[4]).toBeGreaterThan(boundary)
+          else expect(item.transform[4] + item.width).toBeLessThan(boundary)
+        }
+        expect(profile.transform[5]).toBeLessThan(name.transform[5])
+        expect(details.transform[5]).toBeCloseTo(profile.transform[5], 0)
+        expect(
+          find('First profile line.').transform[5] -
+            find('Second profile line.').transform[5],
+        ).toBeCloseTo((appearance.fontSize - 1) * 1.5, 1)
+        expect(
+          Math.abs(
+            find('Remote').transform[5] - find('Designer,').transform[5],
+          ),
+        ).toBeLessThan(2)
+        const text = items.map((item) => item.str).join(' ')
+        expect(text).toContain('\u2022 First achievement.')
+        expect(text).toContain('\u2022 Second achievement.')
+        expect(text).toContain('1. Third achievement.')
+        expect(text).not.toContain('\u2022 \u2022')
+        expect(text).not.toContain('\u2022 1.')
+        expect(text).not.toContain(translate(language, 'Intermediate'))
+        expect(text).toContain('French (conversational)')
       } finally {
         await task.destroy()
       }
@@ -1289,6 +1389,7 @@ describe('template registry', () => {
     'executive',
     'timeline',
     'columnar',
+    'ruled',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
