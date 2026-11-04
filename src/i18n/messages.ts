@@ -369,6 +369,7 @@ export const messages = {
   Present: ['Aujourd’hui', 'حتى الآن'],
   Profile: ['Profil', 'الملف الشخصي'],
   Details: ['Coordonnées', 'التفاصيل'],
+  Info: ['Informations', 'معلومات'],
   'Employment History': ['Parcours professionnel', 'السجل الوظيفي'],
   'Professional Experience': ['Expérience professionnelle', 'الخبرة المهنية'],
   'Areas of Expertise': ['Domaines de compétence', 'مجالات الخبرة'],

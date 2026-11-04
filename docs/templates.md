@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 009 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 010 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -17,12 +17,13 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 007    | `executive`   |
 | 008    | `timeline`    |
 | 009    | `columnar`    |
+| 010    | `ruled`       |
 
-Assign the next unused number explicitly in the definition, starting with 010. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 011. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `010`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `011`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -35,7 +36,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: '010',
+  name: '011',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -62,6 +63,8 @@ Timeline (008) uses a centered identity header with an optional square portrait,
 Columnar (009) uses a white 68% main column and a full-height navy 32% right sidebar. Its left-aligned identity pairs an optional circular portrait with a condensed Oswald name and small uppercase job title; portrait space collapses when absent. Profile, Employment History, Education, Projects, Certifications, and References occupy the main column. Employment and education combine titles with employer/school and location where supplied, with small uppercase dates below. Ordinary employment description lines become bullets without duplicating supplied bullet or numbered markers; other descriptions preserve their lines. Details, Skills, and Languages occupy the sidebar. Rated skills default to bars, support all three proficiency display modes, and honor a saved supported preference; unrated skills show names only. Empty sections are omitted. The navy surface repeats on every page while both columns flow once, without truncating content. Arabic mirrors the sidebar and identity and uses Amiri. Existing color overrides, custom headings, text sizes, A4/Letter paper, and page numbers remain supported. The pale backdrop and rounded corners of the visual reference are not part of the PDF paper.
 
 009 owns a separate copy of Oswald Regular and its original `OFL.txt` under `src/templates/009/assets/`, with the same source and attribution as 008. It registers its own font family and never imports another concrete template's assets or implementation.
+
+Ruled (010) uses a full-width uppercase Helvetica identity with the job title beneath and an optional square portrait opposite. Below a thin gray rule, a white 28% left sidebar holds labeled Info contacts, Skills, and Languages; a white 72% main column holds Profile, Employment History, Education, Projects, Certifications, and References. Uppercase section headings have short underlines, and a thin gray vertical rule separates the columns. Employment headers pair role and employer with location opposite and dates below. Ordinary employment description lines become bullets without duplicating existing list markers. Rated skills default to bars and support text or both; unrated skills and all languages remain literal text without inferred ratings. Empty sections are omitted, and both columns flow across pages without truncation. Arabic mirrors the columns and portrait and uses Amiri. Custom headings, color roles, text sizes, A4/Letter paper, and page numbers remain supported. Ink gives the closest monochrome match; selecting 010 does not change saved colors or content. No outer rounded frame or pale backdrop is included in the PDF.
 
 ## Boundaries
 
@@ -139,8 +142,8 @@ presentation; existing drafts and version 1/2 backups remain readable.
 
 Definitions may declare `skillProficiencyDisplay` metadata with supported `modes`
 and a `defaultMode` contained in that list. Omitted metadata means text only.
-Templates 003, 008, and 009 support all three modes. 003 and 008 default to both;
-009 defaults to bars. The other templates remain text only.
+Templates 003, 008, 009, and 010 support all three modes. 003 and 008 default to both;
+009 and 010 default to bars. The other templates remain text only.
 `resolveSkillProficiencyDisplay` resolves a supported preference
 or the template default without modifying the saved preference. Switching back
 to a supporting template restores the user's choice.
