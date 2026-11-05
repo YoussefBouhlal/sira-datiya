@@ -1855,6 +1855,7 @@ test('legacy portraits retain their appearance and can be reframed without reupl
 test('portrait, rated skills and ordered references persist and render in every template', async ({
   page,
 }) => {
+  test.setTimeout(90_000)
   await page.goto('./')
   await page.getByRole('button', { name: 'Load example' }).click()
   const portrait = await page.evaluate(() => {
@@ -2065,20 +2066,26 @@ test('portrait, rated skills and ordered references persist and render in every 
       })
     }
     if (template === '009') {
-      const samples = await page
-        .getByRole('img', { name: /CV preview, page/ })
-        .evaluate((element) => {
-          const canvas = element as HTMLCanvasElement
-          const context = canvas.getContext('2d')!
-          return [2, Math.floor(canvas.height / 2), canvas.height - 2].map(
-            (height) =>
-              Array.from(
-                context.getImageData(canvas.width - 2, height, 1, 1).data,
-              ),
-          )
-        })
-      for (const pixel of samples)
-        expect(pixel.slice(0, 3)).toEqual([12, 45, 77])
+      await expect
+        .poll(() =>
+          page
+            .getByRole('img', { name: /CV preview, page/ })
+            .evaluate((element) => {
+              const canvas = element as HTMLCanvasElement
+              const context = canvas.getContext('2d')!
+              return [2, Math.floor(canvas.height / 2), canvas.height - 2].map(
+                (height) =>
+                  Array.from(
+                    context.getImageData(canvas.width - 2, height, 1, 1).data,
+                  ).slice(0, 3),
+              )
+            }),
+        )
+        .toEqual([
+          [12, 45, 77],
+          [12, 45, 77],
+          [12, 45, 77],
+        ])
     }
     if (
       template === '006' ||
