@@ -372,6 +372,8 @@ export const messages = {
   Info: ['Informations', 'معلومات'],
   'Employment History': ['Parcours professionnel', 'السجل الوظيفي'],
   'Professional Experience': ['Expérience professionnelle', 'الخبرة المهنية'],
+  'Career Experience': ['Parcours professionnel', 'الخبرة المهنية'],
+  at: ['chez', 'لدى'],
   'Areas of Expertise': ['Domaines de compétence', 'مجالات الخبرة'],
   'Technical Skills': ['Compétences techniques', 'المهارات التقنية'],
   'Additional Information': ['Informations complémentaires', 'معلومات إضافية'],

@@ -6,6 +6,7 @@ import { executiveTemplate } from './007'
 import { timelineTemplate } from './008'
 import { columnarTemplate } from './009'
 import { ruledTemplate } from './010'
+import { sageTemplate } from './011'
 import { sidebarTemplate } from './003'
 import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
@@ -54,6 +55,7 @@ export const templateRegistry = createTemplateRegistry(
     timelineTemplate,
     columnarTemplate,
     ruledTemplate,
+    sageTemplate,
   ],
   'modern',
 )
