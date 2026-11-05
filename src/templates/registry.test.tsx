@@ -177,7 +177,7 @@ describe('template registry', () => {
   })
 
   it.each(
-    ['sidebar', 'timeline', 'columnar', 'ruled'].flatMap((id) =>
+    ['sidebar', 'timeline', 'columnar', 'ruled', 'charcoal'].flatMap((id) =>
       (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
     ),
   )(
@@ -284,7 +284,11 @@ describe('template registry', () => {
         )
         if (!['sidebar', 'executive', 'columnar', 'sage'].includes(id))
           expect(JSON.stringify(strokes)).toContain('#a53b12')
-        if (['sidebar', 'traditional', 'columnar', 'sage'].includes(id)) {
+        if (
+          ['sidebar', 'traditional', 'columnar', 'sage', 'charcoal'].includes(
+            id,
+          )
+        ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
         }
       } finally {
@@ -306,6 +310,7 @@ describe('template registry', () => {
       columnar: '009',
       ruled: '010',
       sage: '011',
+      charcoal: '012',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -1493,6 +1498,110 @@ describe('template registry', () => {
     },
   )
 
+  it.each(
+    (['en', 'fr', 'ar'] as const).flatMap((language) =>
+      (['A4', 'LETTER'] as const).map(
+        (pageSize) => [language, pageSize] as const,
+      ),
+    ),
+  )(
+    'charcoal centers its identity and uses row-major skill columns in %s on %s',
+    async (language, pageSize) => {
+      const template = templateRegistry.resolve('charcoal')
+      expect(template.name).toBe('012')
+      expect(template.portraitShape).toBe('circle')
+      const cv = createExampleCv()
+      cv.skills = [
+        { id: 'first', name: 'First capability', level: 2 },
+        { id: 'second', name: 'Second capability', level: 5 },
+        { id: 'third', name: 'Third capability', level: null },
+      ]
+      cv.experience[0]!.description =
+        'Plain achievement\n\u2022 Existing bullet\n1. Numbered achievement'
+      const appearance = {
+        ...createDocument(template.id, language).appearance,
+        pageSize,
+      }
+      const render = await template.load()
+      const snapshot = structuredClone({ cv, appearance })
+      const task = getDocument({
+        data: new Uint8Array(await renderToBuffer(render({ cv, appearance }))),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const page = await pdf.getPage(1)
+        const items = (await page.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const name = find('Alex Morgan')
+        expect(name.transform[4] + name.width / 2).toBeCloseTo(
+          page.view[2]! / 2,
+          0,
+        )
+        expect(name.transform[5]).toBeGreaterThan(
+          find('PRODUCT DESIGNER').transform[5],
+        )
+        expect(find('PRODUCT DESIGNER').transform[5]).toBeGreaterThan(
+          find('alex@example.com').transform[5],
+        )
+        const fills = JSON.stringify((await page.getOperatorList()).argsArray)
+        expect(fills).toContain('#303030')
+        expect(fills).toContain('#ffffff')
+        const extracted: string[] = []
+        const skillPositions: typeof items = []
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+          const current = await pdf.getPage(pageNumber)
+          const content = (await current.getTextContent()).items.filter(
+            (item) => 'str' in item,
+          )
+          skillPositions.push(
+            ...content.filter((item) => item.str.includes('capability')),
+          )
+          for (const item of content.filter((item) => item.str.trim())) {
+            expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+            expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+              current.view[2]! + 1,
+            )
+            expect(item.transform[5]).toBeGreaterThan(0)
+            expect(item.transform[5]).toBeLessThan(current.view[3]!)
+          }
+          extracted.push(content.map((item) => item.str).join(' '))
+        }
+        const first = skillPositions.find(
+          (item) => item.str === 'First capability',
+        )!
+        const second = skillPositions.find(
+          (item) => item.str === 'Second capability',
+        )!
+        const third = skillPositions.find(
+          (item) => item.str === 'Third capability',
+        )!
+        expect(first).toBeDefined()
+        expect(second).toBeDefined()
+        expect(third).toBeDefined()
+        expect(first.transform[5]).toBeCloseTo(second.transform[5], 0)
+        expect(third.transform[5]).toBeLessThan(first.transform[5])
+        if (language === 'ar')
+          expect(first.transform[4]).toBeGreaterThan(second.transform[4])
+        else expect(first.transform[4]).toBeLessThan(second.transform[4])
+        const text = extracted.join(' ').replace(/\s+/g, ' ')
+        expect(text).toContain('Plain achievement')
+        expect(text).toContain('Existing bullet')
+        expect(text).toContain('Numbered achievement')
+        expect(text).not.toMatch(/\u2022\s*\u2022|\u2022\s*1\./)
+        expect({ cv, appearance }).toEqual(snapshot)
+      } finally {
+        await task.destroy()
+      }
+    },
+  )
+
   it.each([
     'classic',
     'traditional',
@@ -1503,6 +1612,7 @@ describe('template registry', () => {
     'columnar',
     'ruled',
     'sage',
+    'charcoal',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {

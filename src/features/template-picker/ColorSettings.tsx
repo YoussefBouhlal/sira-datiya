@@ -5,6 +5,7 @@ import {
   colorPalettes,
   contrastRatio,
   effectiveColors,
+  surfaceForeground,
   type ColorRole,
 } from '../../domain/cv/colors'
 import type { TemplateOption } from '../../templates/types'
@@ -107,7 +108,12 @@ export function ColorSettings({
   )
   const bandWarning =
     template.colorDefaults?.surface === 'band' &&
-    contrastRatio(colors.headings, colors.surface) < 4.5
+    contrastRatio(
+      template.colorDefaults.surfaceForeground === 'contrast'
+        ? (appearance.colors?.headings ?? surfaceForeground(colors.surface))
+        : colors.headings,
+      colors.surface,
+    ) < 4.5
   return (
     <fieldset className="plain-fieldset color-settings">
       <legend className="setting-label">{t('Colors')}</legend>

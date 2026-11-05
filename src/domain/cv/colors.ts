@@ -10,6 +10,7 @@ export type TemplateColorDefaults = {
   body: string
   surface?: 'sidebar' | 'band'
   surfaceColor?: string
+  surfaceForeground?: 'contrast'
 }
 
 export function effectiveColors(
