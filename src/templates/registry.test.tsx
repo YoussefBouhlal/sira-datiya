@@ -282,9 +282,9 @@ describe('template registry', () => {
         const strokes = operators.argsArray.filter(
           (_, index) => operators.fnArray[index] === OPS.setStrokeRGBColor,
         )
-        if (id !== 'sidebar' && id !== 'executive' && id !== 'columnar')
+        if (!['sidebar', 'executive', 'columnar', 'sage'].includes(id))
           expect(JSON.stringify(strokes)).toContain('#a53b12')
-        if (id === 'sidebar' || id === 'traditional' || id === 'columnar') {
+        if (['sidebar', 'traditional', 'columnar', 'sage'].includes(id)) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
         }
       } finally {
@@ -305,6 +305,7 @@ describe('template registry', () => {
       timeline: '008',
       columnar: '009',
       ruled: '010',
+      sage: '011',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -1381,6 +1382,117 @@ describe('template registry', () => {
     }
   })
 
+  it.each(
+    (['en', 'fr', 'ar'] as const).flatMap((language) =>
+      (['A4', 'LETTER'] as const).map(
+        (pageSize) => [language, pageSize] as const,
+      ),
+    ),
+  )(
+    'sage follows its band, body and footer layout in %s on %s',
+    async (language, pageSize) => {
+      const template = templateRegistry.resolve('sage')
+      expect(template.name).toBe('011')
+      expect(template.headings).not.toHaveProperty('summary')
+      const cv = createExampleCv()
+      cv.experience[0]!.description =
+        'Plain achievement\n\u2022 Existing bullet\n1. Numbered achievement'
+      const snapshot = structuredClone(cv)
+      const appearance = {
+        ...createDocument('sage', language).appearance,
+        pageSize,
+      }
+      const render = await template.load()
+      const task = getDocument({
+        data: new Uint8Array(await renderToBuffer(render({ cv, appearance }))),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const firstPage = await pdf.getPage(1)
+        const items = (await firstPage.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const find = (value: string) => {
+          const item = items.find((item) => item.str.includes(value))
+          expect(item, value).toBeDefined()
+          return item!
+        }
+        const name = find('Alex Morgan')
+        const email = find('alex@example.com')
+        expect(name.height).toBeGreaterThan(appearance.fontSize * 2)
+        expect(name.transform[5]).toBeGreaterThan(
+          find('Product Designer').transform[5],
+        )
+        if (language === 'ar')
+          expect(name.transform[4]).toBeGreaterThan(email.transform[4])
+        else expect(name.transform[4]).toBeLessThan(email.transform[4])
+        const fills = (await firstPage.getOperatorList()).argsArray
+        expect(JSON.stringify(fills)).toContain('#c2d2b3')
+        expect(JSON.stringify(fills)).toContain('#6b8059')
+        const extracted: string[] = []
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+          const page = await pdf.getPage(pageNumber)
+          const content = (await page.getTextContent()).items.filter(
+            (item) => 'str' in item,
+          )
+          const footer = content.filter(
+            (item) => item.str.trim() && item.transform[5] < 40,
+          )
+          expect(footer.length).toBeGreaterThan(0)
+          expect(
+            footer
+              .map((item) => item.str)
+              .join(' ')
+              .replace(/\s/g, ''),
+          ).toContain(
+            translate(language, 'Page {page}', { page: pageNumber }).replace(
+              /\s/g,
+              '',
+            ),
+          )
+          if (language === 'ar')
+            expect(
+              Math.max(...footer.map((item) => item.transform[4] + item.width)),
+            ).toBeCloseTo(page.view[2]! - 36, 0)
+          else
+            expect(
+              Math.min(...footer.map((item) => item.transform[4])),
+            ).toBeCloseTo(36, 0)
+          for (const item of content.filter((item) => item.str.trim())) {
+            expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+            expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+              page.view[2]! + 1,
+            )
+            expect(item.transform[5]).toBeGreaterThan(0)
+            expect(item.transform[5]).toBeLessThan(page.view[3]!)
+          }
+          extracted.push(
+            content
+              .filter((item) => item.transform[5] > 40)
+              .map((item) => item.str)
+              .join(' '),
+          )
+        }
+        const text = extracted.join(' ').replace(/\s+/g, ' ')
+        for (const value of [
+          'Plain achievement',
+          'Existing bullet',
+          'Numbered achievement',
+          cv.education[0]!.school,
+        ])
+          expect(text).toContain(value)
+        expect(text).not.toMatch(/\u2022\s*\u2022|\u2022\s*1\./)
+        expect(text.replace(/\s/g, '')).toContain(
+          translate(language, 'Career Experience').replace(/\s/g, ''),
+        )
+        expect(cv).toEqual(snapshot)
+      } finally {
+        await task.destroy()
+      }
+    },
+  )
+
   it.each([
     'classic',
     'traditional',
@@ -1390,6 +1502,7 @@ describe('template registry', () => {
     'timeline',
     'columnar',
     'ruled',
+    'sage',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {

@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 010 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 011 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -18,12 +18,13 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 008    | `timeline`    |
 | 009    | `columnar`    |
 | 010    | `ruled`       |
+| 011    | `sage`        |
 
-Assign the next unused number explicitly in the definition, starting with 011. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 012. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `011`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `012`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -36,7 +37,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: '011',
+  name: '012',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -65,6 +66,8 @@ Columnar (009) uses a white 68% main column and a full-height navy 32% right sid
 009 owns a separate copy of Oswald Regular and its original `OFL.txt` under `src/templates/009/assets/`, with the same source and attribution as 008. It registers its own font family and never imports another concrete template's assets or implementation.
 
 Ruled (010) uses a full-width uppercase Helvetica identity with the job title beneath and an optional square portrait opposite. Below a thin gray rule, a white 28% left sidebar holds labeled Info contacts, Skills, and Languages; a white 72% main column holds Profile, Employment History, Education, Projects, Certifications, and References. Uppercase section headings have short underlines, and a thin gray vertical rule separates the columns. Employment headers pair role and employer with location opposite and dates below. Ordinary employment description lines become bullets without duplicating existing list markers. Rated skills default to bars and support text or both; unrated skills and all languages remain literal text without inferred ratings. Empty sections are omitted, and both columns flow across pages without truncation. Arabic mirrors the columns and portrait and uses Amiri. Custom headings, color roles, text sizes, A4/Letter paper, and page numbers remain supported. Ink gives the closest monochrome match; selecting 010 does not change saved colors or content. No outer rounded frame or pale backdrop is included in the PDF.
+
+Sage (011) uses a single-column Helvetica layout with a wide rounded pale-sage identity band, a mixed-case name on the left, and right-aligned contacts. An optional square portrait sits beside the name, with no reserved space when absent. The job title and unheaded profile follow below the band; the profile-heading control is omitted without discarding saved overrides. Large unruled Career Experience and Education headings use muted green. Experience leads with role, employer and location opposite dates; education combines degree and dates above the school. Description lines become bullets without duplicating existing bullet or numbered markers. Skills retain named proficiency labels; Projects, Languages, Certifications, and References follow when populated. The localized bottom-left footer reads Page 1, Page 2, and so on. Arabic uses Amiri and mirrors the header, dates and footer. Existing color roles, custom headings, text sizes, A4/Letter paper, and flowing multi-page content remain supported. Sage and green are template defaults; selecting 011 never replaces saved colors or content. The outer rounded page frame and pale backdrop of the reference are not part of the PDF.
 
 ## Boundaries
 
