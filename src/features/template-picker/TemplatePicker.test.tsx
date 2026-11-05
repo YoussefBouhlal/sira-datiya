@@ -135,6 +135,48 @@ it('only exposes surfaces when supported and warns about heading-band contrast',
   }
 })
 
+it('checks adaptive band foregrounds without warning about their body heading defaults', () => {
+  const appearance = createDocument('charcoal').appearance
+  const template = {
+    id: 'charcoal',
+    name: '012',
+    typography: 'serif' as const,
+    colorDefaults: {
+      headings: '#292929',
+      details: '#505050',
+      body: '#292929',
+      surface: 'band' as const,
+      surfaceColor: '#303030',
+      surfaceForeground: 'contrast' as const,
+    },
+  }
+  const warning = 'Low contrast between headings and the section background.'
+  const view = render(
+    <ColorSettings
+      appearance={appearance}
+      template={template}
+      onChange={vi.fn()}
+    />,
+  )
+  expect(screen.queryByText(warning)).not.toBeInTheDocument()
+  view.rerender(
+    <ColorSettings
+      appearance={{ ...appearance, colors: { headings: '#292929' } }}
+      template={template}
+      onChange={vi.fn()}
+    />,
+  )
+  expect(screen.getByText(warning)).toBeInTheDocument()
+  view.rerender(
+    <ColorSettings
+      appearance={{ ...appearance, colors: { surface: '#eeeeee' } }}
+      template={template}
+      onChange={vi.fn()}
+    />,
+  )
+  expect(screen.queryByText(warning)).not.toBeInTheDocument()
+})
+
 it('offers the default immediately and selects inline until confirmation', () => {
   const onApply = vi.fn()
   render(
