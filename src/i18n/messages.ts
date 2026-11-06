@@ -192,6 +192,7 @@ export const messages = {
   Proficiency: ['Niveau de maîtrise', 'مستوى الإتقان'],
   'Proficiency display': ['Affichage du niveau', 'عرض مستوى الإتقان'],
   'Bar only': ['Barre uniquement', 'الشريط فقط'],
+  Dots: ['Points', 'النقاط'],
   'Text only': ['Texte uniquement', 'النص فقط'],
   Both: ['Les deux', 'كلاهما'],
   Unrated: ['Non évalué', 'غير محدد'],

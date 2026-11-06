@@ -48,6 +48,7 @@ export function ExtrasForm({
     bar: 'Bar only',
     text: 'Text only',
     both: 'Both',
+    dots: 'Dots',
   }
   function updateProject(id: string, patch: Partial<Project>) {
     onChange({
