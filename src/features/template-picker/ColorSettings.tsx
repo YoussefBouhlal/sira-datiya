@@ -24,12 +24,14 @@ function ColorField({
   label,
   value,
   warning,
+  pageSurface = false,
   onChange,
 }: {
   role: ColorRole
   label: string
   value: string
   warning: boolean
+  pageSurface?: boolean
   onChange: (color: string) => void
 }) {
   const { t } = useTranslation()
@@ -77,9 +79,11 @@ function ColorField({
           {t(
             invalid
               ? 'Enter a six-digit hex color, such as #177568.'
-              : role === 'surface'
-                ? 'Low contrast between headings and the section background.'
-                : 'Low contrast on white paper.',
+              : pageSurface
+                ? 'Low contrast on the page background.'
+                : role === 'surface'
+                  ? 'Low contrast between headings and the section background.'
+                  : 'Low contrast on white paper.',
           )}
         </p>
       )}
@@ -99,6 +103,7 @@ export function ColorSettings({
   const { t } = useTranslation()
   const id = useId()
   const colors = effectiveColors(appearance, template.colorDefaults)
+  const pageSurface = template.colorDefaults?.surface === 'page'
   const [revision, setRevision] = useState(0)
   const palette = colorPalettes.find((candidate) =>
     roles.every(
@@ -161,11 +166,19 @@ export function ColorSettings({
               role={role}
               label={label}
               value={colors[role]}
+              pageSurface={pageSurface}
               warning={
                 role === 'surface'
-                  ? bandWarning
+                  ? bandWarning ||
+                    (pageSurface &&
+                      [colors.headings, colors.details, colors.body].some(
+                        (color) => contrastRatio(color, colors.surface) < 4.5,
+                      ))
                   : ['headings', 'details', 'body'].includes(role) &&
-                    contrastRatio(colors[role], '#ffffff') < 4.5
+                    contrastRatio(
+                      colors[role],
+                      pageSurface ? colors.surface : '#ffffff',
+                    ) < 4.5
               }
               onChange={(color) =>
                 onChange({
