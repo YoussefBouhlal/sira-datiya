@@ -280,4 +280,24 @@ it('offers supported proficiency displays and retains the preference across temp
     await user.click(screen.getByRole('button', { name: 'sidebar' }))
     expect(screen.getByLabelText('Proficiency display')).toHaveValue('bar')
   }
+  await user.click(screen.getByRole('button', { name: 'framed' }))
+  await user.selectOptions(screen.getByLabelText('Proficiency display'), 'dots')
+  for (const template of templateRegistry.templates.filter(
+    (entry) => entry.id !== 'framed',
+  )) {
+    await user.click(screen.getByRole('button', { name: template.id }))
+    expect(
+      screen.queryByRole('option', { name: 'Dots' }),
+    ).not.toBeInTheDocument()
+    const selector = screen.queryByRole('combobox', {
+      name: 'Proficiency display',
+    })
+    if (selector)
+      expect(selector).toHaveValue(
+        template.skillProficiencyDisplay?.defaultMode,
+      )
+    await user.click(screen.getByRole('button', { name: 'framed' }))
+    expect(screen.getByLabelText('Proficiency display')).toHaveValue('dots')
+    expect(screen.getByLabelText('Proficiency')).toHaveValue('3')
+  }
 })

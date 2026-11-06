@@ -79,7 +79,7 @@ An optional self-assessed skill level: Beginner, Elementary, Intermediate, Advan
 _Avoid_: Skill percentage
 
 **Proficiency display**:
-The presentation of rated skills as a bar, a named level, or both, according to the chosen template's supported presentations. It does not change the skill's proficiency assessment; unrated skills show only their names.
+The presentation of rated skills as a bar, five dots, a named level, or a bar with a named level, according to the chosen template's supported presentations. Filled dots represent the assessed level out of five. The display does not change the skill's proficiency assessment; unrated skills show only their names.
 _Avoid_: Skill rating, skill percentage
 
 **Reference**:

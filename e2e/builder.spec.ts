@@ -211,6 +211,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
     '010',
     '011',
     '012',
+    '013',
   ]) {
     const switcher = page.getByRole('group', { name: 'عرض مساحة العمل' })
     if (await switcher.isVisible())
@@ -451,7 +452,7 @@ test('empty CVs start with template samples before editing and resume entered co
   await expect(
     page.getByRole('heading', { name: 'Choose a template' }),
   ).toBeFocused()
-  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(12)
+  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(13)
   await expect(page.getByRole('group', { name: 'Workspace view' })).toHaveCount(
     0,
   )
@@ -1564,6 +1565,67 @@ test('proficiency display persists, restores and follows template capabilities',
     })
     await skills()
   }
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '013')
+  await skills()
+  await expect(display).toHaveValue('both')
+  await display.selectOption('dots')
+  expect(await pdfText()).not.toContain('Intermediate')
+  await expect(
+    page.getByRole('region', { name: 'CV preview text' }),
+  ).toContainText('Service design: Intermediate')
+  await page.screenshot({
+    path: test.info().outputPath('framed-dots-preview.png'),
+    fullPage: true,
+  })
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance
+            ?.skillProficiencyDisplay,
+        storageKey,
+      ),
+    )
+    .toBe('dots')
+  await page.reload()
+  await skills()
+  await expect(display).toHaveValue('dots')
+  await page.getByLabel('Document actions', { exact: true }).click()
+  const dotsDownload = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Download backup', exact: true })
+    .click()
+  const dotsBackup = await downloadBytes(await dotsDownload)
+  expect(
+    JSON.parse(dotsBackup.toString()).appearance.skillProficiencyDisplay,
+  ).toBe('dots')
+  await display.selectOption('text')
+  await page.getByLabel('CV backup file').setInputFiles({
+    name: 'dots-backup.json',
+    mimeType: 'application/json',
+    buffer: dotsBackup,
+  })
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Restore backup', exact: true })
+    .click()
+  await skills()
+  await expect(display).toHaveValue('dots')
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '003')
+  await skills()
+  await expect(display).toHaveValue('both')
+  await expect(
+    display.getByRole('option', { name: 'Dots', exact: true }),
+  ).toHaveCount(0)
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '013')
+  await skills()
+  await expect(display).toHaveValue('dots')
+  await expect(
+    page.getByLabel('Proficiency', { exact: true }).first(),
+  ).toHaveValue('3')
 })
 
 test('portrait framing supports apply, cancel, touch, keyboard, templates and backups', async ({
@@ -1977,6 +2039,7 @@ test('portrait, rated skills and ordered references persist and render in every 
     '010',
     '011',
     '012',
+    '013',
   ]) {
     if (template !== '003') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
@@ -2024,7 +2087,8 @@ test('portrait, rated skills and ordered references persist and render in every 
               template === '009' ||
               template === '010' ||
               template === '011' ||
-              template === '012'
+              template === '012' ||
+              template === '013'
             ) {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
@@ -2040,7 +2104,7 @@ test('portrait, rated skills and ordered references persist and render in every 
       for (const value of [
         'Alex Morgan',
         'Service design',
-        ...(['009', '010', '012'].includes(template) ? [] : ['Expert']),
+        ...(['009', '010', '012', '013'].includes(template) ? [] : ['Expert']),
         'Casey Example',
         'casey@example.com',
         'Jordan Example',
@@ -2094,7 +2158,8 @@ test('portrait, rated skills and ordered references persist and render in every 
       template === '009' ||
       template === '010' ||
       template === '011' ||
-      template === '012'
+      template === '012' ||
+      template === '013'
     ) {
       const samples = await page
         .getByRole('img', { name: /CV preview, page/ })
@@ -2123,19 +2188,21 @@ test('portrait, rated skills and ordered references persist and render in every 
         path: test
           .info()
           .outputPath(
-            template === '012'
-              ? 'charcoal-portrait-preview.png'
-              : template === '011'
-                ? 'sage-portrait-preview.png'
-                : template === '010'
-                  ? 'ruled-portrait-preview.png'
-                  : template === '009'
-                    ? 'columnar-portrait-preview.png'
-                    : template === '008'
-                      ? 'timeline-portrait-preview.png'
-                      : template === '007'
-                        ? 'executive-portrait-preview.png'
-                        : 'pure-ats-portrait-preview.png',
+            template === '013'
+              ? 'framed-portrait-preview.png'
+              : template === '012'
+                ? 'charcoal-portrait-preview.png'
+                : template === '011'
+                  ? 'sage-portrait-preview.png'
+                  : template === '010'
+                    ? 'ruled-portrait-preview.png'
+                    : template === '009'
+                      ? 'columnar-portrait-preview.png'
+                      : template === '008'
+                        ? 'timeline-portrait-preview.png'
+                        : template === '007'
+                          ? 'executive-portrait-preview.png'
+                          : 'pure-ats-portrait-preview.png',
           ),
         fullPage: true,
       })
@@ -2305,7 +2372,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   ).toHaveText('Templates')
   await expect(gallery.getByText(/^\d+ templates?$/)).toHaveCount(0)
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    12,
+    13,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
@@ -2413,7 +2480,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   await gallery.getByRole('button', { name: 'Close template gallery' }).click()
   await page.getByRole('button', { name: 'Browse templates' }).click()
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    12,
+    13,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),

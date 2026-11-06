@@ -26,6 +26,7 @@ src/
     010/                     Template 010 definition, document and styles
     011/                     Template 011 definition, document and styles
     012/                     Template 012 definition, document and styles
+    013/                     Template 013 definition, document and styles
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing
@@ -74,6 +75,11 @@ Skills editor exposes only meaningful choices. Unsupported preferences resolve
 to the active template's default without overwriting the saved choice. Templates
 without display metadata remain text only. Unrated skills keep their names only;
 the accessible preview summary retains every supplied rating in all visual modes.
+
+Template 013 additionally supports five-dot proficiency display. The optional
+`dots` preference persists in version 2 drafts and backups, independently of
+skill levels. Other templates fall back without replacing it, so returning to
+013 restores dots. Existing `both` remains bars with named proficiency labels.
 
 ## Custom section headings
 

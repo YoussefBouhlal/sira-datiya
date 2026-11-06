@@ -8,6 +8,7 @@ import { columnarTemplate } from './009'
 import { ruledTemplate } from './010'
 import { sageTemplate } from './011'
 import { charcoalTemplate } from './012'
+import { framedTemplate } from './013'
 import { sidebarTemplate } from './003'
 import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
@@ -58,6 +59,7 @@ export const templateRegistry = createTemplateRegistry(
     ruledTemplate,
     sageTemplate,
     charcoalTemplate,
+    framedTemplate,
   ],
   'modern',
 )

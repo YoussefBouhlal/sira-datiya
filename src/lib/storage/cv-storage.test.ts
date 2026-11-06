@@ -115,7 +115,7 @@ describe('CV persistence', () => {
     },
   )
 
-  it.each(['bar', 'text', 'both'] as const)(
+  it.each(['bar', 'text', 'both', 'dots'] as const)(
     'round trips proficiency display %s without changing skill ratings',
     (mode) => {
       const storage = memoryStorage()

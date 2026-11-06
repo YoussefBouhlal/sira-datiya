@@ -160,12 +160,12 @@ describe('template registry', () => {
       expect(resolveSkillProficiencyDisplay(template, undefined)).toBe(
         template.skillProficiencyDisplay?.defaultMode ?? 'text',
       )
-      for (const preferred of ['bar', 'text', 'both'] as const) {
+      for (const preferred of ['bar', 'text', 'both', 'dots'] as const) {
         appearance.skillProficiencyDisplay = preferred
         expect(resolveSkillProficiencyDisplay(template, preferred)).toBe(
           template.skillProficiencyDisplay?.modes.includes(preferred)
             ? preferred
-            : 'text',
+            : (template.skillProficiencyDisplay?.defaultMode ?? 'text'),
         )
         expect(appearance.skillProficiencyDisplay).toBe(preferred)
       }
@@ -177,8 +177,11 @@ describe('template registry', () => {
   })
 
   it.each(
-    ['sidebar', 'timeline', 'columnar', 'ruled', 'charcoal'].flatMap((id) =>
-      (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
+    ['sidebar', 'timeline', 'columnar', 'ruled', 'charcoal', 'framed'].flatMap(
+      (id) =>
+        (['en', 'fr', 'ar'] as const).map(
+          (language) => [id, language] as const,
+        ),
     ),
   )(
     '%s renders proficiency display labels and bar geometry in %s PDFs',
@@ -195,7 +198,16 @@ describe('template registry', () => {
       const snapshot = structuredClone(cv)
       for (const pageSize of ['A4', 'LETTER'] as const) {
         const drawings: number[] = []
-        for (const mode of ['text', 'bar', 'both', undefined] as const) {
+        const modes = [
+          'text',
+          'bar',
+          'both',
+          undefined,
+          ...(template.skillProficiencyDisplay?.modes.includes('dots')
+            ? ['dots' as const]
+            : []),
+        ] as const
+        for (const mode of modes) {
           const appearance = {
             ...createDocument(template.id, language).appearance,
             pageSize,
@@ -218,7 +230,9 @@ describe('template registry', () => {
             expect(text).toContain('Unrated capability')
             const label = translate(language, 'Intermediate')
             if (
-              (mode ?? template.skillProficiencyDisplay?.defaultMode) === 'bar'
+              ['bar', 'dots'].includes(
+                mode ?? template.skillProficiencyDisplay?.defaultMode ?? 'text',
+              )
             )
               expect(text).not.toContain(label)
             else expect(text.match(new RegExp(label, 'g'))).toHaveLength(1)
@@ -247,7 +261,10 @@ describe('template registry', () => {
         }
         expect(drawings[1]).toBe(drawings[0]! + 4)
         expect(drawings[2]).toBe(drawings[1])
-        expect(drawings[3]).toBe(drawings[2])
+        if (template.skillProficiencyDisplay?.defaultMode === 'dots') {
+          expect(drawings[3]).toBeGreaterThan(drawings[2]!)
+          expect(drawings[4]).toBe(drawings[3])
+        } else expect(drawings[3]).toBe(drawings[2])
       }
     },
   )
@@ -285,9 +302,14 @@ describe('template registry', () => {
         if (!['sidebar', 'executive', 'columnar', 'sage'].includes(id))
           expect(JSON.stringify(strokes)).toContain('#a53b12')
         if (
-          ['sidebar', 'traditional', 'columnar', 'sage', 'charcoal'].includes(
-            id,
-          )
+          [
+            'sidebar',
+            'traditional',
+            'columnar',
+            'sage',
+            'charcoal',
+            'framed',
+          ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
         }
@@ -311,6 +333,7 @@ describe('template registry', () => {
       ruled: '010',
       sage: '011',
       charcoal: '012',
+      framed: '013',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -692,10 +715,12 @@ describe('template registry', () => {
             expect(text).toContain('Figma Toolkit')
             expect(text).toContain('reference@example.com')
             if (
-              resolveSkillProficiencyDisplay(
-                templateRegistry.resolve(id),
-                appearance.skillProficiencyDisplay,
-              ) !== 'bar'
+              !['bar', 'dots'].includes(
+                resolveSkillProficiencyDisplay(
+                  templateRegistry.resolve(id),
+                  appearance.skillProficiencyDisplay,
+                ),
+              )
             )
               expect(text).toContain(translate(language, 'Advanced'))
             expect(text.toLowerCase()).not.toMatch(
@@ -1613,6 +1638,7 @@ describe('template registry', () => {
     'ruled',
     'sage',
     'charcoal',
+    'framed',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
@@ -1729,12 +1755,14 @@ describe('template registry', () => {
             const page = await pdf.getPage(index + 1)
             const content = await page.getTextContent()
             const items = content.items.filter((item) => 'str' in item)
-            if (template.id === 'columnar') {
+            if (template.id === 'columnar' || template.id === 'framed') {
               const operators = await page.getOperatorList()
               const fills = operators.argsArray.filter(
                 (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
               )
-              expect(JSON.stringify(fills)).toContain('#0c2d4d')
+              expect(JSON.stringify(fills)).toContain(
+                template.id === 'framed' ? '#f3f3f3' : '#0c2d4d',
+              )
             }
             for (const item of items) {
               if (!item.str.trim()) continue
@@ -1777,7 +1805,9 @@ describe('template registry', () => {
           'Community Toolkit',
           'Accessibility Practitioner',
           'French (conversational)',
-          ...(template.skillProficiencyDisplay?.defaultMode === 'bar'
+          ...(['bar', 'dots'].includes(
+            template.skillProficiencyDisplay?.defaultMode ?? 'text',
+          )
             ? []
             : ['Advanced']),
         ])
