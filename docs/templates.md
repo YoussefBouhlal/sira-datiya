@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 013 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 014 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -21,12 +21,13 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 011    | `sage`        |
 | 012    | `charcoal`    |
 | 013    | `framed`      |
+| 014    | `botanical`   |
 
-Assign the next unused number explicitly in the definition, starting with 014. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 015. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `014`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `015`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -39,7 +40,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: '014',
+  name: '015',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -77,6 +78,8 @@ Framed (013) uses a centered Helvetica name and job title inside a wide white ou
 
 ## Boundaries
 
+Botanical (014) uses a pale-lavender page, original lavender/blush/accent botanical edge artwork, bold Helvetica identity and headings, and an unheaded profile beside an optional organic portrait. Employment History, Education, Projects, and Certifications occupy the wider left column; Details, Skills, literal Languages, and References occupy the right. Missing portraits collapse their space. Its renderer masks the prepared square portrait without reinterpreting framing; the crop dialog intentionally remains square. Rated skills default to five thin rectangular bar segments, one filled per proficiency level, and also support named text or bars with text. No new saved proficiency mode is introduced. Empty sections are omitted. Background and bottom artwork repeat across pages while identity, profile, and portrait flow once. Content remains selectable and continues without truncation on A4 and Letter. Arabic mirrors directional layout using bundled Amiri. Surface controls the whole page; Accent controls principal artwork and skill segments, while secondary lavender/blush artwork remains fixed. Choosing 014 never changes saved appearance or content. Outer rounded corners and the surrounding reference backdrop are not PDF content.
+
 Optional `portraitShape` metadata declares `circle` or `square` for the portrait
 adjustment dialog; omission means `circle`. Keep it consistent with the rendered
 frame. All current frames have a square aspect ratio, regardless of their mask.
@@ -108,7 +111,7 @@ Definitions expose `colorDefaults` for the appearance controls, not renderer
 branching. `headings` and `details` may use the literal `accent` for a legacy
 accent-derived default. The baseline swatches represent a role even when the
 original template uses several shades for its elements. Specify `surface` as
-`sidebar` or `band` only when that template uses a colored surface. The picker
+`sidebar`, `band`, or `page` only when that template uses a colored surface. The picker
 uses this metadata rather than template-ID conditions.
 
 Optional `colorDefaults.surfaceColor` declares a fixed baseline surface color,
@@ -118,7 +121,7 @@ saved surface overrides take precedence and resetting colors restores the baseli
 
 Optional `colorDefaults.surfaceForeground: 'contrast'` declares an adaptive black/white band foreground, as used by 012. The band contrast warning checks that foreground unless a heading override is saved; body heading defaults remain independent.
 
-Paper remains white. Template 003 automatically chooses black or white sidebar
+Paper remains white except for 014's explicitly supported full-page surface (`surface: 'page'`). Its contrast warnings compare all text roles against the chosen page background. Template 003 automatically chooses black or white sidebar
 foregrounds and graphics for the selected surface; main-column roles remain
 independent. Template 004 uses the surface override for heading bands. Other
 templates retain surface choices without exposing an unused control. Low text

@@ -8,7 +8,7 @@ export type TemplateColorDefaults = {
   headings: string
   details: string
   body: string
-  surface?: 'sidebar' | 'band'
+  surface?: 'sidebar' | 'band' | 'page'
   surfaceColor?: string
   surfaceForeground?: 'contrast'
 }

@@ -212,6 +212,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
     '011',
     '012',
     '013',
+    '014',
   ]) {
     const switcher = page.getByRole('group', { name: 'عرض مساحة العمل' })
     if (await switcher.isVisible())
@@ -452,7 +453,7 @@ test('empty CVs start with template samples before editing and resume entered co
   await expect(
     page.getByRole('heading', { name: 'Choose a template' }),
   ).toBeFocused()
-  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(13)
+  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(14)
   await expect(page.getByRole('group', { name: 'Workspace view' })).toHaveCount(
     0,
   )
@@ -2040,6 +2041,7 @@ test('portrait, rated skills and ordered references persist and render in every 
     '011',
     '012',
     '013',
+    '014',
   ]) {
     if (template !== '003') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
@@ -2088,7 +2090,8 @@ test('portrait, rated skills and ordered references persist and render in every 
               template === '010' ||
               template === '011' ||
               template === '012' ||
-              template === '013'
+              template === '013' ||
+              template === '014'
             ) {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
@@ -2104,7 +2107,9 @@ test('portrait, rated skills and ordered references persist and render in every 
       for (const value of [
         'Alex Morgan',
         'Service design',
-        ...(['009', '010', '012', '013'].includes(template) ? [] : ['Expert']),
+        ...(['009', '010', '012', '013', '014'].includes(template)
+          ? []
+          : ['Expert']),
         'Casey Example',
         'casey@example.com',
         'Jordan Example',
@@ -2159,7 +2164,8 @@ test('portrait, rated skills and ordered references persist and render in every 
       template === '010' ||
       template === '011' ||
       template === '012' ||
-      template === '013'
+      template === '013' ||
+      template === '014'
     ) {
       await expect
         .poll(() =>
@@ -2191,21 +2197,23 @@ test('portrait, rated skills and ordered references persist and render in every 
         path: test
           .info()
           .outputPath(
-            template === '013'
-              ? 'framed-portrait-preview.png'
-              : template === '012'
-                ? 'charcoal-portrait-preview.png'
-                : template === '011'
-                  ? 'sage-portrait-preview.png'
-                  : template === '010'
-                    ? 'ruled-portrait-preview.png'
-                    : template === '009'
-                      ? 'columnar-portrait-preview.png'
-                      : template === '008'
-                        ? 'timeline-portrait-preview.png'
-                        : template === '007'
-                          ? 'executive-portrait-preview.png'
-                          : 'pure-ats-portrait-preview.png',
+            template === '014'
+              ? 'botanical-portrait-preview.png'
+              : template === '013'
+                ? 'framed-portrait-preview.png'
+                : template === '012'
+                  ? 'charcoal-portrait-preview.png'
+                  : template === '011'
+                    ? 'sage-portrait-preview.png'
+                    : template === '010'
+                      ? 'ruled-portrait-preview.png'
+                      : template === '009'
+                        ? 'columnar-portrait-preview.png'
+                        : template === '008'
+                          ? 'timeline-portrait-preview.png'
+                          : template === '007'
+                            ? 'executive-portrait-preview.png'
+                            : 'pure-ats-portrait-preview.png',
           ),
         fullPage: true,
       })
@@ -2375,7 +2383,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   ).toHaveText('Templates')
   await expect(gallery.getByText(/^\d+ templates?$/)).toHaveCount(0)
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    13,
+    14,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
@@ -2483,7 +2491,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   await gallery.getByRole('button', { name: 'Close template gallery' }).click()
   await page.getByRole('button', { name: 'Browse templates' }).click()
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    13,
+    14,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),

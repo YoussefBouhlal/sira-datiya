@@ -44,6 +44,10 @@ export const messages = {
     'Contraste faible sur papier blanc.',
     'تباين منخفض على الورق الأبيض.',
   ],
+  'Low contrast on the page background.': [
+    'Contraste faible sur le fond de la page.',
+    'تباين منخفض على خلفية الصفحة.',
+  ],
   'Low contrast between headings and the section background.': [
     'Contraste faible entre les titres et le fond des sections.',
     'تباين منخفض بين العناوين وخلفية القسم.',

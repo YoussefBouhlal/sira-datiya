@@ -10,6 +10,86 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it.each(['en', 'ar'] as const)(
+    'botanical keeps profile clear of the organic portrait and repeats its surface in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('botanical')
+      const render = await template.load()
+      const cv = createExampleCv()
+      cv.personal.fullName = 'Avery Example'
+      cv.personal.portrait =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+      cv.summary = 'Profile passage beside the portrait.'
+      cv.headings = { details: 'Contact details' }
+      cv.skills = Array.from({ length: 70 }, (_, index) => ({
+        id: `skill-${index}`,
+        name: `Capability ${index}`,
+        level: 3,
+      }))
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const appearance = {
+          ...createDocument(template.id, language).appearance,
+          pageSize,
+        }
+        const snapshot = structuredClone({ cv, appearance })
+        const task = getDocument({
+          data: new Uint8Array(
+            await renderToBuffer(render({ cv, appearance })),
+          ),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          expect(pdf.numPages).toBeGreaterThan(1)
+          const texts: string[] = []
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            texts.push(items.map((item) => item.str).join(' '))
+            const operators = await page.getOperatorList()
+            const fills = operators.argsArray.filter(
+              (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+            )
+            expect(JSON.stringify(fills)).toContain('#f7f6ff')
+            if (pageNumber === 1) {
+              expect(operators.fnArray).toContain(OPS.paintImageXObject)
+              const profile = items.filter((item) =>
+                /Profile|passage|beside|portrait/.test(item.str),
+              )
+              expect(profile.length).toBeGreaterThan(0)
+              for (const item of profile) {
+                if (language === 'ar')
+                  expect(item.transform[4]).toBeGreaterThanOrEqual(244)
+                else
+                  expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                    page.view[2]! - 244,
+                  )
+              }
+              const details = items.find(
+                (item) => item.str === 'Contact details',
+              )!
+              expect(details).toBeDefined()
+              if (language === 'ar')
+                expect(details.transform[4]).toBeLessThan(page.view[2]! / 2)
+              else
+                expect(details.transform[4]).toBeGreaterThan(page.view[2]! / 2)
+            } else
+              expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+          }
+          const text = texts.join(' ').replace(/\s+/g, ' ')
+          expect(text.match(/Avery Example/g)).toHaveLength(1)
+          for (let index = 0; index < 70; index++)
+            expect(text).toContain(`Capability ${index}`)
+          expect({ cv, appearance }).toEqual(snapshot)
+        } finally {
+          await task.destroy()
+        }
+      }
+    },
+  )
+
   for (const template of templateRegistry.templates) {
     it(`${template.id} wraps long and mixed-script headings within PDF pages`, async () => {
       const render = await template.load()
@@ -177,11 +257,16 @@ describe('template registry', () => {
   })
 
   it.each(
-    ['sidebar', 'timeline', 'columnar', 'ruled', 'charcoal', 'framed'].flatMap(
-      (id) =>
-        (['en', 'fr', 'ar'] as const).map(
-          (language) => [id, language] as const,
-        ),
+    [
+      'sidebar',
+      'timeline',
+      'columnar',
+      'ruled',
+      'charcoal',
+      'framed',
+      'botanical',
+    ].flatMap((id) =>
+      (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
     ),
   )(
     '%s renders proficiency display labels and bar geometry in %s PDFs',
@@ -259,7 +344,7 @@ describe('template registry', () => {
           }
           expect(cv).toEqual(snapshot)
         }
-        expect(drawings[1]).toBe(drawings[0]! + 4)
+        expect(drawings[1]).toBe(drawings[0]! + (id === 'botanical' ? 10 : 4))
         expect(drawings[2]).toBe(drawings[1])
         if (template.skillProficiencyDisplay?.defaultMode === 'dots') {
           expect(drawings[3]).toBeGreaterThan(drawings[2]!)
@@ -309,6 +394,7 @@ describe('template registry', () => {
             'sage',
             'charcoal',
             'framed',
+            'botanical',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -334,6 +420,7 @@ describe('template registry', () => {
       sage: '011',
       charcoal: '012',
       framed: '013',
+      botanical: '014',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -1639,6 +1726,7 @@ describe('template registry', () => {
     'sage',
     'charcoal',
     'framed',
+    'botanical',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {

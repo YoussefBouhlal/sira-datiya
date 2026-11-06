@@ -12,6 +12,7 @@ import { createDocument } from '../../domain/cv/defaults'
 import { contrastRatio, surfaceForeground } from '../../domain/cv/colors'
 import { ColorSettings } from './ColorSettings'
 import { TemplatePicker, TemplateStart } from './TemplatePicker'
+import { templateRegistry } from '../../templates/registry'
 
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () {
@@ -23,6 +24,36 @@ beforeAll(() => {
 })
 
 afterEach(cleanup)
+
+it('checks page-surface contrast for all text roles and preserves appearance on reset', () => {
+  const initial = createDocument('botanical').appearance
+  function Controls() {
+    const [appearance, setAppearance] = useState(initial)
+    return (
+      <ColorSettings
+        appearance={appearance}
+        template={templateRegistry.resolve('botanical')}
+        onChange={setAppearance}
+      />
+    )
+  }
+  render(<Controls />)
+  expect(screen.getByLabelText('Surface')).toHaveValue('#f7f6ff')
+  fireEvent.change(screen.getByLabelText('Surface'), {
+    target: { value: '#26262c' },
+  })
+  expect(
+    screen.getAllByText('Low contrast on the page background.').length,
+  ).toBeGreaterThan(0)
+  expect(
+    screen.queryByText('Low contrast on white paper.'),
+  ).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole('button', { name: 'Reset colors' }))
+  expect(screen.getByLabelText('Surface')).toHaveValue('#f7f6ff')
+  expect(
+    screen.queryByText('Low contrast on the page background.'),
+  ).not.toBeInTheDocument()
+})
 
 it('edits independent roles, validates hex, applies palettes and resets colors', () => {
   const initial = createDocument('sidebar').appearance

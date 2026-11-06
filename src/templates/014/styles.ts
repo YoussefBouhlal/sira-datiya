@@ -1,0 +1,60 @@
+import { StyleSheet } from '@react-pdf/renderer'
+
+export const createStyles = (fontSize: number) =>
+  StyleSheet.create({
+    page: { fontFamily: 'Helvetica', paddingTop: 36, paddingBottom: 100 },
+    background: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
+    artwork: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 86 },
+    header: { flexDirection: 'row', marginBottom: 8, paddingHorizontal: 40 },
+    identity: { flexGrow: 1, flexShrink: 1, flexBasis: 0 },
+    name: {
+      fontFamily: 'Helvetica-Bold',
+      fontSize: fontSize * 3.5,
+      lineHeight: 1.05,
+    },
+    jobTitle: {
+      fontFamily: 'Helvetica-Bold',
+      fontSize: fontSize * 1.9,
+      lineHeight: 1.2,
+      marginTop: 6,
+    },
+    portraitFrame: { width: 186, height: 186, marginLeft: 18, flexShrink: 0 },
+    portrait: { width: 186, height: 186, objectFit: 'cover' },
+    mask: { position: 'absolute', top: 0, left: 0, width: 186, height: 186 },
+    summary: { fontSize, lineHeight: 1.4, marginTop: 6, marginBottom: 6 },
+    columns: {
+      flexDirection: 'row',
+      paddingHorizontal: 40,
+      alignItems: 'flex-start',
+    },
+    main: { width: '69%', paddingRight: 24 },
+    sidebar: { width: '31%', paddingLeft: 4 },
+    section: { marginTop: 16 },
+    heading: {
+      fontFamily: 'Helvetica-Bold',
+      fontSize: fontSize + 3,
+      lineHeight: 1.25,
+      marginBottom: 6,
+    },
+    entry: { marginBottom: 11 },
+    entryHeader: { marginBottom: 3 },
+    entryTitle: {
+      fontFamily: 'Helvetica-Bold',
+      fontSize: fontSize - 1,
+      lineHeight: 1.35,
+    },
+    dates: {
+      fontSize: fontSize - 3,
+      lineHeight: 1.4,
+      marginTop: 2,
+      textTransform: 'uppercase',
+    },
+    body: { fontSize: fontSize - 1, lineHeight: 1.4 },
+    description: { fontSize: fontSize - 1, lineHeight: 1.4, marginBottom: 2 },
+    contact: { fontSize: fontSize - 2, lineHeight: 1.4 },
+    skill: { marginBottom: 8 },
+    level: { fontSize: fontSize - 3, lineHeight: 1.4, marginTop: 2 },
+    segments: { flexDirection: 'row', gap: 2, marginTop: 3, width: '88%' },
+    segment: { height: 3, flexGrow: 1, flexBasis: 0 },
+    footer: { position: 'absolute', bottom: 88, right: 40, fontSize: 8 },
+  })
