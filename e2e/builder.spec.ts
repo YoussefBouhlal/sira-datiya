@@ -2161,29 +2161,32 @@ test('portrait, rated skills and ordered references persist and render in every 
       template === '012' ||
       template === '013'
     ) {
-      const samples = await page
-        .getByRole('img', { name: /CV preview, page/ })
-        .evaluate((element) => {
-          const canvas = element as HTMLCanvasElement
-          const context = canvas.getContext('2d')!
-          const pixels = context.getImageData(
-            0,
-            0,
-            canvas.width,
-            canvas.height,
-          ).data
-          let ink = 0
-          for (let index = 0; index < pixels.length; index += 4) {
-            if (
-              pixels[index]! < 180 &&
-              pixels[index + 1]! < 180 &&
-              pixels[index + 2]! < 180
-            )
-              ink++
-          }
-          return ink
-        })
-      expect(samples).toBeGreaterThan(500)
+      await expect
+        .poll(() =>
+          page
+            .getByRole('img', { name: /CV preview, page/ })
+            .evaluate((element) => {
+              const canvas = element as HTMLCanvasElement
+              const context = canvas.getContext('2d')!
+              const pixels = context.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+              ).data
+              let ink = 0
+              for (let index = 0; index < pixels.length; index += 4) {
+                if (
+                  pixels[index]! < 180 &&
+                  pixels[index + 1]! < 180 &&
+                  pixels[index + 2]! < 180
+                )
+                  ink++
+              }
+              return ink
+            }),
+        )
+        .toBeGreaterThan(500)
       await page.screenshot({
         path: test
           .info()
