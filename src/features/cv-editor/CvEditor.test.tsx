@@ -286,15 +286,20 @@ it('offers supported proficiency displays and retains the preference across temp
     (entry) => entry.id !== 'framed',
   )) {
     await user.click(screen.getByRole('button', { name: template.id }))
-    expect(
-      screen.queryByRole('option', { name: 'Dots' }),
-    ).not.toBeInTheDocument()
+    const supportsDots =
+      template.skillProficiencyDisplay?.modes.includes('dots')
+    if (supportsDots)
+      expect(screen.getByRole('option', { name: 'Dots' })).toBeInTheDocument()
+    else
+      expect(
+        screen.queryByRole('option', { name: 'Dots' }),
+      ).not.toBeInTheDocument()
     const selector = screen.queryByRole('combobox', {
       name: 'Proficiency display',
     })
     if (selector)
       expect(selector).toHaveValue(
-        template.skillProficiencyDisplay?.defaultMode,
+        supportsDots ? 'dots' : template.skillProficiencyDisplay?.defaultMode,
       )
     await user.click(screen.getByRole('button', { name: 'framed' }))
     expect(screen.getByLabelText('Proficiency display')).toHaveValue('dots')

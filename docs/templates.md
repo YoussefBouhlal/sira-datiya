@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 014 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 015 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -22,12 +22,13 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 012    | `charcoal`    |
 | 013    | `framed`      |
 | 014    | `botanical`   |
+| 015    | `numbered`    |
 
-Assign the next unused number explicitly in the definition, starting with 015. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 016. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
-1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `015`.
+1. Create `src/templates/<template-number>/` with `Document.tsx`, `styles.ts`, and `index.ts`, using the next unused number, such as `016`.
 2. Implement a pure function accepting `TemplateProps` and returning a React PDF `<Document>` element. Use React PDF components, not HTML or DOM CSS. Honor common accent, font size, page size, and document language preferences.
 3. Export a definition satisfying `TemplateDefinition` from `index.ts`.
 4. Import that definition in the registry and add it to the registered array.
@@ -40,7 +41,7 @@ import type { TemplateDefinition } from '../types'
 
 export const editorialTemplate = {
   id: 'editorial',
-  name: '015',
+  name: '016',
   typography: 'serif',
   load: () => import('./Document').then((module) => module.EditorialDocument),
 } satisfies TemplateDefinition
@@ -77,6 +78,8 @@ Charcoal (012) uses a full-width charcoal header with a centered optional circul
 Framed (013) uses a centered Helvetica name and job title inside a wide white outlined identity box, overlapping a full-height pale-gray left sidebar. An optional square portrait appears beside the centered identity, with no reserved image space when absent. Info, Skills, and literal Languages occupy the sidebar; Profile, Work Experience, Education, Projects, Certifications, and References occupy the white main column when populated. Uppercase headings have full-width thin rules. Experience pairs role and employer with location opposite and dates beneath; education combines degree and school above dates. Description lines remain italic paragraphs and preserve supplied list markers. Rated skills default to five filled/outlined dots and also support bars, named text, or bars with named text; unrated skills show names only. The gray sidebar repeats while identity and content flow once across pages. Arabic mirrors the columns, contacts, portrait, dots, and footer using bundled Amiri. Custom headings, independent color roles, portrait framing, text sizes, A4/Letter paper, and page numbers remain supported. Ink gives the closest monochrome reference match; choosing 013 never replaces saved content or colors. No hobbies field or language ratings are inferred, and the outer rounded frame and pale backdrop are not part of the PDF.
 
 ## Boundaries
+
+Numbered (015) uses a large uppercase Times-Roman identity, an optional square portrait opposite, Helvetica body text, and circled consecutive section numbers beside uppercase serif headings. Profile comes first; Skills and literal Languages share a row. Employment History and Education use paired entries in supplied, row-major order; Projects, Certifications, and References follow at full width. Empty sections are omitted and their numbers close up. Missing portraits collapse their space. Rated skills default to five filled/outlined dots and support bars, named levels, or bars with named levels; unrated skills show names only. Languages have no inferred ratings. Long content flows across pages without automatic font shrinking or truncation. Arabic uses bundled Amiri and mirrors directional layout, portrait, and footer. Existing custom headings, independent color roles, portrait framing, text sizes, A4/Letter paper, and localized page numbers remain supported. Ink gives the closest monochrome reference match; choosing 015 never changes saved colors or content. The surrounding pale backdrop and rounded paper corners are not PDF content.
 
 Botanical (014) uses a pale-lavender page, original lavender/blush/accent botanical edge artwork, bold Helvetica identity and headings, and an unheaded profile beside an optional organic portrait. Employment History, Education, Projects, and Certifications occupy the wider left column; Details, Skills, literal Languages, and References occupy the right. Missing portraits collapse their space. Its renderer masks the prepared square portrait without reinterpreting framing; the crop dialog intentionally remains square. Rated skills default to five thin rectangular bar segments, one filled per proficiency level, and also support named text or bars with text. No new saved proficiency mode is introduced. Empty sections are omitted. Background and bottom artwork repeat across pages while identity, profile, and portrait flow once. Content remains selectable and continues without truncation on A4 and Letter. Arabic mirrors directional layout using bundled Amiri. Surface controls the whole page; Accent controls principal artwork and skill segments, while secondary lavender/blush artwork remains fixed. Choosing 014 never changes saved appearance or content. Outer rounded corners and the surrounding reference backdrop are not PDF content.
 
@@ -156,8 +159,8 @@ presentation; existing drafts and version 1/2 backups remain readable.
 
 Definitions may declare `skillProficiencyDisplay` metadata with supported `modes`
 and a `defaultMode` contained in that list. Omitted metadata means text only.
-Templates 003, 008, 009, 010, and 012 support bar, text, and both. 003 and 008 default to both;
-009, 010, and 012 default to bars. Template 013 supports those modes plus dots and defaults to dots. Dots render five circles with one filled circle per proficiency level; both continues to mean bars with named levels. The other templates remain text only.
+Templates 003, 008, 009, 010, 012, and 014 support bar, text, and both. 003 and 008 default to both;
+009, 010, 012, and 014 default to bars. Templates 013 and 015 support those modes plus dots and default to dots. Dots render five circles with one filled circle per proficiency level; both continues to mean bars with named levels. The other templates remain text only.
 `resolveSkillProficiencyDisplay` resolves a supported preference
 or the template default without modifying the saved preference. Switching back
 to a supporting template restores the user's choice.

@@ -10,6 +10,136 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it.each(['A4', 'LETTER'] as const)(
+    'numbered keeps ordinary employment on the first %s page beside a square portrait',
+    async (pageSize) => {
+      const template = templateRegistry.resolve('numbered')
+      const cv = createExampleCv()
+      cv.personal.portrait =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+      const render = await template.load()
+      const task = getDocument({
+        data: new Uint8Array(
+          await renderToBuffer(
+            render({
+              cv,
+              appearance: {
+                ...createDocument(template.id).appearance,
+                pageSize,
+              },
+            }),
+          ),
+        ),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const page = await pdf.getPage(1)
+        const items = (await page.getTextContent()).items.filter(
+          (item) => 'str' in item,
+        )
+        const employment = items.find(
+          (item) => item.str.trim() === 'EMPLOYMENT HISTORY',
+        )
+        expect(
+          employment,
+          JSON.stringify(
+            items
+              .filter((item) => item.str.trim())
+              .map((item) => [item.str, item.transform[5]]),
+          ),
+        ).toBeDefined()
+        expect(items.map((item) => item.str).join(' ')).toContain(
+          cv.experience[0]!.role,
+        )
+        const profile = items.find((item) => item.str.trim() === 'PROFILE')!
+        const identity = items.filter(
+          (item) => item.str.trim() && item.transform[5] > profile.transform[5],
+        )
+        for (const item of identity)
+          expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+            page.view[2]! - 30 - 166 - 26 + 1,
+          )
+      } finally {
+        await task.destroy()
+      }
+    },
+  )
+
+  it('numbered preserves paired entries across pages and closes heading-number gaps', async () => {
+    const template = templateRegistry.resolve('numbered')
+    expect(template.name).toBe('015')
+    const render = await template.load()
+    const cv = createEmptyCv()
+    cv.skills = [{ id: 'skill', name: 'Example skill', level: 3 }]
+    cv.languages = ['Literal language']
+    cv.experience = Array.from({ length: 3 }, (_, index) => ({
+      id: `job-${index}`,
+      role: `Role ${index}`,
+      employer: 'Example employer',
+      location: '',
+      startDate: '',
+      endDate: '',
+      current: false,
+      description: `${'A long description that must remain selectable across page breaks.\n'.repeat(60)}Final marker ${index}`,
+    }))
+    const snapshot = structuredClone(cv)
+    for (const language of ['en', 'fr', 'ar'] as const) {
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const appearance = {
+          ...createDocument(template.id, language).appearance,
+          pageSize,
+        }
+        const task = getDocument({
+          data: new Uint8Array(
+            await renderToBuffer(render({ cv, appearance })),
+          ),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          expect(pdf.numPages).toBeGreaterThan(1)
+          const texts: string[] = []
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            texts.push(items.map((item) => item.str).join(' '))
+            for (const item of items.filter((item) => item.str.trim())) {
+              expect(item.transform[4]).toBeGreaterThanOrEqual(-1)
+              expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                page.view[2]! + 1,
+              )
+              expect(item.transform[5]).toBeGreaterThan(0)
+            }
+            if (pageNumber === 1) {
+              expect(items.some((item) => item.str === '1')).toBe(true)
+              expect(items.some((item) => item.str === '2')).toBe(true)
+              expect(items.some((item) => item.str === '3')).toBe(true)
+              expect(items.some((item) => item.str === '4')).toBe(false)
+            }
+          }
+          const text = texts.join(' ').replace(/\s+/g, ' ')
+          expect(text.replace(/\s/g, '')).toContain(
+            translate(language, 'Employment History')
+              .toUpperCase()
+              .replace(/\s/g, ''),
+          )
+          expect(text.replace(/\s/g, '')).toContain(
+            translate(language, 'Page {page}', { page: '' }).replace(/\s/g, ''),
+          )
+          for (let index = 0; index < 3; index++)
+            expect(text).toContain(`Final marker ${index}`)
+          expect(text).toContain('Literal language')
+          expect(cv).toEqual(snapshot)
+        } finally {
+          await task.destroy()
+        }
+      }
+    }
+  })
+
   it.each(['en', 'ar'] as const)(
     'botanical keeps profile clear of the organic portrait and repeats its surface in %s',
     async (language) => {
@@ -265,6 +395,7 @@ describe('template registry', () => {
       'charcoal',
       'framed',
       'botanical',
+      'numbered',
     ].flatMap((id) =>
       (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
     ),
@@ -421,6 +552,7 @@ describe('template registry', () => {
       charcoal: '012',
       framed: '013',
       botanical: '014',
+      numbered: '015',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
