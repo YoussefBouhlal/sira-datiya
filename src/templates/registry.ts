@@ -10,6 +10,7 @@ import { sageTemplate } from './011'
 import { charcoalTemplate } from './012'
 import { framedTemplate } from './013'
 import { botanicalTemplate } from './014'
+import { numberedTemplate } from './015'
 import { sidebarTemplate } from './003'
 import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
@@ -62,6 +63,7 @@ export const templateRegistry = createTemplateRegistry(
     charcoalTemplate,
     framedTemplate,
     botanicalTemplate,
+    numberedTemplate,
   ],
   'modern',
 )
