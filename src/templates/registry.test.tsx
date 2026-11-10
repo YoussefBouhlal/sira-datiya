@@ -10,6 +10,146 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it.each(['A4', 'LETTER'] as const)(
+    'flora has no decoration-only pages on %s',
+    async (pageSize) => {
+      const template = templateRegistry.resolve('flora')
+      const render = await template.load()
+      const cv = createExampleCv()
+      cv.personal.portrait =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+      cv.references = ['Casey Example', 'Jordan Example'].map((name) => ({
+        id: name,
+        name,
+        jobTitle: '',
+        organization: 'Example Studio',
+        email: 'person@example.com',
+        phone: '',
+      }))
+      const task = getDocument({
+        data: new Uint8Array(
+          await renderToBuffer(
+            render({
+              cv,
+              appearance: {
+                ...createDocument(template.id).appearance,
+                pageSize,
+              },
+            }),
+          ),
+        ),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+          const page = await pdf.getPage(pageNumber)
+          const items = (await page.getTextContent()).items.filter(
+            (item) => 'str' in item,
+          )
+          expect(
+            items.some((item) => item.str.trim() && item.transform[5] > 40),
+            `Body on page ${pageNumber}: ${JSON.stringify(items.map((item) => [item.str, item.transform[5]]))}`,
+          ).toBe(true)
+        }
+      } finally {
+        await task.destroy()
+      }
+    },
+  )
+
+  it.each(['en', 'fr', 'ar'] as const)(
+    'flora centers its identity, mirrors its columns and preserves flowing text in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('flora')
+      expect(template.name).toBe('017')
+      const render = await template.load()
+      const cv = createExampleCv()
+      cv.personal.fullName = 'Avery Example'
+      cv.personal.portrait =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+      cv.summary = 'Opening profile marker.'
+      cv.skills = [
+        { id: 'rated', name: 'Rated capability', level: 3 },
+        { id: 'unrated', name: 'Unrated capability', level: null },
+      ]
+      cv.languages = ['Literal language']
+      cv.experience[0]!.description = `${'Selectable achievement across page breaks.\n'.repeat(100)}Final achievement marker`
+      const snapshot = structuredClone(cv)
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const task = getDocument({
+          data: new Uint8Array(
+            await renderToBuffer(
+              render({
+                cv,
+                appearance: {
+                  ...createDocument(template.id, language).appearance,
+                  pageSize,
+                },
+              }),
+            ),
+          ),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          expect(pdf.numPages).toBeGreaterThan(1)
+          const texts: string[] = []
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            texts.push(items.map((item) => item.str).join(' '))
+            for (const item of items.filter((item) => item.str.trim())) {
+              expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+              expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                page.view[2]! + 1,
+              )
+              expect(item.transform[5]).toBeGreaterThan(15)
+              expect(item.transform[5]).toBeLessThanOrEqual(page.view[3]!)
+            }
+            const operators = await page.getOperatorList()
+            const fills = operators.argsArray.filter(
+              (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+            )
+            expect(JSON.stringify(fills)).toContain('#f2f0e3')
+            if (pageNumber === 1) {
+              expect(operators.fnArray).toContain(OPS.paintImageXObject)
+              const name = items.find((item) => item.str === 'Avery Example')!
+              expect(name).toBeDefined()
+              expect(name.transform[4] + name.width / 2).toBeCloseTo(
+                page.view[2]! / 2,
+                0,
+              )
+              const skill = items.find(
+                (item) => item.str === 'Rated capability',
+              )!
+              const summary = items.find((item) =>
+                item.str.includes('Opening profile marker'),
+              )!
+              expect(skill).toBeDefined()
+              expect(summary).toBeDefined()
+              if (language === 'ar')
+                expect(skill.transform[4]).toBeGreaterThan(summary.transform[4])
+              else expect(skill.transform[4]).toBeLessThan(summary.transform[4])
+            } else
+              expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+          }
+          const text = texts.join(' ').replace(/\s+/g, ' ')
+          expect(text).toContain('Final achievement marker')
+          expect(text).toContain('Literal language')
+          expect(text).toContain('\u00b7')
+          expect(text).not.toContain('\\u00b7')
+          expect(text.match(/Avery Example/g)).toHaveLength(1)
+          expect(cv).toEqual(snapshot)
+        } finally {
+          await task.destroy()
+        }
+      }
+    },
+  )
+
   it.each(['en', 'fr', 'ar'] as const)(
     'editorial preserves its lead, split rows and flowing content in %s',
     async (language) => {
@@ -515,6 +655,7 @@ describe('template registry', () => {
       'framed',
       'botanical',
       'numbered',
+      'flora',
     ].flatMap((id) =>
       (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
     ),
@@ -645,6 +786,7 @@ describe('template registry', () => {
             'charcoal',
             'framed',
             'botanical',
+            'flora',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -673,6 +815,7 @@ describe('template registry', () => {
       botanical: '014',
       numbered: '015',
       editorial: '016',
+      flora: '017',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -1979,6 +2122,7 @@ describe('template registry', () => {
     'charcoal',
     'framed',
     'botanical',
+    'flora',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
