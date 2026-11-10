@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 018 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 019 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -26,8 +26,9 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 016    | `editorial`   |
 | 017    | `flora`       |
 | 018    | `confetti`    |
+| 019    | `atelier`     |
 
-Assign the next unused number explicitly in the definition, starting with 019. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 020. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
@@ -88,6 +89,8 @@ Flora (017) uses warm ivory paper with original peach, olive, and accent botanic
 
 Confetti (018) uses white paper with original faint geometric outlines, a centered hexagonal portrait, bold Helvetica name, job title, and two-column labeled contacts. Without a portrait, its space collapses; the mask uses the prepared image and retains a square adjustment dialog. Profile, Employment History, Education, Skills, Projects, Languages, Certifications, and References have consecutive two-digit section numbers, omitting empty sections without gaps. Profile text sits beside its heading; dated entries pair a narrow date/location rail with a wider title and description column. Description lines become bullets without duplicating existing list markers. Skills show named proficiency when supplied; languages remain literal text. Artwork repeats on every page while identity and contacts flow once. Long content flows without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors rails, contacts, and the localized page-number footer. Existing custom headings, independent color roles, portrait framing, text sizes, and A4/Letter paper remain supported. Accent recolors the principal geometric outlines; secondary muted colors stay fixed. Paper stays white, and choosing 018 never changes saved content or colors. The reference's surrounding lavender backdrop and rounded paper corners are not PDF content.
 
+Atelier (019) uses cream paper, a repeating muted-brown left sidebar, an optional tall arched portrait, and a brown identity band with a serif name, job title, and unheaded profile. The sidebar holds outlined contact capsules, Skills with named proficiency when supplied, and literal Languages. Work experience, Education, Projects, Certifications, and References occupy the main column, with serif headings in rounded bands. Original grid lines and star ornaments repeat on every page. Employment descriptions become bullets without duplicating supplied list markers. Empty sections are omitted; missing portraits leave no reserved portrait space. The arch crops the existing prepared square portrait without changing its framing or accessing its source; the adjustment dialog remains square. No achievements field, skill descriptions, reference photograph, or watermark is introduced. Identity content flows once, and long content continues without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors columns, contacts, and the footer. Custom headings, independent color roles, text sizes, A4/Letter paper, and localized page numbers remain supported. Surface recolors the cream paper; Accent controls principal grid/star decoration. Brown bands/sidebar retain their original colors, with light default text unless explicit text-role overrides are saved. Choosing 019 never changes saved content or colors. All fonts are existing bundled or standard PDF fonts; no remote assets are used.
+
 ## Boundaries
 
 Numbered (015) uses a large uppercase Times-Roman identity, an optional square portrait opposite, Helvetica body text, and circled consecutive section numbers beside uppercase serif headings. Profile comes first; Skills and literal Languages share a row. Employment History and Education use paired entries in supplied, row-major order; Projects, Certifications, and References follow at full width. Empty sections are omitted and their numbers close up. Missing portraits collapse their space. Rated skills default to five filled/outlined dots and support bars, named levels, or bars with named levels; unrated skills show names only. Languages have no inferred ratings. Long content flows across pages without automatic font shrinking or truncation. Arabic uses bundled Amiri and mirrors directional layout, portrait, and footer. Existing custom headings, independent color roles, portrait framing, text sizes, A4/Letter paper, and localized page numbers remain supported. Ink gives the closest monochrome reference match; choosing 015 never changes saved colors or content. The surrounding pale backdrop and rounded paper corners are not PDF content.
@@ -96,7 +99,8 @@ Botanical (014) uses a pale-lavender page, original lavender/blush/accent botani
 
 Optional `portraitShape` metadata declares `circle` or `square` for the portrait
 adjustment dialog; omission means `circle`. Keep it consistent with the rendered
-frame. All current frames have a square aspect ratio, regardless of their mask.
+frame. Most frames have a square aspect ratio; 019 crops that prepared square
+image into a tall arch without changing the adjustment contract.
 Templates render the already-framed `cv.personal.portrait` image as before; they
 do not reinterpret `portraitFraming` or read adjustment state. One framing choice
 follows the portrait across templates, and preview/download use the same image.
@@ -135,7 +139,7 @@ saved surface overrides take precedence and resetting colors restores the baseli
 
 Optional `colorDefaults.surfaceForeground: 'contrast'` declares an adaptive black/white band foreground, as used by 012. The band contrast warning checks that foreground unless a heading override is saved; body heading defaults remain independent.
 
-Paper remains white except for 014 and 017's explicitly supported full-page surfaces (`surface: 'page'`). Their contrast warnings compare all text roles against the chosen page background. Template 003 automatically chooses black or white sidebar
+Paper remains white except for 014, 017, and 019's explicitly supported full-page surfaces (`surface: 'page'`). Their contrast warnings compare all text roles against the chosen page background. Template 003 automatically chooses black or white sidebar
 foregrounds and graphics for the selected surface; main-column roles remain
 independent. Template 004 uses the surface override for heading bands. Other
 templates retain surface choices without exposing an unused control. Low text
