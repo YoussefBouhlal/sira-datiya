@@ -14,6 +14,7 @@ import { numberedTemplate } from './015'
 import { editorialTemplate } from './016'
 import { floraTemplate } from './017'
 import { confettiTemplate } from './018'
+import { atelierTemplate } from './019'
 import { sidebarTemplate } from './003'
 import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
@@ -70,6 +71,7 @@ export const templateRegistry = createTemplateRegistry(
     editorialTemplate,
     floraTemplate,
     confettiTemplate,
+    atelierTemplate,
   ],
   'modern',
 )
