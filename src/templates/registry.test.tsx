@@ -10,6 +10,125 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it.each(['en', 'fr', 'ar'] as const)(
+    'editorial preserves its lead, split rows and flowing content in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('editorial')
+      expect(template.name).toBe('016')
+      expect(template.headings).not.toHaveProperty('summary')
+      const render = await template.load()
+      const cv = createExampleCv()
+      cv.personal.fullName = 'Avery Example'
+      cv.personal.portrait =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+      cv.summary = 'Opening statement.\n\nSupporting paragraph.'
+      cv.skills = Array.from({ length: 5 }, (_, index) => ({
+        id: `skill-${index}`,
+        name: `Capability ${index}`,
+        level: null,
+      }))
+      cv.experience = [
+        {
+          id: 'job',
+          role: 'Example role',
+          employer: 'Example employer',
+          location: '',
+          startDate: '2020-01',
+          endDate: '',
+          current: true,
+          description: `${'A selectable achievement across page breaks.\n'.repeat(100)}Final achievement marker`,
+        },
+      ]
+      const snapshot = structuredClone(cv)
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const appearance = {
+          ...createDocument(template.id, language).appearance,
+          pageSize,
+        }
+        const task = getDocument({
+          data: new Uint8Array(
+            await renderToBuffer(render({ cv, appearance })),
+          ),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          expect(pdf.numPages).toBeGreaterThan(1)
+          const texts: string[] = []
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            texts.push(items.map((item) => item.str).join(' '))
+            for (const item of items.filter((item) => item.str.trim())) {
+              expect(item.transform[4]).toBeGreaterThanOrEqual(-1)
+              expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                page.view[2]! + 1,
+              )
+              expect(item.transform[5]).toBeGreaterThan(0)
+              expect(item.transform[5]).toBeLessThanOrEqual(page.view[3]!)
+            }
+            const operators = await page.getOperatorList()
+            const fills = operators.argsArray.filter(
+              (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+            )
+            if (pageNumber === 1) {
+              expect(JSON.stringify(fills)).toContain('#f6eee2')
+              expect(operators.fnArray).toContain(OPS.paintImageXObject)
+              const lead = items.find((item) =>
+                item.str.includes('Opening statement'),
+              )!
+              const support = items.find((item) =>
+                item.str.includes('Supporting paragraph'),
+              )!
+              expect(lead).toBeDefined()
+              expect(support).toBeDefined()
+              expect(lead.height).toBeGreaterThan(support.height * 1.5)
+              const role = items.find((item) =>
+                item.str.includes('Example role'),
+              )!
+              const achievement = items.find((item) =>
+                item.str.includes('selectable achievement'),
+              )!
+              expect(role).toBeDefined()
+              expect(achievement).toBeDefined()
+              if (language === 'ar')
+                expect(role.transform[4]).toBeGreaterThan(
+                  achievement.transform[4],
+                )
+              else
+                expect(role.transform[4]).toBeLessThan(achievement.transform[4])
+              const skillPositions = [0, 1, 2].map((index) =>
+                items.find((item) => item.str === `Capability ${index}`)!,
+              )
+              expect(skillPositions.every(Boolean)).toBe(true)
+              expect(
+                new Set(
+                  skillPositions.map((item) => Math.round(item.transform[5])),
+                ).size,
+              ).toBe(1)
+            } else {
+              expect(JSON.stringify(fills)).not.toContain('#f6eee2')
+              expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+            }
+          }
+          const text = texts.join(' ').replace(/\s+/g, ' ')
+          expect(text).toContain('Final achievement marker')
+          expect(text.match(/Avery Example/g)).toHaveLength(1)
+          expect(text.replace(/\s/g, '')).toContain(
+            translate(language, 'Employment History').replace(/\s/g, ''),
+          )
+          for (let index = 0; index < 5; index++)
+            expect(text).toContain(`Capability ${index}`)
+          expect(cv).toEqual(snapshot)
+        } finally {
+          await task.destroy()
+        }
+      }
+    },
+  )
+
   it.each(['A4', 'LETTER'] as const)(
     'numbered keeps ordinary employment on the first %s page beside a square portrait',
     async (pageSize) => {
@@ -553,6 +672,7 @@ describe('template registry', () => {
       framed: '013',
       botanical: '014',
       numbered: '015',
+      editorial: '016',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
