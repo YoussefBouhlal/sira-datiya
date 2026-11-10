@@ -10,6 +10,114 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it.each(['en', 'fr', 'ar'] as const)(
+    'confetti centers its identity, mirrors date rails and repeats artwork in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('confetti')
+      expect(template.name).toBe('018')
+      expect(template.portraitShape).toBe('square')
+      const render = await template.load()
+      const cv = createEmptyCv()
+      cv.personal.fullName = 'Avery Example'
+      cv.personal.email = 'avery@example.com'
+      cv.personal.portrait =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+      cv.summary = 'Opening profile marker.'
+      cv.experience = [
+        {
+          id: 'job',
+          role: 'Example role',
+          employer: 'Example employer',
+          location: 'Rail location',
+          startDate: '2020-01',
+          endDate: '',
+          current: true,
+          description: `${'Selectable achievement across page breaks.\n'.repeat(100)}Final achievement marker`,
+        },
+      ]
+      cv.languages = ['Literal language']
+      const snapshot = structuredClone(cv)
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const task = getDocument({
+          data: new Uint8Array(
+            await renderToBuffer(
+              render({
+                cv,
+                appearance: {
+                  ...createDocument(template.id, language).appearance,
+                  pageSize,
+                },
+              }),
+            ),
+          ),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          expect(pdf.numPages).toBeGreaterThan(1)
+          const texts: string[] = []
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            expect(
+              items.some((item) => item.str.trim() && item.transform[5] > 40),
+            ).toBe(true)
+            texts.push(items.map((item) => item.str).join(' '))
+            for (const item of items.filter((item) => item.str.trim())) {
+              expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+              expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                page.view[2]! + 1,
+              )
+              expect(item.transform[5]).toBeGreaterThan(15)
+              expect(item.transform[5]).toBeLessThanOrEqual(page.view[3]!)
+            }
+            const operators = await page.getOperatorList()
+            expect(
+              operators.fnArray.filter((value) => value === OPS.constructPath)
+                .length,
+            ).toBeGreaterThanOrEqual(78)
+            if (pageNumber === 1) {
+              expect(operators.fnArray).toContain(OPS.paintImageXObject)
+              const name = items.find((item) => item.str === 'Avery Example')!
+              expect(name.transform[4] + name.width / 2).toBeCloseTo(
+                page.view[2]! / 2,
+                0,
+              )
+              const location = items.find(
+                (item) => item.str === 'Rail location',
+              )!
+              const title = items.find((item) =>
+                item.str.includes('Example role'),
+              )!
+              if (language === 'ar')
+                expect(location.transform[4]).toBeGreaterThan(
+                  title.transform[4] + title.width,
+                )
+              else
+                expect(location.transform[4] + location.width).toBeLessThan(
+                  title.transform[4],
+                )
+            } else
+              expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+          }
+          const text = texts.join(' ').replace(/\s+/g, ' ')
+          expect(text).toContain('Final achievement marker')
+          expect(text).toContain('Literal language')
+          expect(text).toContain('avery@example.com')
+          expect(text.match(/Avery Example/g)).toHaveLength(1)
+          for (const number of ['01', '02', '03'])
+            expect(text).toContain(number)
+          expect(text).not.toContain('04')
+          expect(cv).toEqual(snapshot)
+        } finally {
+          await task.destroy()
+        }
+      }
+    },
+  )
+
   it.each(['A4', 'LETTER'] as const)(
     'flora has no decoration-only pages on %s',
     async (pageSize) => {
@@ -816,6 +924,7 @@ describe('template registry', () => {
       numbered: '015',
       editorial: '016',
       flora: '017',
+      confetti: '018',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -2123,6 +2232,7 @@ describe('template registry', () => {
     'framed',
     'botanical',
     'flora',
+    'confetti',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
