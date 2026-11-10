@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 017 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 018 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -25,8 +25,9 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 015    | `numbered`    |
 | 016    | `editorial`   |
 | 017    | `flora`       |
+| 018    | `confetti`    |
 
-Assign the next unused number explicitly in the definition, starting with 018. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 019. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
@@ -84,6 +85,8 @@ Editorial (016) uses a warm cream intro band with an optional square portrait, H
 Flora (017) uses warm ivory paper with original peach, olive, and accent botanical edge artwork. A centered organic portrait sits above a locally bundled condensed Oswald name, job title, and wrapping contact line. Missing portraits collapse their space. A narrow left sidebar holds Skills and literal Languages; the wider right column holds Profile, Employment History, Education, Projects, Certifications, and References when populated. Employment descriptions become bullets without duplicating supplied list markers. Rated skills default to continuous bars and support named text or bars with text; unrated skills and languages have no inferred ratings. Background and artwork repeat on subsequent pages while identity and content flow once, without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors the columns, spacing, and localized page-number footer. Custom headings, independent color roles, portrait framing, text sizes, and A4/Letter paper remain supported. Surface recolors the whole page; Accent controls rules, skill fills, and principal artwork, while secondary peach/olive artwork stays fixed. Choosing 017 never replaces saved content or colors. Grain texture, outer rounded corners, and the surrounding backdrop are not PDF content.
 
 017 bundles its own Oswald Regular and original `OFL.txt` under `src/templates/017/assets/`, Copyright 2016 The Oswald Project Authors, distributed under the SIL Open Font License 1.1 and sourced from `googlefonts/OswaldFont`. It registers its own font family and never imports another concrete template's assets or implementation. All fonts are served locally and embedded in the PDF.
+
+Confetti (018) uses white paper with original faint geometric outlines, a centered hexagonal portrait, bold Helvetica name, job title, and two-column labeled contacts. Without a portrait, its space collapses; the mask uses the prepared image and retains a square adjustment dialog. Profile, Employment History, Education, Skills, Projects, Languages, Certifications, and References have consecutive two-digit section numbers, omitting empty sections without gaps. Profile text sits beside its heading; dated entries pair a narrow date/location rail with a wider title and description column. Description lines become bullets without duplicating existing list markers. Skills show named proficiency when supplied; languages remain literal text. Artwork repeats on every page while identity and contacts flow once. Long content flows without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors rails, contacts, and the localized page-number footer. Existing custom headings, independent color roles, portrait framing, text sizes, and A4/Letter paper remain supported. Accent recolors the principal geometric outlines; secondary muted colors stay fixed. Paper stays white, and choosing 018 never changes saved content or colors. The reference's surrounding lavender backdrop and rounded paper corners are not PDF content.
 
 ## Boundaries
 
