@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 016 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 017 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -24,8 +24,9 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 014    | `botanical`   |
 | 015    | `numbered`    |
 | 016    | `editorial`   |
+| 017    | `flora`       |
 
-Assign the next unused number explicitly in the definition, starting with 017. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 018. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
@@ -80,6 +81,10 @@ Framed (013) uses a centered Helvetica name and job title inside a wide white ou
 
 Editorial (016) uses a warm cream intro band with an optional square portrait, Helvetica name and job title, opposite contacts, and an accent rule above location. Without a portrait, its space collapses. The unheaded summary uses the first blank-line-separated paragraph as a large lead and subsequent paragraphs at body size; a single paragraph stays entirely large. The profile-heading control is omitted without discarding saved overrides. Skills follow in three row-major columns with short dash markers and named proficiency when supplied. The white lower body uses split employment and education rows, with identity and dates on the left and bulleted descriptions on the right. Existing list markers are preserved. Projects, Certifications, literal Languages, and References follow when populated. The intro flows once, while long content continues without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors directional layouts and the localized page-number footer. Existing custom headings, independent color roles, portrait framing, text sizes, and A4/Letter paper remain supported. Surface recolors the intro band only. Choosing 016 never changes saved content or colors. The reference's outer backdrop and rounded paper corners are not PDF content.
 
+Flora (017) uses warm ivory paper with original peach, olive, and accent botanical edge artwork. A centered organic portrait sits above a locally bundled condensed Oswald name, job title, and wrapping contact line. Missing portraits collapse their space. A narrow left sidebar holds Skills and literal Languages; the wider right column holds Profile, Employment History, Education, Projects, Certifications, and References when populated. Employment descriptions become bullets without duplicating supplied list markers. Rated skills default to continuous bars and support named text or bars with text; unrated skills and languages have no inferred ratings. Background and artwork repeat on subsequent pages while identity and content flow once, without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors the columns, spacing, and localized page-number footer. Custom headings, independent color roles, portrait framing, text sizes, and A4/Letter paper remain supported. Surface recolors the whole page; Accent controls rules, skill fills, and principal artwork, while secondary peach/olive artwork stays fixed. Choosing 017 never replaces saved content or colors. Grain texture, outer rounded corners, and the surrounding backdrop are not PDF content.
+
+017 bundles its own Oswald Regular and original `OFL.txt` under `src/templates/017/assets/`, Copyright 2016 The Oswald Project Authors, distributed under the SIL Open Font License 1.1 and sourced from `googlefonts/OswaldFont`. It registers its own font family and never imports another concrete template's assets or implementation. All fonts are served locally and embedded in the PDF.
+
 ## Boundaries
 
 Numbered (015) uses a large uppercase Times-Roman identity, an optional square portrait opposite, Helvetica body text, and circled consecutive section numbers beside uppercase serif headings. Profile comes first; Skills and literal Languages share a row. Employment History and Education use paired entries in supplied, row-major order; Projects, Certifications, and References follow at full width. Empty sections are omitted and their numbers close up. Missing portraits collapse their space. Rated skills default to five filled/outlined dots and support bars, named levels, or bars with named levels; unrated skills show names only. Languages have no inferred ratings. Long content flows across pages without automatic font shrinking or truncation. Arabic uses bundled Amiri and mirrors directional layout, portrait, and footer. Existing custom headings, independent color roles, portrait framing, text sizes, A4/Letter paper, and localized page numbers remain supported. Ink gives the closest monochrome reference match; choosing 015 never changes saved colors or content. The surrounding pale backdrop and rounded paper corners are not PDF content.
@@ -127,7 +132,7 @@ saved surface overrides take precedence and resetting colors restores the baseli
 
 Optional `colorDefaults.surfaceForeground: 'contrast'` declares an adaptive black/white band foreground, as used by 012. The band contrast warning checks that foreground unless a heading override is saved; body heading defaults remain independent.
 
-Paper remains white except for 014's explicitly supported full-page surface (`surface: 'page'`). Its contrast warnings compare all text roles against the chosen page background. Template 003 automatically chooses black or white sidebar
+Paper remains white except for 014 and 017's explicitly supported full-page surfaces (`surface: 'page'`). Their contrast warnings compare all text roles against the chosen page background. Template 003 automatically chooses black or white sidebar
 foregrounds and graphics for the selected surface; main-column roles remain
 independent. Template 004 uses the surface override for heading bands. Other
 templates retain surface choices without exposing an unused control. Low text
@@ -162,8 +167,8 @@ presentation; existing drafts and version 1/2 backups remain readable.
 
 Definitions may declare `skillProficiencyDisplay` metadata with supported `modes`
 and a `defaultMode` contained in that list. Omitted metadata means text only.
-Templates 003, 008, 009, 010, 012, and 014 support bar, text, and both. 003 and 008 default to both;
-009, 010, 012, and 014 default to bars. Templates 013 and 015 support those modes plus dots and default to dots. Dots render five circles with one filled circle per proficiency level; both continues to mean bars with named levels. The other templates remain text only.
+Templates 003, 008, 009, 010, 012, 014, and 017 support bar, text, and both. 003 and 008 default to both;
+009, 010, 012, 014, and 017 default to bars. Templates 013 and 015 support those modes plus dots and default to dots. Dots render five circles with one filled circle per proficiency level; both continues to mean bars with named levels. The other templates remain text only.
 `resolveSkillProficiencyDisplay` resolves a supported preference
 or the template default without modifying the saved preference. Switching back
 to a supporting template restores the user's choice.
