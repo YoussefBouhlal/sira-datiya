@@ -11,14 +11,16 @@ import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
   it.each(
-    ['ribbon', 'folio'].flatMap((id) =>
+    ['ribbon', 'folio', 'gild'].flatMap((id) =>
       (['en', 'fr', 'ar'] as const).map((language) => ({ id, language })),
     ),
   )(
     '$id preserves its columns and flowing text in $language',
     async ({ id, language }) => {
       const template = templateRegistry.resolve(id)
-      expect(template.name).toBe(id === 'folio' ? '021' : '020')
+      expect(template.name).toBe(
+        id === 'gild' ? '022' : id === 'folio' ? '021' : '020',
+      )
       const render = await template.load()
       const cv = createExampleCv()
       cv.personal.fullName = 'Avery Example'
@@ -30,6 +32,7 @@ describe('template registry', () => {
         cv.summary = 'Opening profile marker.'
       }
       cv.education[0]!.degree = 'Education marker'
+      cv.skills[0]!.name = 'Sidebar marker'
       cv.experience[0]!.role = 'Experience marker'
       cv.experience[0]!.description = `${'Selectable achievement across page breaks.\n'.repeat(100)}Final achievement marker`
       const snapshot = structuredClone(cv)
@@ -91,14 +94,16 @@ describe('template registry', () => {
                   )
               }
               const education = items.find((item) =>
-                item.str.includes('Education marker'),
+                item.str.includes(
+                  id === 'gild' ? 'Sidebar marker' : 'Education marker',
+                ),
               )!
               const experience = items.find((item) =>
                 item.str.includes('Experience marker'),
               )!
               expect(education).toBeDefined()
               expect(experience).toBeDefined()
-              if (language === 'ar')
+              if ((language === 'ar') !== (id === 'gild'))
                 expect(education.transform[4]).toBeGreaterThan(
                   experience.transform[4] + experience.width,
                 )
@@ -981,6 +986,7 @@ describe('template registry', () => {
       'botanical',
       'numbered',
       'flora',
+      'gild',
     ].flatMap((id) =>
       (['en', 'fr', 'ar'] as const).map((language) => [id, language] as const),
     ),
@@ -1113,6 +1119,7 @@ describe('template registry', () => {
             'botanical',
             'flora',
             'atelier',
+            'gild',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -1146,6 +1153,7 @@ describe('template registry', () => {
       atelier: '019',
       ribbon: '020',
       folio: '021',
+      gild: '022',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -2457,6 +2465,7 @@ describe('template registry', () => {
     'atelier',
     'ribbon',
     'folio',
+    'gild',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
@@ -2573,13 +2582,17 @@ describe('template registry', () => {
             const page = await pdf.getPage(index + 1)
             const content = await page.getTextContent()
             const items = content.items.filter((item) => 'str' in item)
-            if (template.id === 'columnar' || template.id === 'framed') {
+            if (['columnar', 'framed', 'gild'].includes(template.id)) {
               const operators = await page.getOperatorList()
               const fills = operators.argsArray.filter(
                 (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
               )
               expect(JSON.stringify(fills)).toContain(
-                template.id === 'framed' ? '#f3f3f3' : '#0c2d4d',
+                template.id === 'gild'
+                  ? '#303b4d'
+                  : template.id === 'framed'
+                    ? '#f3f3f3'
+                    : '#0c2d4d',
               )
             }
             for (const item of items) {

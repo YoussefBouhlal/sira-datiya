@@ -133,6 +133,7 @@ export const messages = {
   'Professional summary': ['Profil professionnel', 'الملخص المهني'],
   Summary: ['Profil', 'الملخص'],
   'Work experience': ['Expérience professionnelle', 'الخبرة المهنية'],
+  Links: ['Liens', 'الروابط'],
   Experience: ['Expérience', 'الخبرة'],
   Education: ['Formation', 'التعليم'],
   'Skills & extras': ['Compétences et compléments', 'المهارات والإضافات'],
