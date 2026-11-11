@@ -11,6 +11,89 @@ import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
   it.each(['en', 'fr', 'ar'] as const)(
+    'ribbon preserves its columns and flowing text in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('ribbon')
+      expect(template.name).toBe('020')
+      const render = await template.load()
+      const cv = createExampleCv()
+      cv.personal.fullName = 'Avery Example'
+      cv.personal.website = 'avery.example.com'
+      cv.personal.email = 'avery@example.com'
+      cv.education[0]!.degree = 'Education marker'
+      cv.experience[0]!.role = 'Experience marker'
+      cv.experience[0]!.description = `${'Selectable achievement across page breaks.\n'.repeat(100)}Final achievement marker`
+      const snapshot = structuredClone(cv)
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const task = getDocument({
+          data: new Uint8Array(
+            await renderToBuffer(
+              render({
+                cv,
+                appearance: {
+                  ...createDocument(template.id, language).appearance,
+                  pageSize,
+                },
+              }),
+            ),
+          ),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          expect(pdf.numPages).toBeGreaterThan(1)
+          const text: string[] = []
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            const body = items.filter(
+              (item) => item.str.trim() && item.transform[5] > 40,
+            )
+            expect(body.length).toBeGreaterThan(0)
+            text.push(body.map((item) => item.str).join(' '))
+            for (const item of items.filter((item) => item.str.trim())) {
+              expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+              expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                page.view[2]! + 1,
+              )
+              expect(item.transform[5]).toBeGreaterThan(15)
+              expect(item.transform[5]).toBeLessThanOrEqual(page.view[3]!)
+            }
+            if (pageNumber === 1) {
+              const education = items.find((item) =>
+                item.str.includes('Education marker'),
+              )!
+              const experience = items.find((item) =>
+                item.str.includes('Experience marker'),
+              )!
+              expect(education).toBeDefined()
+              expect(experience).toBeDefined()
+              if (language === 'ar')
+                expect(education.transform[4]).toBeGreaterThan(
+                  experience.transform[4] + experience.width,
+                )
+              else
+                expect(education.transform[4] + education.width).toBeLessThan(
+                  experience.transform[4],
+                )
+            }
+          }
+          const combined = text.join(' ').replace(/\s+/g, ' ')
+          expect(combined).toContain('Final achievement marker')
+          expect(combined).toContain('avery.example.com')
+          expect(combined).toContain('avery@example.com')
+          expect(combined.match(/AVERY EXAMPLE/g)).toHaveLength(1)
+          expect(cv).toEqual(snapshot)
+        } finally {
+          await task.destroy()
+        }
+      }
+    },
+  )
+
+  it.each(['en', 'fr', 'ar'] as const)(
     'atelier mirrors its portrait layout and preserves flowing content in %s',
     async (language) => {
       const template = templateRegistry.resolve('atelier')
@@ -1030,6 +1113,7 @@ describe('template registry', () => {
       flora: '017',
       confetti: '018',
       atelier: '019',
+      ribbon: '020',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -2339,6 +2423,7 @@ describe('template registry', () => {
     'flora',
     'confetti',
     'atelier',
+    'ribbon',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
