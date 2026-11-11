@@ -219,6 +219,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
     '018',
     '019',
     '020',
+    '021',
   ]) {
     const switcher = page.getByRole('group', { name: 'عرض مساحة العمل' })
     if (await switcher.isVisible())
@@ -459,7 +460,7 @@ test('empty CVs start with template samples before editing and resume entered co
   await expect(
     page.getByRole('heading', { name: 'Choose a template' }),
   ).toBeFocused()
-  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(20)
+  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(21)
   await expect(page.getByRole('group', { name: 'Workspace view' })).toHaveCount(
     0,
   )
@@ -2054,6 +2055,7 @@ test('portrait, rated skills and ordered references persist and render in every 
     '018',
     '019',
     '020',
+    '021',
   ]) {
     if (template !== '003') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
@@ -2108,7 +2110,8 @@ test('portrait, rated skills and ordered references persist and render in every 
               template === '016' ||
               template === '017' ||
               template === '018' ||
-              template === '019'
+              template === '019' ||
+              template === '021'
             ) {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
@@ -2415,7 +2418,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   ).toHaveText('Templates')
   await expect(gallery.getByText(/^\d+ templates?$/)).toHaveCount(0)
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    20,
+    21,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
@@ -2523,7 +2526,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   await gallery.getByRole('button', { name: 'Close template gallery' }).click()
   await page.getByRole('button', { name: 'Browse templates' }).click()
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    20,
+    21,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),

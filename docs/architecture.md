@@ -34,6 +34,7 @@ src/
     018/                     Template 018 definition, document and styles
     019/                     Template 019 definition, document and styles
     020/                     Template 020 definition, document and styles
+    021/                     Template 021 definition, document and styles
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing

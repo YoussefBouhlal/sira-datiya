@@ -10,16 +10,25 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
-  it.each(['en', 'fr', 'ar'] as const)(
-    'ribbon preserves its columns and flowing text in %s',
-    async (language) => {
-      const template = templateRegistry.resolve('ribbon')
-      expect(template.name).toBe('020')
+  it.each(
+    ['ribbon', 'folio'].flatMap((id) =>
+      (['en', 'fr', 'ar'] as const).map((language) => ({ id, language })),
+    ),
+  )(
+    '$id preserves its columns and flowing text in $language',
+    async ({ id, language }) => {
+      const template = templateRegistry.resolve(id)
+      expect(template.name).toBe(id === 'folio' ? '021' : '020')
       const render = await template.load()
       const cv = createExampleCv()
       cv.personal.fullName = 'Avery Example'
       cv.personal.website = 'avery.example.com'
       cv.personal.email = 'avery@example.com'
+      if (id === 'folio') {
+        cv.personal.portrait =
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+        cv.summary = 'Opening profile marker.'
+      }
       cv.education[0]!.degree = 'Education marker'
       cv.experience[0]!.role = 'Experience marker'
       cv.experience[0]!.description = `${'Selectable achievement across page breaks.\n'.repeat(100)}Final achievement marker`
@@ -62,6 +71,25 @@ describe('template registry', () => {
               expect(item.transform[5]).toBeLessThanOrEqual(page.view[3]!)
             }
             if (pageNumber === 1) {
+              if (id === 'folio') {
+                expect((await page.getOperatorList()).fnArray).toContain(
+                  OPS.paintImageXObject,
+                )
+                const name = items.find((item) => item.str.includes('AVERY'))!
+                const profile = items.find((item) =>
+                  item.str.includes('Opening profile marker.'),
+                )!
+                expect(name).toBeDefined()
+                expect(profile).toBeDefined()
+                if (language === 'ar')
+                  expect(name.transform[4]).toBeGreaterThan(
+                    profile.transform[4] + profile.width,
+                  )
+                else
+                  expect(name.transform[4] + name.width).toBeLessThan(
+                    profile.transform[4],
+                  )
+              }
               const education = items.find((item) =>
                 item.str.includes('Education marker'),
               )!
@@ -78,7 +106,10 @@ describe('template registry', () => {
                 expect(education.transform[4] + education.width).toBeLessThan(
                   experience.transform[4],
                 )
-            }
+            } else
+              expect((await page.getOperatorList()).fnArray).not.toContain(
+                OPS.paintImageXObject,
+              )
           }
           const combined = text.join(' ').replace(/\s+/g, ' ')
           expect(combined).toContain('Final achievement marker')
@@ -1114,6 +1145,7 @@ describe('template registry', () => {
       confetti: '018',
       atelier: '019',
       ribbon: '020',
+      folio: '021',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
@@ -2424,6 +2456,7 @@ describe('template registry', () => {
     'confetti',
     'atelier',
     'ribbon',
+    'folio',
   ])(
     '%s preserves long profile and a single experience across page breaks',
     async (templateId) => {
