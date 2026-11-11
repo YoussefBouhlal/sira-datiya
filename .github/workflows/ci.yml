@@ -7,6 +7,8 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
     permissions:
       contents: read
       pages: read
@@ -33,7 +35,6 @@ jobs:
         run: printf 'VITE_BASE_PATH=%s/\n' "$PAGES_BASE_PATH" >> "$GITHUB_ENV"
       - run: npm run format:check
       - run: npm run check
-      - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - name: Upload the verified production build
         if: env.PAGES_PUBLISH == 'true'
