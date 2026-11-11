@@ -1,6 +1,6 @@
 # Template guide
 
-Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 021 are registered; 002 remains the default.
+Templates are modules, not branches in the editor or PDF export feature. The only central list lives in `src/templates/registry.ts`. Templates 001 through 022 are registered; 002 remains the default.
 
 ## Template numbers
 
@@ -29,8 +29,9 @@ Each definition's `name` is its permanent, zero-padded template number. Its fold
 | 019    | `atelier`     |
 | 020    | `ribbon`      |
 | 021    | `folio`       |
+| 022    | `gild`        |
 
-Assign the next unused number explicitly in the definition, starting with 022. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
+Assign the next unused number explicitly in the definition, starting with 023. Never derive numbers from array positions, change them when sorting or filtering, or reuse retired numbers. Keep retired numbers in this table and mark them as retired. The registry rejects duplicate numbers and labels containing anything other than at least three Western digits.
 
 ## Add a template
 
@@ -98,6 +99,8 @@ Ribbon (020) uses white paper, a large uppercase Helvetica name and job title, o
 Folio (021) uses white paper with an uppercase Helvetica identity and compact two-column contacts at the top left, and a headed Profile at the top right behind a thin vertical rule. An optional square portrait sits beside the identity and leaves no reserved space when absent. A full-width horizontal divider precedes a narrow Education, Skills, and literal Languages column and a wider Professional Experience, Projects, Certifications, and References column, separated by a thin vertical rule. Sidebar sections have fine horizontal dividers. Employment headers combine role, employer, location, and dates; description lines become bullets without duplicating supplied list markers. Skills remain flat with named proficiency when supplied; no skill categories, awards, interests, or extracurricular fields are introduced. Empty sections are omitted. Identity and contacts flow once; long profiles and both body columns continue across pages without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors the header, contacts, columns, portrait, rules, and localized page-number footer. Custom headings, independent color roles, portrait framing, text sizes, A4/Letter paper, and selectable PDF text remain supported. Letter spacing stays zero to preserve searchable text. Rules use the selected accent; Ink gives the closest monochrome reference match. Choosing 021 never changes saved content or colors. The surrounding pale-blue backdrop and rounded paper corners are not PDF content.
 
 ## Boundaries
+
+Gild (022) uses white paper with a 65% main column and a full-height navy 35% right sidebar. A circular optional portrait sits beside an uppercase Helvetica name, gold job title, and compact location/phone/email contacts. Without a portrait, its space collapses. Profile, Work Experience, Education, Projects, Certifications, and References occupy the main column; Skills, literal Languages, and existing LinkedIn/website links occupy the sidebar. Its customizable Links heading uses the existing `details` heading key. Sidebar headings and employer/school text have gold defaults, while rules and proficiency markers follow the selected accent; choosing a gold custom accent gives the closest reference match. Rated skills default to five dots and support bars, named text, or bars with named text; unrated skills show names only. Descriptions become bullets without duplicating supplied list markers. Empty sections are omitted. The navy background repeats on every page while identity and both columns flow once without truncation or automatic shrinking. Arabic uses bundled Amiri and mirrors columns, portrait, contacts, dates, and the localized footer. Custom headings, independent color roles, portrait framing, text sizes, A4/Letter paper, selectable text, and page numbers remain supported. Choosing 022 never changes saved colors or content. No additional personal-detail fields, hobbies, publications, or language ratings are inferred from the reference, and its outer backdrop and rounded paper corners are not PDF content.
 
 Numbered (015) uses a large uppercase Times-Roman identity, an optional square portrait opposite, Helvetica body text, and circled consecutive section numbers beside uppercase serif headings. Profile comes first; Skills and literal Languages share a row. Employment History and Education use paired entries in supplied, row-major order; Projects, Certifications, and References follow at full width. Empty sections are omitted and their numbers close up. Missing portraits collapse their space. Rated skills default to five filled/outlined dots and support bars, named levels, or bars with named levels; unrated skills show names only. Languages have no inferred ratings. Long content flows across pages without automatic font shrinking or truncation. Arabic uses bundled Amiri and mirrors directional layout, portrait, and footer. Existing custom headings, independent color roles, portrait framing, text sizes, A4/Letter paper, and localized page numbers remain supported. Ink gives the closest monochrome reference match; choosing 015 never changes saved colors or content. The surrounding pale backdrop and rounded paper corners are not PDF content.
 
@@ -181,7 +184,7 @@ presentation; existing drafts and version 1/2 backups remain readable.
 Definitions may declare `skillProficiencyDisplay` metadata with supported `modes`
 and a `defaultMode` contained in that list. Omitted metadata means text only.
 Templates 003, 008, 009, 010, 012, 014, and 017 support bar, text, and both. 003 and 008 default to both;
-009, 010, 012, 014, and 017 default to bars. Templates 013 and 015 support those modes plus dots and default to dots. Dots render five circles with one filled circle per proficiency level; both continues to mean bars with named levels. The other templates remain text only.
+009, 010, 012, 014, and 017 default to bars. Templates 013, 015, and 022 support those modes plus dots and default to dots. Dots render five circles with one filled circle per proficiency level; both continues to mean bars with named levels. The other templates remain text only.
 `resolveSkillProficiencyDisplay` resolves a supported preference
 or the template default without modifying the saved preference. Switching back
 to a supporting template restores the user's choice.

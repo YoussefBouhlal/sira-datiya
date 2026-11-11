@@ -35,6 +35,7 @@ src/
     019/                     Template 019 definition, document and styles
     020/                     Template 020 definition, document and styles
     021/                     Template 021 definition, document and styles
+    022/                     Template 022 definition, document and styles
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing
@@ -84,7 +85,7 @@ to the active template's default without overwriting the saved choice. Templates
 without display metadata remain text only. Unrated skills keep their names only;
 the accessible preview summary retains every supplied rating in all visual modes.
 
-Templates 013 and 015 additionally support five-dot proficiency display. The optional
+Templates 013, 015, and 022 additionally support five-dot proficiency display. The optional
 `dots` preference persists in version 2 drafts and backups, independently of
 skill levels. Other templates fall back without replacing it, so returning to
 either template restores dots. Existing `both` remains bars with named proficiency labels.
