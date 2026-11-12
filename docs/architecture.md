@@ -124,7 +124,12 @@ Overrides autosave and round trip through version 2 backups without changing CV
 content. Template definitions describe color-control defaults and surface support;
 the picker never branches on template IDs. Shared PDF text applies explicit roles,
 while concrete templates own decorative and background styling. Sidebar foregrounds
-adapt to their surface for contrast. Reset removes overrides, not other settings.
+adapt to their surface for contrast. Reset colors removes overrides, not other settings.
+Confirming a different template clears all color overrides and restores the default
+legacy accent, matching its gallery sample. Confirming the active template,
+reloading, or restoring a backup preserves colors. Both initial selection and the
+gallery use this rule; CV content and other appearance settings stay unchanged.
+Individual color controls remain available without preset palettes.
 
 ## PDF pipeline
 

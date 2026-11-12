@@ -1,6 +1,7 @@
 import { Check, LayoutGrid, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { Appearance } from '../../domain/cv/types'
+import { selectTemplateAppearance } from '../../domain/cv/defaults'
 import type { TemplateOption } from '../../templates/types'
 import { useTranslation } from '../../i18n/context'
 import { ColorSettings } from './ColorSettings'
@@ -156,7 +157,7 @@ export function TemplatePicker({
           renderThumbnail={renderThumbnail}
           onClose={() => setGalleryOpen(false)}
           onApply={(templateId) => {
-            onChange({ ...appearance, templateId })
+            onChange(selectTemplateAppearance(appearance, templateId))
             setGalleryOpen(false)
           }}
         />

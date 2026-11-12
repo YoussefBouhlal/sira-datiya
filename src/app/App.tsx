@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { createExampleCv } from '../domain/cv/example'
+import { selectTemplateAppearance } from '../domain/cv/defaults'
 import type { CvData, CvDocument } from '../domain/cv/types'
 import {
   CvEditor,
@@ -306,7 +307,10 @@ export default function App() {
                 onApply={(templateId) => {
                   update({
                     ...document,
-                    appearance: { ...document.appearance, templateId },
+                    appearance: selectTemplateAppearance(
+                      document.appearance,
+                      templateId,
+                    ),
                   })
                   chooseStep('personal')
                   window.scrollTo({ top: 0 })
