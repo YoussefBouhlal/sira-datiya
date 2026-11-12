@@ -1,0 +1,45 @@
+import { StyleSheet } from '@react-pdf/renderer'
+
+export const styles = StyleSheet.create({
+  page: {
+    paddingTop: 28,
+    paddingHorizontal: 38,
+    paddingBottom: 48,
+    fontFamily: 'Helvetica',
+    color: '#171717',
+  },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 2 },
+  identity: { flexBasis: 0, flexGrow: 1, flexShrink: 1, textAlign: 'center' },
+  portrait: { width: 54, height: 54, objectFit: 'cover', marginLeft: 14 },
+  name: { textTransform: 'uppercase', color: '#505050', marginBottom: 6 },
+  jobTitle: { marginBottom: 4, color: '#505050' },
+  contacts: { color: '#505050', lineHeight: 1.3 },
+  links: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: 5,
+  },
+  chip: {
+    maxWidth: '100%',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    margin: 2,
+  },
+  section: { marginTop: 10 },
+  heading: {
+    fontFamily: 'Helvetica-Bold',
+    color: '#292d38',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 2,
+    marginBottom: 8,
+  },
+  body: { lineHeight: 1.35, marginBottom: 3 },
+  entry: { marginBottom: 7 },
+  entryTitle: { lineHeight: 1.35, marginBottom: 4 },
+  title: { fontFamily: 'Helvetica-Bold', color: '#292d38' },
+  details: { color: '#505050' },
+})
