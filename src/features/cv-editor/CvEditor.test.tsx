@@ -222,69 +222,72 @@ it('keeps repeatable entry identity when an earlier position is removed', async 
   expect(screen.getByLabelText('End date')).toBeDisabled()
 })
 
-it('offers supported proficiency displays and retains the preference across templates', async () => {
-  const user = userEvent.setup()
-  function Harness() {
-    const [document, setDocument] = useState(() => {
-      const initial = createDocument('sidebar')
-      initial.cv.skills = [{ id: 'rated', name: 'Research', level: 3 }]
-      return initial
-    })
-    return (
-      <>
-        {templateRegistry.templates.map((template) => (
-          <button
-            key={template.id}
-            onClick={() =>
-              setDocument({
-                ...document,
-                appearance: { ...document.appearance, templateId: template.id },
-              })
+it.each(templateRegistry.templates)(
+  '$id offers supported proficiency displays and retains the preference across templates',
+  async (template) => {
+    const user = userEvent.setup()
+    function Harness() {
+      const [document, setDocument] = useState(() => {
+        const initial = createDocument('sidebar')
+        initial.cv.skills = [{ id: 'rated', name: 'Research', level: 3 }]
+        return initial
+      })
+      return (
+        <>
+          {templateRegistry.templates.map((template) => (
+            <button
+              key={template.id}
+              onClick={() =>
+                setDocument({
+                  ...document,
+                  appearance: {
+                    ...document.appearance,
+                    templateId: template.id,
+                  },
+                })
+              }
+            >
+              {template.id}
+            </button>
+          ))}
+          <CvEditor
+            cv={document.cv}
+            step="skills"
+            onChange={(cv) => setDocument({ ...document, cv })}
+            appearance={document.appearance}
+            template={templateRegistry.resolve(document.appearance.templateId)}
+            onAppearanceChange={(appearance) =>
+              setDocument({ ...document, appearance })
             }
-          >
-            {template.id}
-          </button>
-        ))}
-        <CvEditor
-          cv={document.cv}
-          step="skills"
-          onChange={(cv) => setDocument({ ...document, cv })}
-          appearance={document.appearance}
-          template={templateRegistry.resolve(document.appearance.templateId)}
-          onAppearanceChange={(appearance) =>
-            setDocument({ ...document, appearance })
-          }
-        />
-      </>
-    )
-  }
-  render(<Harness />)
-  const display = screen.getByRole('combobox', { name: 'Proficiency display' })
-  expect(display).toHaveValue('both')
-  for (const mode of ['text', 'both', 'bar']) {
-    await user.selectOptions(display, mode)
-    expect(display).toHaveValue(mode)
-    expect(screen.getByLabelText('Proficiency')).toHaveValue('3')
-    expect(screen.getByLabelText('Skill name')).toHaveValue('Research')
-  }
-  for (const template of templateRegistry.templates.filter(
-    (entry) => entry.id !== 'sidebar',
-  )) {
+          />
+        </>
+      )
+    }
+    render(<Harness />)
+    const display = screen.getByRole('combobox', {
+      name: 'Proficiency display',
+    })
+    expect(display).toHaveValue('both')
+    for (const mode of ['text', 'both', 'bar']) {
+      await user.selectOptions(display, mode)
+      expect(display).toHaveValue(mode)
+      expect(screen.getByLabelText('Proficiency')).toHaveValue('3')
+      expect(screen.getByLabelText('Skill name')).toHaveValue('Research')
+    }
     await user.click(screen.getByRole('button', { name: template.id }))
-    const selector = screen.queryByRole('combobox', {
+    const barSelector = screen.queryByRole('combobox', {
       name: 'Proficiency display',
     })
     if ((template.skillProficiencyDisplay?.modes.length ?? 0) > 1)
-      expect(selector).toHaveValue('bar')
-    else expect(selector).not.toBeInTheDocument()
+      expect(barSelector).toHaveValue('bar')
+    else expect(barSelector).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'sidebar' }))
     expect(screen.getByLabelText('Proficiency display')).toHaveValue('bar')
-  }
-  await user.click(screen.getByRole('button', { name: 'framed' }))
-  await user.selectOptions(screen.getByLabelText('Proficiency display'), 'dots')
-  for (const template of templateRegistry.templates.filter(
-    (entry) => entry.id !== 'framed',
-  )) {
+    await user.click(screen.getByRole('button', { name: 'framed' }))
+    await user.selectOptions(
+      screen.getByLabelText('Proficiency display'),
+      'dots',
+    )
     await user.click(screen.getByRole('button', { name: template.id }))
     const supportsDots =
       template.skillProficiencyDisplay?.modes.includes('dots')
@@ -294,15 +297,15 @@ it('offers supported proficiency displays and retains the preference across temp
       expect(
         screen.queryByRole('option', { name: 'Dots' }),
       ).not.toBeInTheDocument()
-    const selector = screen.queryByRole('combobox', {
+    const dotsSelector = screen.queryByRole('combobox', {
       name: 'Proficiency display',
     })
-    if (selector)
-      expect(selector).toHaveValue(
+    if (dotsSelector)
+      expect(dotsSelector).toHaveValue(
         supportsDots ? 'dots' : template.skillProficiencyDisplay?.defaultMode,
       )
     await user.click(screen.getByRole('button', { name: 'framed' }))
     expect(screen.getByLabelText('Proficiency display')).toHaveValue('dots')
     expect(screen.getByLabelText('Proficiency')).toHaveValue('3')
-  }
-})
+  },
+)
