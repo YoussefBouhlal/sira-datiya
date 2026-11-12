@@ -10,11 +10,53 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
-  it.each(['en', 'fr', 'ar'] as const)(
-    'crest mirrors columns and preserves portrait and flowing content in %s',
-    async (language) => {
-      const template = templateRegistry.resolve('crest')
-      expect(template.name).toBe('024')
+  it.each(['#333333', '#eeeeee'])(
+    'silhouette adapts sidebar foreground to %s without changing the main column',
+    async (surface) => {
+      const template = templateRegistry.resolve('silhouette')
+      const cv = createExampleCv()
+      cv.summary = 'Sidebar contrast marker'
+      const appearance = createDocument(template.id).appearance
+      if (surface !== '#333333') appearance.colors = { surface }
+      expect(effectiveColors(appearance, template.colorDefaults).surface).toBe(
+        surface,
+      )
+      const render = await template.load()
+      const task = getDocument({
+        data: new Uint8Array(await renderToBuffer(render({ cv, appearance }))),
+        useSystemFonts: true,
+      })
+      try {
+        const page = await (await task.promise).getPage(1)
+        const operators = await page.getOperatorList()
+        const fills = operators.argsArray.filter(
+          (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+        )
+        for (const color of [
+          surface,
+          surface === '#333333' ? '#ffffff' : '#000000',
+          '#292929',
+          '#454545',
+        ])
+          expect(JSON.stringify(fills)).toContain(color)
+      } finally {
+        await task.destroy()
+      }
+    },
+  )
+
+  it.each(
+    (['crest', 'silhouette'] as const).flatMap((templateId) =>
+      (['en', 'fr', 'ar'] as const).map((language) => ({
+        templateId,
+        language,
+      })),
+    ),
+  )(
+    '$templateId mirrors columns and preserves portrait and flowing content in $language',
+    async ({ templateId, language }) => {
+      const template = templateRegistry.resolve(templateId)
+      expect(template.name).toBe(templateId === 'crest' ? '024' : '025')
       expect(template.portraitShape).toBe('circle')
       const render = await template.load()
       for (const pageSize of ['A4', 'LETTER'] as const) {
@@ -56,7 +98,9 @@ describe('template registry', () => {
                 (item) => 'str' in item,
               )
               const body = items.filter(
-                (item) => item.str.trim() && item.transform[5] > 40,
+                (item) =>
+                  item.str.trim() &&
+                  item.transform[5] > (templateId === 'crest' ? 40 : 25),
               )
               expect(body.length).toBeGreaterThan(0)
               text.push(body.map((item) => item.str).join(' '))
@@ -65,14 +109,25 @@ describe('template registry', () => {
                 expect(item.transform[4] + item.width).toBeLessThanOrEqual(
                   page.view[2]! + 1,
                 )
-                expect(item.transform[5]).toBeGreaterThan(29)
-                expect(item.transform[5]).toBeLessThan(page.view[3]! - 64)
+                expect(item.transform[5]).toBeGreaterThan(
+                  templateId === 'crest' ? 29 : 15,
+                )
+                expect(item.transform[5]).toBeLessThan(
+                  page.view[3]! - (templateId === 'crest' ? 64 : 20),
+                )
               }
               const operators = await page.getOperatorList()
               const fills = operators.argsArray.filter(
                 (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
               )
-              for (const color of ['#996e47', '#f4f2f2', '#263037'])
+              for (const color of [
+                '#f4f2f2',
+                ...(templateId === 'crest'
+                  ? ['#996e47', '#263037']
+                  : pageNumber === 1
+                    ? ['#996e47']
+                    : []),
+              ])
                 expect(JSON.stringify(fills)).toContain(color)
               if (pageNumber === 1) {
                 const profile = items.find(
@@ -1341,6 +1396,7 @@ describe('template registry', () => {
             'gild',
             'bandeau',
             'crest',
+            'silhouette',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -1377,6 +1433,7 @@ describe('template registry', () => {
       gild: '022',
       bandeau: '023',
       crest: '024',
+      silhouette: '025',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
