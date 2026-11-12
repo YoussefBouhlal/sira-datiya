@@ -221,6 +221,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
     '020',
     '021',
     '022',
+    '023',
   ]) {
     const switcher = page.getByRole('group', { name: 'عرض مساحة العمل' })
     if (await switcher.isVisible())
@@ -461,7 +462,7 @@ test('empty CVs start with template samples before editing and resume entered co
   await expect(
     page.getByRole('heading', { name: 'Choose a template' }),
   ).toBeFocused()
-  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(22)
+  await expect(entry.getByRole('button', { name: /^Inspect / })).toHaveCount(23)
   await expect(page.getByRole('group', { name: 'Workspace view' })).toHaveCount(
     0,
   )
@@ -2058,6 +2059,7 @@ test('portrait, rated skills and ordered references persist and render in every 
     '020',
     '021',
     '022',
+    '023',
   ]) {
     if (template !== '003') {
       await page.getByRole('button', { name: /06 Template & style/ }).click()
@@ -2114,13 +2116,14 @@ test('portrait, rated skills and ordered references persist and render in every 
               template === '018' ||
               template === '019' ||
               template === '021' ||
-              template === '022'
+              template === '022' ||
+              template === '023'
             ) {
               const body = items.filter(
                 (item) => item.str.trim() && item.transform[5] > 40,
               )
               expect(body.at(-1)?.str.trim()).not.toMatch(
-                /^(PROFILE|SUMMARY|EXPERIENCE|CAREER EXPERIENCE|EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE|EDUCATION|SKILLS|TECHNICAL SKILLS|AREAS OF EXPERTISE|LANGUAGES|PROJECTS|CERTIFICATIONS|ADDITIONAL INFORMATION|REFERENCES)$/i,
+                /^(PROFILE|SUMMARY|ABOUT ME|EXPERIENCE|CAREER EXPERIENCE|EMPLOYMENT HISTORY|PROFESSIONAL EXPERIENCE|EDUCATION|SKILLS|TECHNICAL SKILLS|AREAS OF EXPERTISE|LANGUAGES|PROJECTS|CERTIFICATIONS|ADDITIONAL INFORMATION|REFERENCES)$/i,
               )
             }
             return items.map((item) => item.str).join(' ')
@@ -2423,7 +2426,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   ).toHaveText('Templates')
   await expect(gallery.getByText(/^\d+ templates?$/)).toHaveCount(0)
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    22,
+    23,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),
@@ -2531,7 +2534,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   await gallery.getByRole('button', { name: 'Close template gallery' }).click()
   await page.getByRole('button', { name: 'Browse templates' }).click()
   await expect(gallery.getByRole('button', { name: /^Inspect / })).toHaveCount(
-    22,
+    23,
   )
   await expect(
     gallery.getByRole('button', { name: 'Inspect 002', exact: true }),

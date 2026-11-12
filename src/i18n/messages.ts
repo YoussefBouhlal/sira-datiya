@@ -374,6 +374,7 @@ export const messages = {
   '{name} portrait': ['Photo de {name}', 'صورة {name}'],
   Present: ['Aujourd’hui', 'حتى الآن'],
   Profile: ['Profil', 'الملف الشخصي'],
+  'About me': ['À propos de moi', 'نبذة عني'],
   Details: ['Coordonnées', 'التفاصيل'],
   Info: ['Informations', 'معلومات'],
   'Employment History': ['Parcours professionnel', 'السجل الوظيفي'],

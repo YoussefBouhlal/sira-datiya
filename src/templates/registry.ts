@@ -18,6 +18,7 @@ import { atelierTemplate } from './019'
 import { ribbonTemplate } from './020'
 import { folioTemplate } from './021'
 import { gildTemplate } from './022'
+import { bandeauTemplate } from './023'
 import { sidebarTemplate } from './003'
 import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
@@ -78,6 +79,7 @@ export const templateRegistry = createTemplateRegistry(
     ribbonTemplate,
     folioTemplate,
     gildTemplate,
+    bandeauTemplate,
   ],
   'modern',
 )
