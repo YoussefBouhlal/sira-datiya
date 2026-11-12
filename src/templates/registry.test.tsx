@@ -11,6 +11,119 @@ import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
   it.each(['en', 'fr', 'ar'] as const)(
+    'crest mirrors columns and preserves portrait and flowing content in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('crest')
+      expect(template.name).toBe('024')
+      expect(template.portraitShape).toBe('circle')
+      const render = await template.load()
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        for (const portrait of [false, true]) {
+          const cv = createExampleCv()
+          cv.personal.fullName = 'Avery Example'
+          cv.personal.email = 'avery@example.com'
+          cv.personal.portrait = portrait
+            ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+            : ''
+          cv.summary = `Sidebar opening marker.\n${'Flowing sidebar content.\n'.repeat(80)}Sidebar final marker.`
+          cv.education[0]!.school = 'Education marker'
+          cv.experience[0]!.description = `${'Selectable achievement across pages.\n'.repeat(90)}Final achievement marker.`
+          cv.skills = [{ id: 'rated', name: 'Studio planning', level: 4 }]
+          cv.languages = ['Literal language']
+          const snapshot = structuredClone(cv)
+          const task = getDocument({
+            data: new Uint8Array(
+              await renderToBuffer(
+                render({
+                  cv,
+                  appearance: {
+                    ...createDocument(template.id, language).appearance,
+                    pageSize,
+                    colors: { accent: '#996e47', surface: '#f4f2f2' },
+                  },
+                }),
+              ),
+            ),
+            useSystemFonts: true,
+          })
+          try {
+            const pdf = await task.promise
+            expect(pdf.numPages).toBeGreaterThan(1)
+            const text: string[] = []
+            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+              const page = await pdf.getPage(pageNumber)
+              const items = (await page.getTextContent()).items.filter(
+                (item) => 'str' in item,
+              )
+              const body = items.filter(
+                (item) => item.str.trim() && item.transform[5] > 40,
+              )
+              expect(body.length).toBeGreaterThan(0)
+              text.push(body.map((item) => item.str).join(' '))
+              for (const item of items.filter((item) => item.str.trim())) {
+                expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+                expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                  page.view[2]! + 1,
+                )
+                expect(item.transform[5]).toBeGreaterThan(29)
+                expect(item.transform[5]).toBeLessThan(page.view[3]! - 64)
+              }
+              const operators = await page.getOperatorList()
+              const fills = operators.argsArray.filter(
+                (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+              )
+              for (const color of ['#996e47', '#f4f2f2', '#263037'])
+                expect(JSON.stringify(fills)).toContain(color)
+              if (pageNumber === 1) {
+                const profile = items.find(
+                  (item) => item.str === 'Sidebar opening marker.',
+                )!
+                const education = items.find(
+                  (item) => item.str === 'Education marker',
+                )!
+                expect(profile).toBeDefined()
+                expect(education).toBeDefined()
+                if (language === 'ar')
+                  expect(profile.transform[4]).toBeGreaterThan(
+                    education.transform[4] + education.width,
+                  )
+                else
+                  expect(profile.transform[4] + profile.width).toBeLessThan(
+                    education.transform[4],
+                  )
+                if (portrait)
+                  expect(operators.fnArray).toContain(OPS.paintImageXObject)
+                else
+                  expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+                expect(page.view[3]! - profile.transform[5]).toBeLessThan(
+                  portrait ? 300 : 160,
+                )
+              } else
+                expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+            }
+            const combined = text.join(' ').replace(/\s+/g, ' ')
+            for (const value of [
+              'Sidebar final marker.',
+              'Final achievement marker.',
+              'avery@example.com',
+              'Studio planning',
+              'Literal language',
+            ])
+              expect(combined).toContain(value)
+            expect(combined.replace(/\s/g, '')).toContain(
+              translate(language, 'Advanced').replace(/\s/g, ''),
+            )
+            expect(combined.match(/Avery Example/g)).toHaveLength(1)
+            expect(cv).toEqual(snapshot)
+          } finally {
+            await task.destroy()
+          }
+        }
+      }
+    },
+  )
+
+  it.each(['en', 'fr', 'ar'] as const)(
     'bandeau preserves centered identity, portrait and flowing text in %s',
     async (language) => {
       const template = templateRegistry.resolve('bandeau')
@@ -1227,6 +1340,7 @@ describe('template registry', () => {
             'atelier',
             'gild',
             'bandeau',
+            'crest',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -1262,6 +1376,7 @@ describe('template registry', () => {
       folio: '021',
       gild: '022',
       bandeau: '023',
+      crest: '024',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
