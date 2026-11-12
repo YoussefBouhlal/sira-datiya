@@ -10,6 +10,99 @@ import { createTemplateRegistry, templateRegistry } from './registry'
 import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it.each(['en', 'fr', 'ar'] as const)(
+    'plum preserves its sidebar, identity band and flowing timeline in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('plum')
+      expect(template.name).toBe('026')
+      expect(template.portraitShape).toBe('circle')
+      const render = await template.load()
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        for (const portrait of [false, true]) {
+          const cv = createExampleCv()
+          cv.personal.fullName = 'Avery Example'
+          cv.personal.portrait = portrait
+            ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+            : ''
+          cv.summary = 'Main profile marker.'
+          cv.personal.email = 'avery@example.com'
+          cv.skills = [{ id: 'rated', name: 'Planning', level: 4 }]
+          cv.experience[0]!.description = `${'Flowing timeline description.\n'.repeat(90)}Final timeline marker.`
+          const snapshot = structuredClone(cv)
+          const appearance = {
+            ...createDocument(template.id, language).appearance,
+            pageSize,
+          }
+          const task = getDocument({
+            data: new Uint8Array(
+              await renderToBuffer(render({ cv, appearance })),
+            ),
+            useSystemFonts: true,
+          })
+          try {
+            const pdf = await task.promise
+            expect(pdf.numPages).toBeGreaterThan(1)
+            const text: string[] = []
+            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+              const page = await pdf.getPage(pageNumber)
+              const items = (await page.getTextContent()).items
+                .filter((item) => 'str' in item)
+                .filter((item) => item.str.trim())
+              const body = items.filter((item) => item.transform[5] > 30)
+              expect(body.length).toBeGreaterThan(0)
+              text.push(body.map((item) => item.str).join(' '))
+              for (const item of items) {
+                expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+                expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                  page.view[2]! + 1,
+                )
+                expect(item.transform[5]).toBeGreaterThan(12)
+                expect(item.transform[5]).toBeLessThan(page.view[3]! - 20)
+              }
+              const operators = await page.getOperatorList()
+              const fills = operators.argsArray.filter(
+                (_, index) => operators.fnArray[index] === OPS.setFillRGBColor,
+              )
+              expect(JSON.stringify(fills)).toContain('#f0eef1')
+              if (pageNumber === 1) {
+                expect(JSON.stringify(fills)).toContain('#58253f')
+                const profile = items.find(
+                  (item) => item.str === 'Main profile marker.',
+                )!
+                const email = items.find(
+                  (item) => item.str === 'avery@example.com',
+                )!
+                expect(profile).toBeDefined()
+                expect(email).toBeDefined()
+                if (language === 'ar')
+                  expect(profile.transform[4] + profile.width).toBeLessThan(
+                    email.transform[4],
+                  )
+                else
+                  expect(email.transform[4] + email.width).toBeLessThan(
+                    profile.transform[4],
+                  )
+                expect(operators.fnArray.includes(OPS.paintImageXObject)).toBe(
+                  portrait,
+                )
+              } else
+                expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+            }
+            const combined = text.join(' ').replace(/\s+/g, ' ')
+            expect(combined).toContain('Final timeline marker.')
+            expect(combined.match(/AVERY EXAMPLE/g)).toHaveLength(1)
+            expect(combined.replace(/\s/g, '')).toContain(
+              translate(language, 'Advanced').replace(/\s/g, ''),
+            )
+            expect(cv).toEqual(snapshot)
+          } finally {
+            await task.destroy()
+          }
+        }
+      }
+    },
+  )
+
   it.each(['#333333', '#eeeeee'])(
     'silhouette adapts sidebar foreground to %s without changing the main column',
     async (surface) => {
@@ -1397,6 +1490,7 @@ describe('template registry', () => {
             'bandeau',
             'crest',
             'silhouette',
+            'plum',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -1434,6 +1528,7 @@ describe('template registry', () => {
       bandeau: '023',
       crest: '024',
       silhouette: '025',
+      plum: '026',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
