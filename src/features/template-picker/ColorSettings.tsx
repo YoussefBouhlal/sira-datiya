@@ -1,8 +1,7 @@
-import { Check, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { useId, useState } from 'react'
 import type { Appearance } from '../../domain/cv/types'
 import {
-  colorPalettes,
   contrastRatio,
   effectiveColors,
   surfaceForeground,
@@ -101,16 +100,9 @@ export function ColorSettings({
   onChange: (appearance: Appearance) => void
 }) {
   const { t } = useTranslation()
-  const id = useId()
   const colors = effectiveColors(appearance, template.colorDefaults)
   const pageSurface = template.colorDefaults?.surface === 'page'
   const [revision, setRevision] = useState(0)
-  const palette = colorPalettes.find((candidate) =>
-    roles.every(
-      ({ role }) =>
-        appearance.colors?.[role]?.toLowerCase() === candidate.colors[role],
-    ),
-  )
   const bandWarning =
     template.colorDefaults?.surface === 'band' &&
     contrastRatio(
@@ -122,39 +114,6 @@ export function ColorSettings({
   return (
     <fieldset className="plain-fieldset color-settings">
       <legend className="setting-label">{t('Colors')}</legend>
-      <fieldset className="plain-fieldset">
-        <legend className="color-palette-label">
-          {t('Palette')}:{' '}
-          {t(palette?.label ?? (appearance.colors ? 'Custom' : 'Original'))}
-        </legend>
-        <div className="color-options">
-          {colorPalettes.map((candidate) => (
-            <label
-              key={candidate.label}
-              className="color-option"
-              title={t(candidate.label)}
-            >
-              <input
-                className="sr-only"
-                type="radio"
-                name={`${id}-palette`}
-                aria-label={t(candidate.label)}
-                checked={candidate === palette}
-                onChange={() => {
-                  setRevision(revision + 1)
-                  onChange({ ...appearance, colors: { ...candidate.colors } })
-                }}
-              />
-              <span
-                className="color-swatch"
-                style={{ background: candidate.colors.accent }}
-              >
-                {candidate === palette && <Check size={17} />}
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
       <div className="color-fields">
         {roles
           .filter(

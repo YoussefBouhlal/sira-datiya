@@ -611,6 +611,7 @@ test('appearance-only drafts retain styling through opening template selection',
   document.appearance = {
     ...document.appearance,
     accent: '#8c4255',
+    colors: { headings: '#913355', accent: '#a53b12' },
     fontSize: 12,
     pageSize: 'LETTER',
   }
@@ -629,11 +630,11 @@ test('appearance-only drafts retain styling through opening template selection',
     'Browse templates',
   )
   await expect(page.getByLabel('Accent', { exact: true })).toHaveValue(
-    '#8c4255',
+    '#a53b12',
   )
   await expect(
     page.getByText('Palette: Original', { exact: true }),
-  ).toBeVisible()
+  ).toHaveCount(0)
   await expect(page.getByRole('radio', { name: 'Large' })).toBeChecked()
   await expect(page.getByLabel('Paper size')).toHaveValue('LETTER')
   await expect
@@ -644,6 +645,23 @@ test('appearance-only drafts retain styling through opening template selection',
       ),
     )
     .toEqual({ version: 2, ...document })
+  await page.reload()
+  await page.getByRole('button', { name: 'Inspect 002', exact: true }).click()
+  await page.getByRole('button', { name: 'Use this template' }).click()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key) ?? '{}').appearance,
+        storageKey,
+      ),
+    )
+    .toEqual({
+      templateId: 'modern',
+      accent: '#177568',
+      language: 'en',
+      fontSize: 12,
+      pageSize: 'LETTER',
+    })
 })
 
 test('custom section headings persist, validate, export, restore and reset', async ({
@@ -818,7 +836,7 @@ test('custom section headings persist, validate, export, restore and reset', asy
   await expect.poll(savedHeadings).toBeNull()
 })
 
-test('custom color roles persist across templates, backups, previews and reset', async ({
+test('custom color roles persist until a template switch and survive backups, previews and reset', async ({
   page,
 }) => {
   test.setTimeout(90_000)
@@ -826,11 +844,11 @@ test('custom color roles persist across templates, backups, previews and reset',
   await page.getByRole('button', { name: 'Load example' }).click()
   await page.getByRole('button', { name: /06 Template & style/ }).click()
   await expect(page.getByLabel('Surface', { exact: true })).toHaveCount(0)
+  await chooseTemplate(page, '003')
   await page.getByLabel('Headings', { exact: true }).fill('#913355')
   await page.getByLabel('Subtitles & details', { exact: true }).fill('#345678')
   await page.getByLabel('Body text', { exact: true }).fill('#263947')
   await page.getByLabel('Accent', { exact: true }).fill('#a53b12')
-  await chooseTemplate(page, '003')
   await page.getByLabel('Surface', { exact: true }).fill('#eeeeee')
   await page.getByLabel('Headings', { exact: true }).fill('#ffffff')
   await expect(page.getByText('Low contrast on white paper.')).toBeVisible()
@@ -879,10 +897,36 @@ test('custom color roles persist across templates, backups, previews and reset',
   await expect(page.getByLabel('Surface', { exact: true })).toHaveValue(
     colors.surface,
   )
-  await chooseTemplate(page, '004')
+  await chooseTemplate(page, '003')
   await expect(page.getByLabel('Surface', { exact: true })).toHaveValue(
     colors.surface,
   )
+  await chooseTemplate(page, '004')
+  await expect(page.getByLabel('Surface', { exact: true })).toHaveValue(
+    '#dfdfdf',
+  )
+  await expect(page.getByLabel('Accent', { exact: true })).toHaveValue(
+    '#177568',
+  )
+  await expect
+    .poll(() =>
+      page.evaluate(
+        (key) =>
+          JSON.parse(localStorage.getItem(key) ?? '{}').appearance?.colors ??
+          null,
+        storageKey,
+      ),
+    )
+    .toBeNull()
+  for (const [label, value] of [
+    ['Headings', colors.headings],
+    ['Subtitles & details', colors.details],
+    ['Body text', colors.body],
+    ['Accent', colors.accent],
+    ['Surface', colors.surface],
+  ]) {
+    await page.getByLabel(label!, { exact: true }).fill(value!)
+  }
   await page.getByLabel('Document actions', { exact: true }).click()
   const backupPending = page.waitForEvent('download')
   await page
@@ -1346,7 +1390,7 @@ test('edit, reload, choose a template, and download a real text PDF', async ({
   await expect(page.locator('.selected-template-details')).toHaveText(
     'Browse templates',
   )
-  await page.getByTitle('Cobalt', { exact: true }).click()
+  await page.getByLabel('Accent', { exact: true }).fill('#3456a0')
   await page.getByLabel('Paper size').selectOption('LETTER')
   await preview(page)
   const pending = page.waitForEvent('download')
@@ -2404,7 +2448,7 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   await page.getByRole('button', { name: 'Load example' }).click()
   await page.getByLabel('Full name', { exact: true }).fill('Jordan Gallery')
   await page.getByRole('button', { name: /06 Template & style/ }).click()
-  await page.getByTitle('Cobalt', { exact: true }).click()
+  await page.getByLabel('Accent', { exact: true }).fill('#3456a0')
   await page.getByText('Large', { exact: true }).click()
   await page.getByLabel('Paper size').selectOption('LETTER')
   await expect
@@ -2567,8 +2611,11 @@ test('template gallery supports thumbnails, cancellation and responsive selectio
   )
   expect(after.cv).toEqual(before.cv)
   expect(after.appearance).toEqual({
-    ...before.appearance,
     templateId: 'sidebar',
+    accent: '#177568',
+    language: 'en',
+    fontSize: 12,
+    pageSize: 'LETTER',
   })
   await page.reload()
   await page.getByRole('button', { name: /06 Template & style/ }).click()

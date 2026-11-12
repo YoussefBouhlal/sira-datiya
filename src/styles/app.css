@@ -1170,19 +1170,10 @@ button {
   background: #fff;
   border-top: 1px solid var(--border);
 }
-.color-options {
-  display: flex;
-  gap: 14px;
-}
 .color-settings {
   display: grid;
   gap: 18px;
   min-width: 0;
-}
-.color-palette-label {
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: var(--muted);
 }
 .color-fields {
   display: grid;
@@ -1240,27 +1231,6 @@ button {
   .color-inputs {
     width: 140px;
   }
-}
-.color-option {
-  padding: 4px;
-  cursor: pointer;
-  border: 1px solid transparent;
-  border-radius: 50%;
-}
-.color-option:has(input:checked) {
-  border-color: #abbeb0;
-}
-.color-option:has(input:focus-visible) {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-.color-swatch {
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 29px;
-  border-radius: 50%;
-  color: #fff;
 }
 .segmented-control {
   display: flex;

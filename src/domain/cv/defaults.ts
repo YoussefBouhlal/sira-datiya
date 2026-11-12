@@ -9,6 +9,8 @@ import type {
   Skill,
 } from './types'
 
+const defaultAccent = '#177568'
+
 export function createEmptyCv(): CvData {
   return {
     personal: {
@@ -41,11 +43,21 @@ export function createDocument(
     appearance: {
       language,
       templateId,
-      accent: '#177568',
+      accent: defaultAccent,
       fontSize: 11,
       pageSize: 'A4',
     },
   }
+}
+
+export function selectTemplateAppearance(
+  appearance: Appearance,
+  templateId: string,
+): Appearance {
+  if (appearance.templateId === templateId) return appearance
+  const { colors: previousColors, ...original } = appearance
+  void previousColors
+  return { ...original, templateId, accent: defaultAccent }
 }
 
 export function createExperience(id: string): Experience {

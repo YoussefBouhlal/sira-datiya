@@ -72,19 +72,3 @@ export function surfaceForeground(background: string): string {
     ? '#ffffff'
     : '#000000'
 }
-
-export const colorPalettes = [
-  { label: 'Forest', accent: '#177568' },
-  { label: 'Cobalt', accent: '#3456a0' },
-  { label: 'Rose', accent: '#8c4255' },
-  { label: 'Ink', accent: '#292929' },
-].map(({ label, accent }) => ({
-  label,
-  colors: {
-    headings: accent,
-    details: '#50565a',
-    body: '#222222',
-    accent,
-    surface: '#eeeeee',
-  } satisfies Required<ColorScheme>,
-}))

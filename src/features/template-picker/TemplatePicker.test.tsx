@@ -8,7 +8,10 @@ import {
 } from '@testing-library/react'
 import { afterEach, beforeAll, expect, it, vi } from 'vitest'
 import { useState } from 'react'
-import { createDocument } from '../../domain/cv/defaults'
+import {
+  createDocument,
+  selectTemplateAppearance,
+} from '../../domain/cv/defaults'
 import { contrastRatio, surfaceForeground } from '../../domain/cv/colors'
 import { ColorSettings } from './ColorSettings'
 import { TemplatePicker, TemplateStart } from './TemplatePicker'
@@ -24,6 +27,34 @@ beforeAll(() => {
 })
 
 afterEach(cleanup)
+
+it('resets all colors only for a different template, preserving other preferences', () => {
+  const appearance = createDocument('sidebar', 'fr').appearance
+  appearance.accent = '#8c4255'
+  appearance.colors = {
+    headings: '#abcdef',
+    details: '#345678',
+    body: '#263947',
+    accent: '#a53b12',
+    surface: '#eeeeee',
+  }
+  appearance.fontSize = 12
+  appearance.pageSize = 'LETTER'
+  appearance.skillProficiencyDisplay = 'dots'
+  const original = structuredClone(appearance)
+  expect(selectTemplateAppearance(appearance, 'sidebar')).toBe(appearance)
+  const next = selectTemplateAppearance(appearance, 'modern')
+  expect(next).toEqual({
+    templateId: 'modern',
+    accent: '#177568',
+    language: 'fr',
+    fontSize: 12,
+    pageSize: 'LETTER',
+    skillProficiencyDisplay: 'dots',
+  })
+  expect(next).not.toHaveProperty('colors')
+  expect(appearance).toEqual(original)
+})
 
 it('checks page-surface contrast for all text roles and preserves appearance on reset', () => {
   const initial = createDocument('botanical').appearance
@@ -55,7 +86,7 @@ it('checks page-surface contrast for all text roles and preserves appearance on 
   ).not.toBeInTheDocument()
 })
 
-it('edits independent roles, validates hex, applies palettes and resets colors', () => {
+it('edits independent roles, validates hex and resets colors without palette controls', () => {
   const initial = createDocument('sidebar').appearance
   initial.accent = '#8c4255'
   const onChange = vi.fn()
@@ -103,10 +134,10 @@ it('edits independent roles, validates hex, applies palettes and resets colors',
     ...initial,
     colors: { headings: '#abcdef', body: '#123456' },
   })
-  fireEvent.click(screen.getByRole('radio', { name: 'Cobalt' }))
-  expect(screen.getByLabelText('Headings')).toHaveValue('#3456a0')
-  expect(screen.getByLabelText('Surface')).toHaveValue('#eeeeee')
-  expect(screen.getByRole('radio', { name: 'Cobalt' })).toBeChecked()
+  expect(
+    screen.queryByRole('group', { name: /Palette/ }),
+  ).not.toBeInTheDocument()
+  expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Reset colors' }))
   expect(onChange).toHaveBeenLastCalledWith(initial)
   expect(screen.getByLabelText('Surface')).toHaveValue('#622e3b')
@@ -268,6 +299,8 @@ it('offers the default immediately and selects inline until confirmation', () =>
 
 it('shows all templates without filters or counts and resets tentative selection on reopen', () => {
   const appearance = createDocument('classic').appearance
+  appearance.accent = '#8c4255'
+  appearance.colors = { headings: '#913355', accent: '#3456a0' }
   const onChange = vi.fn()
   render(
     <TemplatePicker
@@ -319,9 +352,8 @@ it('shows all templates without filters or counts and resets tentative selection
   ).toHaveAttribute('aria-pressed', 'true')
   fireEvent.click(within(gallery).getByRole('button', { name: 'Inspect 003' }))
   fireEvent.click(within(gallery).getByRole('button', { name: 'Use template' }))
-  expect(onChange).toHaveBeenCalledExactlyOnceWith({
-    ...appearance,
-    templateId: 'sidebar',
-  })
+  expect(onChange).toHaveBeenCalledExactlyOnceWith(
+    createDocument('sidebar').appearance,
+  )
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 })
