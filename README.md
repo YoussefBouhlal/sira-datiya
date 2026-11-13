@@ -78,4 +78,6 @@ No project license has been selected yet. Before publishing as open source, the 
 
 Bundled Amiri font files are Copyright 2010-2022 The Amiri Project Authors and distributed under the SIL Open Font License 1.1. Their original license is included at [public/fonts/amiri/OFL.txt](public/fonts/amiri/OFL.txt).
 
+Template 028 bundles Allura Regular, Copyright 2010 The Allura Project Authors, under the SIL Open Font License 1.1. Its original license is included at [src/templates/028/assets/OFL.txt](src/templates/028/assets/OFL.txt).
+
 Templates 008, 009, and 017 each bundle their own Oswald Regular font, Copyright 2016 The Oswald Project Authors and distributed under the SIL Open Font License 1.1. Their original licenses are included at [src/templates/008/assets/OFL.txt](src/templates/008/assets/OFL.txt), [src/templates/009/assets/OFL.txt](src/templates/009/assets/OFL.txt), and [src/templates/017/assets/OFL.txt](src/templates/017/assets/OFL.txt).
