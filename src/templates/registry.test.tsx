@@ -11,6 +11,140 @@ import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
   it.each(['en', 'fr', 'ar'] as const)(
+    'mist preserves its header, sidebar education and flowing columns in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('mist')
+      expect(template.name).toBe('027')
+      expect(template.portraitShape).toBe('circle')
+      const render = await template.load()
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        for (const portrait of [false, true]) {
+          const cv = createExampleCv()
+          cv.personal.fullName = 'Avery Example'
+          cv.personal.portrait = portrait
+            ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+            : ''
+          cv.summary = 'Main profile marker.'
+          cv.education[0]!.degree = 'Sidebar degree'
+          cv.education[0]!.description = `${'Education continuation.\n'.repeat(80)}Final education marker.`
+          cv.experience[0]!.description = `${'Employment continuation.\n'.repeat(90)}Final employment marker.`
+          const appearance = {
+            ...createDocument(template.id, language).appearance,
+            pageSize,
+          }
+          const snapshot = structuredClone({ cv, appearance })
+          const task = getDocument({
+            data: new Uint8Array(
+              await renderToBuffer(render({ cv, appearance })),
+            ),
+            useSystemFonts: true,
+          })
+          try {
+            const pdf = await task.promise
+            expect(pdf.numPages).toBeGreaterThan(1)
+            const extracted: string[] = []
+            for (let number = 1; number <= pdf.numPages; number++) {
+              const page = await pdf.getPage(number)
+              const items = (await page.getTextContent()).items
+                .filter((item) => 'str' in item)
+                .filter((item) => item.str.trim())
+              const body = items.filter((item) => item.transform[5] > 30)
+              expect(body.length).toBeGreaterThan(0)
+              extracted.push(body.map((item) => item.str).join(' '))
+              for (const item of items) {
+                expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+                expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                  page.view[2]! + 1,
+                )
+                expect(item.transform[5]).toBeGreaterThan(12)
+                expect(item.transform[5]).toBeLessThan(page.view[3]! - 20)
+              }
+              const operators = await page.getOperatorList()
+              expect(JSON.stringify(operators.argsArray)).toContain('#d5dfe5')
+              expect(operators.fnArray.includes(OPS.paintImageXObject)).toBe(
+                number === 1 && portrait,
+              )
+              if (number === 1) {
+                const degree = items.find(
+                  (item) => item.str === 'Sidebar degree',
+                )!
+                const profile = items.find(
+                  (item) => item.str === 'Main profile marker.',
+                )!
+                expect(degree).toBeDefined()
+                expect(profile).toBeDefined()
+                if (language === 'ar')
+                  expect(profile.transform[4] + profile.width).toBeLessThan(
+                    degree.transform[4],
+                  )
+                else
+                  expect(degree.transform[4] + degree.width).toBeLessThan(
+                    profile.transform[4],
+                  )
+              }
+            }
+            const text = extracted.join(' ').replace(/\s+/g, ' ')
+            expect(text).toContain('Final education marker.')
+            expect(text).toContain('Final employment marker.')
+            expect(text.match(/AVERY EXAMPLE/g)).toHaveLength(1)
+            expect({ cv, appearance }).toEqual(snapshot)
+          } finally {
+            await task.destroy()
+          }
+        }
+      }
+    },
+  )
+
+  it.each([1, 2, 3])(
+    'mist lays out %s references without dropping contact text',
+    async (count) => {
+      const template = templateRegistry.resolve('mist')
+      const cv = createEmptyCv()
+      cv.references = Array.from({ length: count }, (_, index) => ({
+        id: `ref-${index}`,
+        name: `Contact ${index}`,
+        jobTitle: 'Director',
+        organization: 'Example Studio',
+        phone: `555-010${index}`,
+        email: `reference${index}@example.com`,
+      }))
+      const render = await template.load()
+      const task = getDocument({
+        data: new Uint8Array(
+          await renderToBuffer(
+            render({ cv, appearance: createDocument(template.id).appearance }),
+          ),
+        ),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        expect(pdf.numPages).toBe(1)
+        const items = (
+          await (await pdf.getPage(1)).getTextContent()
+        ).items.filter((item) => 'str' in item)
+        const text = items.map((item) => item.str).join(' ')
+        for (const reference of cv.references) {
+          expect(text).toContain(reference.name)
+          expect(text).toContain(reference.email)
+          expect(text).toContain(reference.phone)
+        }
+        if (count > 1) {
+          const first = items.find((item) => item.str === 'Contact 0')!
+          const second = items.find((item) => item.str === 'Contact 1')!
+          expect(first.transform[5]).toBeCloseTo(second.transform[5], 0)
+          expect(first.transform[4] + first.width).toBeLessThan(
+            second.transform[4],
+          )
+        }
+      } finally {
+        await task.destroy()
+      }
+    },
+  )
+
+  it.each(['en', 'fr', 'ar'] as const)(
     'plum preserves its sidebar, identity band and flowing timeline in %s',
     async (language) => {
       const template = templateRegistry.resolve('plum')
@@ -1491,6 +1625,7 @@ describe('template registry', () => {
             'crest',
             'silhouette',
             'plum',
+            'mist',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -1529,6 +1664,7 @@ describe('template registry', () => {
       crest: '024',
       silhouette: '025',
       plum: '026',
+      mist: '027',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),

@@ -40,6 +40,7 @@ src/
     024/                     Template 024 definition, document and styles
     025/                     Template 025 definition, document and styles
     026/                     Template 026 definition, document and styles
+    027/                     Template 027 definition, document and styles
     shared/                  Shared PDF content primitives
   components/ui/             Reused domain-independent HTML controls
   lib/storage/               Versioned storage and backup parsing
