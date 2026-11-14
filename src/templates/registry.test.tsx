@@ -11,6 +11,96 @@ import { resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
   it.each(['en', 'fr', 'ar'] as const)(
+    'azure preserves its band, mirrored sidebar and long content in %s',
+    async (language) => {
+      const template = templateRegistry.resolve('azure')
+      expect(template.name).toBe('029')
+      expect(template.portraitShape).toBe('square')
+      const render = await template.load()
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        for (const portrait of [false, true]) {
+          const cv = createExampleCv()
+          cv.personal.fullName = 'Avery Example'
+          cv.personal.portrait = portrait
+            ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aVVQAAAAASUVORK5CYII='
+            : ''
+          cv.summary = 'Main profile marker.'
+          cv.skills = [{ id: 'planning', name: 'Sidebar skill', level: 4 }]
+          cv.experience[0]!.description = `${'Employment continuation.\n'.repeat(90)}Final employment marker.`
+          cv.languages = Array.from(
+            { length: 90 },
+            (_, index) => `Language ${index}`,
+          )
+          cv.education[0]!.degree = 'Main education marker'
+          const appearance = {
+            ...createDocument(template.id, language).appearance,
+            pageSize,
+          }
+          const snapshot = structuredClone({ cv, appearance })
+          const task = getDocument({
+            data: new Uint8Array(
+              await renderToBuffer(render({ cv, appearance })),
+            ),
+            useSystemFonts: true,
+          })
+          try {
+            const pdf = await task.promise
+            expect(pdf.numPages).toBeGreaterThan(1)
+            const extracted: string[] = []
+            for (let number = 1; number <= pdf.numPages; number++) {
+              const page = await pdf.getPage(number)
+              const items = (await page.getTextContent()).items
+                .filter((item) => 'str' in item)
+                .filter((item) => item.str.trim())
+              const body = items.filter((item) => item.transform[5] > 30)
+              expect(body.length).toBeGreaterThan(0)
+              extracted.push(body.map((item) => item.str).join(' '))
+              for (const item of items) {
+                expect(item.transform[4]).toBeGreaterThanOrEqual(0)
+                expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                  page.view[2]! + 1,
+                )
+                expect(item.transform[5]).toBeGreaterThan(12)
+                expect(item.transform[5]).toBeLessThan(page.view[3]! - 10)
+              }
+              const operators = await page.getOperatorList()
+              expect(JSON.stringify(operators.argsArray)).toContain('#d7e0eb')
+              expect(operators.fnArray.includes(OPS.paintImageXObject)).toBe(
+                number === 1 && portrait,
+              )
+              if (number === 1) {
+                expect(JSON.stringify(operators.argsArray)).toContain('#486994')
+                const sidebar = items.find((item) => item.str === 'Language 0')!
+                const profile = items.find(
+                  (item) => item.str === 'Main profile marker.',
+                )!
+                expect(sidebar).toBeDefined()
+                expect(profile).toBeDefined()
+                if (language === 'ar')
+                  expect(profile.transform[4] + profile.width).toBeLessThan(
+                    sidebar.transform[4],
+                  )
+                else
+                  expect(sidebar.transform[4] + sidebar.width).toBeLessThan(
+                    profile.transform[4],
+                  )
+              }
+            }
+            const text = extracted.join(' ').replace(/\s+/g, ' ')
+            expect(text).toContain('Final employment marker.')
+            expect(text).toContain('Language 89')
+            expect(text).toContain('Sidebar skill')
+            expect(text).toContain('Main education marker')
+            expect(text.match(/Avery Example/g)).toHaveLength(1)
+            expect({ cv, appearance }).toEqual(snapshot)
+          } finally {
+            await task.destroy()
+          }
+        }
+      }
+    },
+  )
+  it.each(['en', 'fr', 'ar'] as const)(
     'blush preserves identity, column order and long content in %s',
     async (language) => {
       const template = templateRegistry.resolve('blush')
@@ -1696,8 +1786,9 @@ describe('template registry', () => {
         const strokes = operators.argsArray.filter(
           (_, index) => operators.fnArray[index] === OPS.setStrokeRGBColor,
         )
-        if (!['sidebar', 'executive', 'columnar', 'sage'].includes(id))
+        if (!['sidebar', 'executive', 'columnar', 'sage', 'azure'].includes(id))
           expect(JSON.stringify(strokes)).toContain('#a53b12')
+        if (id === 'azure') expect(JSON.stringify(fills)).toContain('#a53b12')
         if (
           [
             'sidebar',
@@ -1716,6 +1807,7 @@ describe('template registry', () => {
             'plum',
             'mist',
             'blush',
+            'azure',
           ].includes(id)
         ) {
           expect(JSON.stringify(fills)).toContain('#eeeeee')
@@ -1756,6 +1848,7 @@ describe('template registry', () => {
       plum: '026',
       mist: '027',
       blush: '028',
+      azure: '029',
     }
     const reordered = createTemplateRegistry(
       [...templateRegistry.templates].reverse(),
