@@ -24,6 +24,7 @@ import { silhouetteTemplate } from './025'
 import { plumTemplate } from './026'
 import { mistTemplate } from './027'
 import { blushTemplate } from './028'
+import { azureTemplate } from './029'
 import { sidebarTemplate } from './003'
 import { traditionalTemplate } from './004'
 import type { TemplateDefinition } from './types'
@@ -90,6 +91,7 @@ export const templateRegistry = createTemplateRegistry(
     plumTemplate,
     mistTemplate,
     blushTemplate,
+    azureTemplate,
   ],
   'modern',
 )
