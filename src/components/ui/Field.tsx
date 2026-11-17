@@ -1,17 +1,30 @@
-import { useId, type ComponentProps } from 'react'
+import { useId, type ComponentProps, type ReactNode } from 'react'
 import { useTranslation } from '../../i18n/context'
 
 export function Field({
   label,
   className = '',
+  labelAction,
+  children,
   ...props
-}: ComponentProps<'input'> & { label: string }) {
+}: ComponentProps<'input'> & {
+  label: string
+  labelAction?: ReactNode
+  children?: ReactNode
+}) {
   const generatedId = useId()
   const { t } = useTranslation()
   const id = props.id ?? generatedId
   return (
     <div className={`form-field ${className}`}>
-      <label htmlFor={id}>{t(label)}</label>
+      {labelAction ? (
+        <div className="field-label-row">
+          <label htmlFor={id}>{t(label)}</label>
+          {labelAction}
+        </div>
+      ) : (
+        <label htmlFor={id}>{t(label)}</label>
+      )}
       <input
         dir={
           ['email', 'tel', 'url', 'month'].includes(props.type ?? '')
@@ -23,6 +36,7 @@ export function Field({
         id={id}
         maxLength={props.maxLength ?? 500}
       />
+      {children}
     </div>
   )
 }

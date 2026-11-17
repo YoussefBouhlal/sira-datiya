@@ -5,11 +5,166 @@ import { describe, expect, it } from 'vitest'
 import { createDocument, createEmptyCv } from '../domain/cv/defaults'
 import { effectiveColors } from '../domain/cv/colors'
 import { createExampleCv } from '../domain/cv/example'
+import { contactLabelKeys } from '../domain/cv/schema'
 import { translate } from '../i18n/messages'
 import { createTemplateRegistry, templateRegistry } from './registry'
-import { resolveSkillProficiencyDisplay } from './types'
+import { resolveContactLabel, resolveSkillProficiencyDisplay } from './types'
 
 describe('template registry', () => {
+  it('uses consistent contact defaults in every supporting template without replacing custom wording', () => {
+    const expected = {
+      email: 'Email',
+      phone: 'Phone',
+      location: 'Location',
+      website: 'Website',
+      linkedin: 'Linkedin',
+    }
+    for (const template of templateRegistry.templates) {
+      for (const key of contactLabelKeys) {
+        if (!template.contactLabels?.[key]) continue
+        expect(template.contactLabels[key], `${template.id} ${key}`).toBe(
+          expected[key],
+        )
+        expect(
+          resolveContactLabel(undefined, template.contactLabels, key, 'en'),
+        ).toBe(expected[key])
+        for (const language of ['fr', 'ar'] as const) {
+          expect(
+            resolveContactLabel(
+              undefined,
+              template.contactLabels,
+              key,
+              language,
+            ),
+          ).toBe(
+            translate(
+              language,
+              key === 'linkedin' ? 'LinkedIn' : expected[key],
+            ),
+          )
+        }
+        expect(
+          resolveContactLabel(
+            { [key]: 'My saved label' },
+            template.contactLabels,
+            key,
+            'en',
+          ),
+        ).toBe('My saved label')
+      }
+    }
+  })
+
+  it('resolves contact defaults in the document language without translating custom labels', () => {
+    const defaults = { email: 'Email address' }
+    expect(resolveContactLabel(undefined, defaults, 'email', 'fr')).toBe(
+      translate('fr', 'Email address'),
+    )
+    expect(resolveContactLabel({ email: '   ' }, defaults, 'email', 'ar')).toBe(
+      translate('ar', 'Email address'),
+    )
+    expect(
+      resolveContactLabel({ email: '  Work email  ' }, defaults, 'email', 'fr'),
+    ).toBe('Work email')
+  })
+
+  for (const template of templateRegistry.templates.filter(
+    (entry) => entry.contactLabels,
+  )) {
+    it(`${template.id} renders literal custom contact labels and wraps long labels inside PDF pages`, async () => {
+      const render = await template.load()
+      for (const label of [
+        'Reach me',
+        'W'.repeat(80),
+        '\u0627\u0644\u0639\u0646\u0648\u0627\u0646 / Address',
+      ]) {
+        for (const language of ['en', 'fr', 'ar'] as const) {
+          for (const pageSize of ['A4', 'LETTER'] as const) {
+            const cv = createExampleCv()
+            cv.contactLabels = {
+              location: label,
+              phone: label,
+              email: label,
+              website: label,
+              linkedin: label,
+            }
+            const snapshot = structuredClone(cv)
+            const task = getDocument({
+              data: new Uint8Array(
+                await renderToBuffer(
+                  render({
+                    cv,
+                    appearance: {
+                      ...createDocument(template.id, language).appearance,
+                      pageSize,
+                    },
+                  }),
+                ),
+              ),
+              useSystemFonts: true,
+            })
+            try {
+              const pdf = await task.promise
+              const text: string[] = []
+              for (let number = 1; number <= pdf.numPages; number++) {
+                const page = await pdf.getPage(number)
+                const items = (await page.getTextContent()).items.filter(
+                  (item) => 'str' in item,
+                )
+                text.push(items.map((item) => item.str).join(' '))
+                for (const item of items.filter((item) => item.str.trim())) {
+                  expect(item.transform[4]).toBeGreaterThanOrEqual(-1)
+                  expect(item.transform[4] + item.width).toBeLessThanOrEqual(
+                    page.view[2]! + 1,
+                  )
+                  expect(item.transform[5]).toBeGreaterThan(0)
+                  expect(item.transform[5]).toBeLessThanOrEqual(page.view[3]!)
+                }
+              }
+              const extracted = text.join(' ').replace(/[\s-]+/g, '')
+              if (/\p{Script=Arabic}/u.test(label)) {
+                expect(extracted).toContain('Address')
+                for (const character of label.match(/\p{Script=Arabic}/gu) ??
+                  [])
+                  expect(extracted).toContain(character)
+              } else expect(extracted).toContain(label.replace(/\s/g, ''))
+            } finally {
+              await task.destroy()
+            }
+            expect(cv).toEqual(snapshot)
+          }
+        }
+      }
+      const cv = createEmptyCv()
+      cv.contactLabels = {
+        location: 'Hidden label',
+        email: 'Hidden label',
+        phone: 'Hidden label',
+        website: 'Hidden label',
+        linkedin: 'Hidden label',
+      }
+      const task = getDocument({
+        data: new Uint8Array(
+          await renderToBuffer(
+            render({ cv, appearance: createDocument(template.id).appearance }),
+          ),
+        ),
+        useSystemFonts: true,
+      })
+      try {
+        const pdf = await task.promise
+        const page = await pdf.getPage(1)
+        const text = (await page.getTextContent()).items
+          .filter((item) => 'str' in item)
+          .map((item) => item.str)
+          .join(' ')
+        expect(text).not.toContain('Hidden label')
+      } finally {
+        await task.destroy()
+      }
+    })
+  }
+
   it.each(['en', 'fr', 'ar'] as const)(
     'diagonal preserves mirrored columns, portrait and flowing text in %s',
     async (language) => {

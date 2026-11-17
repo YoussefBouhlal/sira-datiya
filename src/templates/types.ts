@@ -2,6 +2,7 @@ import type { ReactElement } from 'react'
 import type { DocumentProps } from '@react-pdf/renderer'
 import type {
   Appearance,
+  ContactLabelKey,
   CvData,
   DeepReadonly,
   SectionHeadingKey,
@@ -22,6 +23,25 @@ export const defaultSectionHeadings = {
 } as const
 
 export type SectionHeadings = Partial<Record<SectionHeadingKey, string>>
+
+export type ContactLabels = Partial<Record<ContactLabelKey, string>>
+
+export const defaultContactLabels = {
+  location: 'Location',
+  phone: 'Phone',
+  email: 'Email',
+  website: 'Website',
+  linkedin: 'Linkedin',
+} as const
+
+export function resolveContactLabel(
+  labels: Readonly<ContactLabels> | undefined,
+  defaults: Readonly<ContactLabels>,
+  key: ContactLabelKey,
+  language: Language,
+): string {
+  return labels?.[key]?.trim() || translate(language, defaults[key] ?? '')
+}
 
 export function resolveSectionHeading(
   headings: Readonly<SectionHeadings> | undefined,
@@ -45,6 +65,7 @@ export type TemplateDefinition = {
   readonly portraitShape?: 'circle' | 'square'
   readonly colorDefaults?: TemplateColorDefaults
   readonly headings?: Readonly<SectionHeadings>
+  readonly contactLabels?: Readonly<ContactLabels>
   readonly skillProficiencyDisplay?: {
     readonly modes: readonly SkillProficiencyDisplay[]
     readonly defaultMode: SkillProficiencyDisplay
@@ -63,6 +84,7 @@ export type TemplateOption = Pick<
   | 'portraitShape'
   | 'colorDefaults'
   | 'headings'
+  | 'contactLabels'
   | 'skillProficiencyDisplay'
 >
 

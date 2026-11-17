@@ -757,6 +757,25 @@ button {
 .heading-input-row input {
   min-width: 0;
 }
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 20px;
+}
+.field-label-row label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.contact-label-toggle {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+.contact-label-editor {
+  min-width: 0;
+}
 .portrait-controls {
   display: grid;
   grid-template-columns: 42px 34px 34px;

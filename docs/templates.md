@@ -185,6 +185,30 @@ contrast against white paper or heading bands produces a non-blocking warning.
 Color roles are edited independently; no preset palette controls are shown.
 Gallery thumbnails retain their fixed sample appearance.
 
+## Contact labels
+
+Definitions optionally declare `contactLabels`, mapping supported contact fields
+(`location`, `phone`, `email`, `website`, `linkedin`) to default message keys.
+Declare only labels actually printed by the renderer. Templates 010, 013, and 018
+label all five fields; 022 labels only website and LinkedIn. Omitted metadata means
+no contact-label editor controls and no added captions.
+
+Use the shared `defaultContactLabels` for supported fields: Email, Phone,
+Location, Website, and Linkedin in English. Defaults are translated in French
+and Arabic; editor field names and saved custom labels remain unchanged.
+
+Use `resolveContactLabel(cv.contactLabels, definition.contactLabels, key,
+appearance.language)` for printed captions. Custom labels are literal, including
+casing; disable any default uppercase styling for supplied overrides. Keep stable
+field keys for contact lists because multiple custom labels may have the same
+wording. Allow long labels to wrap without overlapping contact values. Empty values
+omit their labels. Preserve existing template defaults when no override is supplied.
+
+Overrides belong to CV content, follow fields across templates, and remain intact
+when a template does not display them. Do not rename editor fields or introduce
+labels into icon-only or value-only layouts. Preview and download share the same
+renderer; the accessible preview uses the same label resolver.
+
 ## Section headings
 
 Definitions declare `headings`, a map from supported logical section keys to

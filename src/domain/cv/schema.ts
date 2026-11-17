@@ -23,6 +23,16 @@ export const sectionHeadingSchema = z
   .trim()
   .refine((text) => Array.from(text).length <= 80)
 
+export const contactLabelKeys = [
+  'location',
+  'email',
+  'phone',
+  'website',
+  'linkedin',
+] as const
+
+export const contactLabelSchema = sectionHeadingSchema
+
 export const experienceSchema = z.object({
   id: z.string().min(1),
   role: shortText,
@@ -66,6 +76,9 @@ export const referenceSchema = z.object({
 })
 
 export const cvSchema = z.object({
+  contactLabels: z
+    .partialRecord(z.enum(contactLabelKeys), contactLabelSchema)
+    .optional(),
   headings: z
     .partialRecord(z.enum(sectionHeadingKeys), sectionHeadingSchema)
     .optional(),

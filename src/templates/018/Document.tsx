@@ -7,7 +7,7 @@ import { ContactText, Image, PdfLanguage, View } from '../shared/PdfLayout'
 import { PageNumber } from '../shared/content'
 import { pageLanguageStyle, usePdfTranslation } from '../shared/localization'
 import { Text } from '../shared/Text'
-import type { TemplateProps } from '../types'
+import { resolveContactLabel, type TemplateProps } from '../types'
 import { confettiTemplate } from './index'
 import { createStyles } from './styles'
 
@@ -289,13 +289,20 @@ export function ConfettiDocument({ cv, appearance }: TemplateProps) {
         <View style={styles.content}>{values}</View>
       </View>,
     )
-  const contacts = [
-    ['Location', cv.personal.location],
-    ['Phone number', cv.personal.phone],
-    ['Email address', cv.personal.email],
-    ['Website or portfolio', cv.personal.website],
-    ['LinkedIn', cv.personal.linkedin],
-  ].filter(([, value]) => value?.trim())
+  const contacts = (
+    ['location', 'phone', 'email', 'website', 'linkedin'] as const
+  )
+    .filter((key) => cv.personal[key].trim())
+    .map((key) => ({
+      key,
+      label: resolveContactLabel(
+        cv.contactLabels,
+        confettiTemplate.contactLabels,
+        key,
+        appearance.language,
+      ),
+      value: cv.personal[key],
+    }))
   return (
     <Document
       title={`${cv.personal.fullName || 'Untitled'} - CV`}
@@ -341,10 +348,18 @@ export function ConfettiDocument({ cv, appearance }: TemplateProps) {
           </View>
           {contacts.length > 0 && (
             <View style={styles.contacts}>
-              {contacts.map(([label, value]) => (
-                <View key={label} style={styles.contact} wrap={false}>
-                  <Text colorRole="headings" style={styles.contactLabel}>
-                    {t(label!)}
+              {contacts.map(({ key, label, value }) => (
+                <View key={key} style={styles.contact} wrap={false}>
+                  <Text
+                    colorRole="headings"
+                    style={[
+                      styles.contactLabel,
+                      cv.contactLabels?.[key]?.trim()
+                        ? { textTransform: 'none' }
+                        : {},
+                    ]}
+                  >
+                    {label}
                   </Text>
                   <View style={styles.contactValue}>
                     <ContactText values={[value!]} style={styles.contactText} />

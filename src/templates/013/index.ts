@@ -1,4 +1,8 @@
-import { defaultSectionHeadings, type TemplateDefinition } from '../types'
+import {
+  defaultContactLabels,
+  defaultSectionHeadings,
+  type TemplateDefinition,
+} from '../types'
 
 export const framedTemplate = {
   id: 'framed',
@@ -6,6 +10,7 @@ export const framedTemplate = {
   typography: 'sans',
   layout: 'two-column',
   portraitShape: 'square',
+  contactLabels: defaultContactLabels,
   headings: {
     ...defaultSectionHeadings,
     experience: 'Work experience',

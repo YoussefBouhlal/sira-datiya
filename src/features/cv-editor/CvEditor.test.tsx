@@ -17,6 +17,100 @@ import { LanguageProvider } from '../../i18n/react'
 
 afterEach(cleanup)
 
+it('edits, validates and resets contact labels separately from their values', async () => {
+  const user = userEvent.setup()
+  let latest = createEmptyCv()
+  function Harness() {
+    const [cv, setCv] = useState(latest)
+    useEffect(() => {
+      latest = cv
+    }, [cv])
+    return (
+      <CvEditor
+        cv={cv}
+        onChange={setCv}
+        step="personal"
+        appearance={createDocument('confetti').appearance}
+        template={templateRegistry.resolve('confetti')}
+        onAppearanceChange={() => {}}
+      />
+    )
+  }
+  render(<Harness />)
+  expect(
+    screen.getAllByRole('button', { name: /^Edit contact label:/ }),
+  ).toHaveLength(5)
+  await user.click(
+    screen.getByRole('button', { name: 'Edit contact label: Email' }),
+  )
+  const input = screen.getByLabelText('Contact label: Email')
+  fireEvent.change(input, { target: { value: '  Work email  ' } })
+  expect(latest.contactLabels).toEqual({ email: 'Work email' })
+  await user.click(screen.getByLabelText('Email address'))
+  expect(input).toHaveValue('Work email')
+  expect(latest.personal.email).toBe('')
+  fireEvent.change(input, { target: { value: 'W'.repeat(81) } })
+  expect(input).toHaveAttribute('aria-invalid', 'true')
+  expect(screen.getByRole('alert')).toHaveTextContent('80 characters')
+  expect(latest.contactLabels?.email).toBe('Work email')
+  await user.click(
+    screen.getByRole('button', {
+      name: 'Use default contact label: Email',
+    }),
+  )
+  expect(latest.contactLabels).toBeUndefined()
+  expect(input).toHaveValue('')
+  expect(input).toHaveAttribute('placeholder', 'Email')
+  fireEvent.change(input, { target: { value: 'Mailbox' } })
+  fireEvent.change(input, { target: { value: '   ' } })
+  expect(latest.contactLabels).toBeUndefined()
+})
+
+it('exposes only printed contact labels and preserves literal overrides across templates and languages', async () => {
+  const user = userEvent.setup()
+  const document = createDocument('confetti')
+  document.cv.contactLabels = {
+    website: 'My portfolio',
+    location: 'My address',
+  }
+  const props = {
+    cv: document.cv,
+    onChange: () => {},
+    step: 'personal' as const,
+    appearance: document.appearance,
+    onAppearanceChange: () => {},
+  }
+  const { rerender } = render(
+    <CvEditor {...props} template={templateRegistry.resolve('modern')} />,
+  )
+  expect(
+    screen.queryByRole('button', { name: /^Edit contact label:/ }),
+  ).not.toBeInTheDocument()
+  rerender(<CvEditor {...props} template={templateRegistry.resolve('gild')} />)
+  expect(
+    screen.getAllByRole('button', { name: /^Edit contact label:/ }),
+  ).toHaveLength(2)
+  await user.click(
+    screen.getByRole('button', { name: 'Edit contact label: Website' }),
+  )
+  expect(screen.getByLabelText('Contact label: Website')).toHaveValue(
+    'My portfolio',
+  )
+  rerender(
+    <LanguageProvider language="fr">
+      <CvEditor {...props} template={templateRegistry.resolve('confetti')} />
+    </LanguageProvider>,
+  )
+  await user.click(
+    screen.getByRole('button', { name: 'Modifier le libell\u00e9 : Lieu' }),
+  )
+  expect(screen.getByLabelText('Libell\u00e9 : Lieu')).toHaveValue('My address')
+  expect(document.cv.contactLabels).toEqual({
+    website: 'My portfolio',
+    location: 'My address',
+  })
+})
+
 it('edits, validates, trims and resets headings without changing section content', async () => {
   const user = userEvent.setup()
   let latest: CvData = createEmptyCv()

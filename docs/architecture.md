@@ -119,6 +119,27 @@ Existing version 1/2 drafts and backups without headings keep their defaults.
 Overrides autosave and round trip through version 2 backups. Start over and Load
 example replace them along with CV content; color reset leaves them unchanged.
 
+## Custom contact labels
+
+Optional `cv.contactLabels` stores overrides for location, phone, email, website,
+and LinkedIn labels. They are CV content, separate from section headings, contact
+values, editor field names, and appearance. Overrides use the same trimmed,
+single-line, 80-Unicode-code-point validation as section headings; invalid editor
+text remains local and never replaces the last valid saved label. Clearing or
+resetting one override restores its translated template default, not a hidden label.
+
+Template `contactLabels` metadata declares only the contact fields that print
+labels and supplies their default message keys. Personal-detail fields expose a
+pencil control only for declared labels, including when their values are empty.
+Templates without labels preserve saved overrides without adding captions. Custom
+wording retains its casing and language across template/language changes. PDF
+preview, download, and accessible preview use the same resolver; blank contact
+values still omit their labels. Gallery samples remain independent of overrides.
+
+Older drafts remain readable without this optional field. Overrides autosave and
+round trip in version 2 backups. Start over and Load example replace them along
+with CV content; appearance changes and color resets preserve them.
+
 ## Color customization
 
 Color customization is an optional `appearance.colors` object with independent

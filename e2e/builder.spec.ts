@@ -668,6 +668,204 @@ test('appearance-only drafts retain styling through opening template selection',
     })
 })
 
+test('custom contact labels persist, validate, export, restore and reset', async ({
+  page,
+}) => {
+  test.setTimeout(120_000)
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example', exact: true }).click()
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '018')
+  await page.getByRole('button', { name: /About you/ }).click()
+  const labels = {
+    location: 'My address',
+    email: 'Work email',
+    phone: 'Call me',
+    website: 'My portfolio',
+    linkedin: 'Professional network',
+  }
+  const fields = [
+    ['Location', labels.location],
+    ['Email', labels.email],
+    ['Phone', labels.phone],
+    ['Website', labels.website],
+    ['Linkedin', labels.linkedin],
+  ] as const
+  async function savedLabels() {
+    return page.evaluate(
+      (key) =>
+        JSON.parse(localStorage.getItem(key) ?? '{}').cv?.contactLabels ?? null,
+      storageKey,
+    )
+  }
+  async function edit() {
+    const switcher = page.getByRole('group', { name: 'Workspace view' })
+    if (await switcher.isVisible())
+      await switcher.getByRole('button', { name: 'Edit', exact: true }).click()
+  }
+  for (const [label, value] of fields) {
+    const toggle = page.getByRole('button', {
+      name: `Edit contact label: ${label}`,
+      exact: true,
+    })
+    await toggle.focus()
+    await page.keyboard.press('Enter')
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    await page
+      .getByLabel(`Contact label: ${label}`, { exact: true })
+      .fill(value)
+  }
+  const input = page.getByLabel('Contact label: Location', { exact: true })
+  await input.fill('  My address  ')
+  await input.blur()
+  await expect(input).toHaveValue('My address')
+  await expect.poll(savedLabels).toEqual(labels)
+  await input.fill('W'.repeat(81))
+  await expect(page.getByRole('alert')).toHaveText(
+    'Use a single line of up to 80 characters.',
+  )
+  await expect.poll(savedLabels).toEqual(labels)
+  await input.fill(labels.location)
+  await expect(page.getByLabel('Email address', { exact: true })).toHaveValue(
+    'alex@example.com',
+  )
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 })
+    await input.scrollIntoViewIfNeeded()
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(width)
+    const bounds = await input.boundingBox()
+    expect(bounds!.x).toBeGreaterThanOrEqual(0)
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width)
+    await page.screenshot({
+      path: test.info().outputPath(`contact-label-editor-${width}.png`),
+      fullPage: true,
+    })
+  }
+  const accessibility = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+    .analyze()
+  expect(accessibility.violations).toEqual([])
+  await page.reload()
+  await page
+    .getByRole('button', { name: 'Edit contact label: Location', exact: true })
+    .click()
+  await expect(input).toHaveValue(labels.location)
+  await page
+    .getByRole('combobox', { name: 'Language', exact: true })
+    .selectOption('fr')
+  await expect(
+    page.getByLabel('Libell\u00e9 : Lieu', { exact: true }),
+  ).toHaveValue(labels.location)
+  await page
+    .getByRole('combobox', { name: 'Langue', exact: true })
+    .selectOption('en')
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '002')
+  await page.getByRole('button', { name: /About you/ }).click()
+  await expect(
+    page.getByRole('button', { name: /^Edit contact label:/ }),
+  ).toHaveCount(0)
+  await expect.poll(savedLabels).toEqual(labels)
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '010')
+  await page.getByRole('button', { name: /About you/ }).click()
+  await page
+    .getByRole('button', { name: 'Edit contact label: Email', exact: true })
+    .click()
+  await expect(
+    page.getByLabel('Contact label: Email', { exact: true }),
+  ).toHaveValue(labels.email)
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  await chooseTemplate(page, '018')
+  await page.getByLabel('Headings', { exact: true }).fill('#913355')
+  await page.getByRole('button', { name: 'Reset colors', exact: true }).click()
+  await expect.poll(savedLabels).toEqual(labels)
+  await page.getByLabel('Document actions', { exact: true }).click()
+  const backupPending = page.waitForEvent('download')
+  await page
+    .getByRole('button', { name: 'Download backup', exact: true })
+    .click()
+  const backupBytes = await downloadBytes(await backupPending)
+  expect(JSON.parse(backupBytes.toString()).cv.contactLabels).toEqual(labels)
+  await preview(page)
+  for (const label of Object.values(labels))
+    await expect(
+      page.getByRole('region', { name: 'CV preview text' }),
+    ).toContainText(label)
+  const pdfPending = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Download PDF', exact: true }).click()
+  const task = getDocument({
+    data: new Uint8Array(await downloadBytes(await pdfPending)),
+    useSystemFonts: true,
+  })
+  try {
+    const pdf = await task.promise
+    const text: string[] = []
+    for (let number = 1; number <= pdf.numPages; number++) {
+      const pdfPage = await pdf.getPage(number)
+      text.push(
+        (await pdfPage.getTextContent()).items
+          .filter((item) => 'str' in item)
+          .map((item) => item.str)
+          .join(' '),
+      )
+    }
+    for (const value of Object.values(labels))
+      expect(text.join(' ').replace(/\s/g, '')).toContain(
+        value.replace(/\s/g, ''),
+      )
+  } finally {
+    await task.destroy()
+  }
+  await edit()
+  await page.getByRole('button', { name: 'Load example', exact: true }).click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Use example', exact: true })
+    .click()
+  await expect.poll(savedLabels).toBeNull()
+  await page.getByLabel('CV backup file').setInputFiles({
+    name: 'contact-labels-backup.json',
+    mimeType: 'application/json',
+    buffer: backupBytes,
+  })
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Restore backup', exact: true })
+    .click()
+  await expect.poll(savedLabels).toEqual(labels)
+  await page.getByRole('button', { name: /About you/ }).click()
+  await page
+    .getByRole('button', { name: 'Edit contact label: Location', exact: true })
+    .click()
+  await page
+    .getByRole('button', {
+      name: 'Use default contact label: Location',
+      exact: true,
+    })
+    .click()
+  await expect(input).toHaveValue('')
+  const remaining = {
+    email: labels.email,
+    phone: labels.phone,
+    website: labels.website,
+    linkedin: labels.linkedin,
+  }
+  await expect.poll(savedLabels).toEqual(remaining)
+  await page.getByLabel('Document actions', { exact: true }).click()
+  await page.getByRole('button', { name: 'Start over', exact: true }).click()
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Start over', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Choose a template' }),
+  ).toBeVisible()
+  await expect.poll(savedLabels).toBeNull()
+})
+
 test('custom section headings persist, validate, export, restore and reset', async ({
   page,
 }) => {

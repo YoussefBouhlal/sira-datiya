@@ -17,6 +17,12 @@ A person's own wording for a CV section heading, used in the preview and exporte
 **CV section group**:
 Related CV sections presented together under a shared heading, such as languages and certifications under Additional Information. The group's heading is distinct from the headings of its member sections.
 
+**Contact label**:
+The text identifying an individual contact detail in a CV, such as Location or Email address, distinct from the detail's value and from a section heading.
+
+**Custom contact label**:
+A person's own wording for a contact label. It belongs to the CV rather than a particular template and remains as written when the document language changes.
+
 **Template**:
 A visual presentation of CV content. Choosing a different template does not change the content.
 

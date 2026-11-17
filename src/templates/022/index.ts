@@ -1,4 +1,8 @@
-import { defaultSectionHeadings, type TemplateDefinition } from '../types'
+import {
+  defaultContactLabels,
+  defaultSectionHeadings,
+  type TemplateDefinition,
+} from '../types'
 
 export const gildTemplate = {
   id: 'gild',
@@ -6,6 +10,10 @@ export const gildTemplate = {
   typography: 'sans',
   layout: 'two-column',
   portraitShape: 'circle',
+  contactLabels: {
+    linkedin: defaultContactLabels.linkedin,
+    website: defaultContactLabels.website,
+  },
   headings: {
     ...defaultSectionHeadings,
     experience: 'Work experience',
