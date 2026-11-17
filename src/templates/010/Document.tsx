@@ -6,7 +6,11 @@ import { dateRange as localizedDateRange, translate } from '../../i18n/messages'
 import { ContactText, Image, PdfLanguage, View } from '../shared/PdfLayout'
 import { pageLanguageStyle, usePdfTranslation } from '../shared/localization'
 import { Text } from '../shared/Text'
-import { resolveSkillProficiencyDisplay, type TemplateProps } from '../types'
+import {
+  resolveContactLabel,
+  resolveSkillProficiencyDisplay,
+  type TemplateProps,
+} from '../types'
 import { ruledTemplate } from './index'
 import { createStyles } from './styles'
 
@@ -109,13 +113,20 @@ export function RuledDocument({ cv, appearance }: TemplateProps) {
     ruledTemplate,
     appearance.skillProficiencyDisplay,
   )
-  const contact = [
-    ['Location', cv.personal.location],
-    ['Phone', cv.personal.phone],
-    ['Email', cv.personal.email],
-    ['Website', cv.personal.website],
-    ['LinkedIn', cv.personal.linkedin],
-  ].filter(([, value]) => value!.trim())
+  const contact = (
+    ['location', 'phone', 'email', 'website', 'linkedin'] as const
+  )
+    .filter((key) => cv.personal[key].trim())
+    .map((key) => ({
+      key,
+      label: resolveContactLabel(
+        cv.contactLabels,
+        ruledTemplate.contactLabels,
+        key,
+        appearance.language,
+      ),
+      value: cv.personal[key],
+    }))
   const skills = cv.skills.filter((skill) => skill.name.trim())
   const languages = cv.languages.filter((value) => value.trim())
   const experience = cv.experience.filter(
@@ -232,11 +243,19 @@ export function RuledDocument({ cv, appearance }: TemplateProps) {
             <View style={styles.sidebar}>
               {contact.length > 0 && (
                 <Section section="details" appearance={appearance}>
-                  {contact.map(([label, value]) => (
-                    <View key={label} style={styles.contact}>
+                  {contact.map(({ key, label, value }) => (
+                    <View key={key} style={styles.contact}>
                       <View wrap={false} minPresenceAhead={16}>
-                        <Text colorRole="headings" style={styles.contactLabel}>
-                          {t(label!)}
+                        <Text
+                          colorRole="headings"
+                          style={[
+                            styles.contactLabel,
+                            cv.contactLabels?.[key]?.trim()
+                              ? { textTransform: 'none' }
+                              : {},
+                          ]}
+                        >
+                          {label}
                         </Text>
                       </View>
                       <ContactText

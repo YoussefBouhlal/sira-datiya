@@ -7,7 +7,11 @@ import { dateRange as localizedDateRange, translate } from '../../i18n/messages'
 import { ContactText, Image, PdfLanguage, View } from '../shared/PdfLayout'
 import { pageLanguageStyle, usePdfTranslation } from '../shared/localization'
 import { Text } from '../shared/Text'
-import { resolveSkillProficiencyDisplay, type TemplateProps } from '../types'
+import {
+  resolveContactLabel,
+  resolveSkillProficiencyDisplay,
+  type TemplateProps,
+} from '../types'
 import { gildTemplate } from './index'
 import { createStyles } from './styles'
 
@@ -132,10 +136,18 @@ export function GildDocument({ cv, appearance }: TemplateProps) {
     cv.personal.phone,
     cv.personal.email,
   ].filter((value) => value.trim())
-  const links = [
-    ['LinkedIn', cv.personal.linkedin],
-    ['Website', cv.personal.website],
-  ].filter(([, value]) => value!.trim())
+  const links = (['linkedin', 'website'] as const)
+    .filter((key) => cv.personal[key].trim())
+    .map((key) => ({
+      key,
+      label: resolveContactLabel(
+        cv.contactLabels,
+        gildTemplate.contactLabels,
+        key,
+        appearance.language,
+      ),
+      value: cv.personal[key],
+    }))
   const skills = cv.skills.filter((skill) => skill.name.trim())
   const languages = cv.languages.filter((value) => value.trim())
   const experience = cv.experience.filter(
@@ -412,10 +424,10 @@ export function GildDocument({ cv, appearance }: TemplateProps) {
                 )}
                 {links.length > 0 && (
                   <Section section="details" appearance={appearance}>
-                    {links.map(([label, value]) => (
-                      <View key={label} style={styles.entry} wrap={false}>
+                    {links.map(({ key, label, value }) => (
+                      <View key={key} style={styles.entry} wrap={false}>
                         <Text colorRole="details" style={styles.linkLabel}>
-                          {t(label!)}
+                          {label}
                         </Text>
                         <ContactText
                           values={[value!]}

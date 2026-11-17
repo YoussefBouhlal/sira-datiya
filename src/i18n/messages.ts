@@ -2,6 +2,22 @@ export const languages = ['en', 'fr', 'ar'] as const
 export type Language = (typeof languages)[number]
 
 export const messages = {
+  'Edit contact label: {label}': [
+    'Modifier le libell\u00e9 : {label}',
+    '\u062a\u0639\u062f\u064a\u0644 \u062a\u0633\u0645\u064a\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644: {label}',
+  ],
+  'Contact label: {label}': [
+    'Libell\u00e9 : {label}',
+    '\u062a\u0633\u0645\u064a\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644: {label}',
+  ],
+  'Use default contact label': [
+    'Utiliser le libell\u00e9 par d\u00e9faut',
+    '\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u062a\u0633\u0645\u064a\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629',
+  ],
+  'Use default contact label: {label}': [
+    'Utiliser le libell\u00e9 par d\u00e9faut : {label}',
+    '\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u062a\u0633\u0645\u064a\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644 \u0627\u0644\u0627\u0641\u062a\u0631\u0627\u0636\u064a\u0629: {label}',
+  ],
   'Edit heading: {section}': [
     'Modifier le titre : {section}',
     '\u062a\u0639\u062f\u064a\u0644 \u0627\u0644\u0639\u0646\u0648\u0627\u0646: {section}',
@@ -150,6 +166,7 @@ export const messages = {
     'الموقع الإلكتروني أو معرض الأعمال',
   ],
   LinkedIn: ['LinkedIn', 'لينكدإن'],
+  Linkedin: ['LinkedIn', '\u0644\u064a\u0646\u0643\u062f\u0625\u0646'],
   'Product Designer': ['Designer produit', 'مصمم منتجات'],
   'Senior Product Designer': ['Designer produit senior', 'مصمم منتجات أول'],
   'San Francisco, CA': [

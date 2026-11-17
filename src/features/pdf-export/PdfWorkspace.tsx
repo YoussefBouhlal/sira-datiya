@@ -8,8 +8,10 @@ import {
 import { useState } from 'react'
 import type { Appearance, CvData } from '../../domain/cv/types'
 import { proficiencyLevels } from '../../domain/cv/defaults'
+import { contactLabelKeys } from '../../domain/cv/schema'
 import { documentFilename, downloadBlob } from '../../lib/download'
 import {
+  resolveContactLabel,
   resolveSectionHeading,
   type TemplateDefinition,
 } from '../../templates/types'
@@ -154,10 +156,19 @@ export function PdfWorkspace({
           ].some((value) => Boolean(value.trim())),
         )}
         {Object.entries(cv.personal)
-          .filter(([key]) => key !== 'fullName' && key !== 'portrait')
+          .filter(([key]) => key === 'jobTitle')
           .map(([key, value]) =>
             typeof value === 'string' ? <p key={key}>{value}</p> : null,
           )}
+        {contactLabelKeys.map((key) =>
+          cv.personal[key].trim() ? (
+            <p key={key}>
+              {template.contactLabels?.[key] &&
+                `${resolveContactLabel(cv.contactLabels, template.contactLabels, key, appearance.language)}: `}
+              {cv.personal[key]}
+            </p>
+          ) : null,
+        )}
         {heading('summary', Boolean(cv.summary.trim()))}
         <p>{cv.summary}</p>
         {heading(

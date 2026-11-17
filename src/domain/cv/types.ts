@@ -1,6 +1,7 @@
 import type { z } from 'zod'
 import type {
   appearanceSchema,
+  contactLabelKeys,
   cvSchema,
   educationSchema,
   experienceSchema,
@@ -11,6 +12,7 @@ import type {
 } from './schema'
 
 export type CvData = z.infer<typeof cvSchema>
+export type ContactLabelKey = (typeof contactLabelKeys)[number]
 export type SectionHeadingKey = (typeof sectionHeadingKeys)[number]
 export type Experience = z.infer<typeof experienceSchema>
 export type Education = z.infer<typeof educationSchema>

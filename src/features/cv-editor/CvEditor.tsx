@@ -8,6 +8,7 @@ import { PortraitField } from './PortraitField'
 import type { EditorStep } from './steps'
 import { useTranslation } from '../../i18n/context'
 import { SectionHeadingField } from './SectionHeadingField'
+import { ContactField } from './ContactField'
 
 export function CvEditor({
   cv,
@@ -115,47 +116,57 @@ export function CvEditor({
         value={cv.personal.jobTitle}
         onChange={(event) => update('jobTitle', event.target.value)}
       />
-      <Field
+      <ContactField
+        cv={cv}
+        onChange={onChange}
+        template={template}
+        field="email"
         label="Email address"
         type="email"
         autoComplete="email"
         placeholder="alex@example.com"
-        value={cv.personal.email}
-        onChange={(event) => update('email', event.target.value)}
       />
-      <Field
+      <ContactField
+        cv={cv}
+        onChange={onChange}
+        template={template}
+        field="phone"
         label="Phone number"
         type="tel"
         autoComplete="tel"
         placeholder="+1 415 555 0142"
-        value={cv.personal.phone}
-        onChange={(event) => update('phone', event.target.value)}
       />
-      <Field
+      <ContactField
+        cv={cv}
+        onChange={onChange}
+        template={template}
+        field="location"
         className="full-width"
         label="Location"
         autoComplete="address-level2"
         placeholder="San Francisco, CA"
-        value={cv.personal.location}
-        onChange={(event) => update('location', event.target.value)}
       />
       <div className="form-divider full-width">
         <span>{t('ON THE WEB')}</span>
       </div>
-      <Field
+      <ContactField
+        cv={cv}
+        onChange={onChange}
+        template={template}
+        field="website"
         className="full-width"
         label="Website or portfolio"
         autoComplete="url"
         placeholder="alexmorgan.example"
-        value={cv.personal.website}
-        onChange={(event) => update('website', event.target.value)}
       />
-      <Field
+      <ContactField
+        cv={cv}
+        onChange={onChange}
+        template={template}
+        field="linkedin"
         className="full-width"
         label="LinkedIn"
         placeholder="linkedin.com/in/alex-example"
-        value={cv.personal.linkedin}
-        onChange={(event) => update('linkedin', event.target.value)}
       />
     </div>
   )

@@ -24,6 +24,51 @@ function memoryStorage(): StoragePort {
 }
 
 describe('CV persistence', () => {
+  it('round trips contact labels in drafts and backups with Unicode-aware trimming', () => {
+    const storage = memoryStorage()
+    const document = createDocument('confetti')
+    document.cv.contactLabels = {
+      location: '  Address  ',
+      email: 'Work email',
+      phone: '\u{1f600}'.repeat(80),
+      website: 'Portfolio',
+      linkedin: 'Professional network',
+    }
+    const normalized = {
+      ...document,
+      cv: {
+        ...document.cv,
+        contactLabels: { ...document.cv.contactLabels, location: 'Address' },
+      },
+    }
+    expect(parseBackup(serializeBackup(document))).toEqual(normalized)
+    expect(saveDocument(storage, document)).toEqual({ ok: true })
+    expect(loadDocument(storage)).toEqual({
+      status: 'ready',
+      document: normalized,
+    })
+  })
+
+  it.each([
+    'x'.repeat(81),
+    'First\nSecond',
+    'First\rSecond',
+    'First\u2028Second',
+    'First\u2029Second',
+  ])('preserves unreadable data with an invalid contact label: %s', (label) => {
+    const storage = memoryStorage()
+    const document = createDocument('confetti')
+    const raw = JSON.stringify({
+      version: 2,
+      ...document,
+      cv: { ...document.cv, contactLabels: { email: label } },
+    })
+    storage.setItem(STORAGE_KEY, raw)
+    expect(loadDocument(storage).status).toBe('blocked')
+    expect(storage.getItem(STORAGE_KEY)).toBe(raw)
+    expect(() => parseBackup(raw)).toThrow()
+  })
+
   it('round trips portrait sources and framing without changing legacy portraits', () => {
     const storage = memoryStorage()
     const document = createDocument('modern')

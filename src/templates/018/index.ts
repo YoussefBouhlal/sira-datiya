@@ -1,10 +1,15 @@
-import { defaultSectionHeadings, type TemplateDefinition } from '../types'
+import {
+  defaultContactLabels,
+  defaultSectionHeadings,
+  type TemplateDefinition,
+} from '../types'
 
 export const confettiTemplate = {
   id: 'confetti',
   name: '018',
   typography: 'sans',
   portraitShape: 'square',
+  contactLabels: defaultContactLabels,
   headings: {
     ...defaultSectionHeadings,
     experience: 'Employment History',

@@ -1,4 +1,8 @@
-import { defaultSectionHeadings, type TemplateDefinition } from '../types'
+import {
+  defaultContactLabels,
+  defaultSectionHeadings,
+  type TemplateDefinition,
+} from '../types'
 
 export const ruledTemplate = {
   id: 'ruled',
@@ -6,6 +10,7 @@ export const ruledTemplate = {
   typography: 'sans',
   layout: 'two-column',
   portraitShape: 'square',
+  contactLabels: defaultContactLabels,
   headings: {
     ...defaultSectionHeadings,
     experience: 'Employment History',

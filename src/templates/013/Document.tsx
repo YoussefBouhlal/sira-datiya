@@ -7,7 +7,11 @@ import { dateRange as localizedDateRange, translate } from '../../i18n/messages'
 import { ContactText, Image, PdfLanguage, View } from '../shared/PdfLayout'
 import { pageLanguageStyle, usePdfTranslation } from '../shared/localization'
 import { Text } from '../shared/Text'
-import { resolveSkillProficiencyDisplay, type TemplateProps } from '../types'
+import {
+  resolveContactLabel,
+  resolveSkillProficiencyDisplay,
+  type TemplateProps,
+} from '../types'
 import { framedTemplate } from './index'
 import { createStyles } from './styles'
 
@@ -113,13 +117,20 @@ export function FramedDocument({ cv, appearance }: TemplateProps) {
     framedTemplate,
     appearance.skillProficiencyDisplay,
   )
-  const contact = [
-    ['Location', cv.personal.location],
-    ['Phone', cv.personal.phone],
-    ['Email', cv.personal.email],
-    ['Website', cv.personal.website],
-    ['LinkedIn', cv.personal.linkedin],
-  ].filter(([, value]) => value!.trim())
+  const contact = (
+    ['location', 'phone', 'email', 'website', 'linkedin'] as const
+  )
+    .filter((key) => cv.personal[key].trim())
+    .map((key) => ({
+      key,
+      label: resolveContactLabel(
+        cv.contactLabels,
+        framedTemplate.contactLabels,
+        key,
+        appearance.language,
+      ),
+      value: cv.personal[key],
+    }))
   const skills = cv.skills.filter((skill) => skill.name.trim())
   const languages = cv.languages.filter((value) => value.trim())
   const experience = cv.experience.filter(
@@ -238,10 +249,10 @@ export function FramedDocument({ cv, appearance }: TemplateProps) {
               <View style={styles.sidebar}>
                 {contact.length > 0 && (
                   <Section section="details" appearance={appearance}>
-                    {contact.map(([label, value]) => (
-                      <View key={label} style={styles.contact} wrap={false}>
+                    {contact.map(({ key, label, value }) => (
+                      <View key={key} style={styles.contact} wrap={false}>
                         <Text colorRole="details" style={styles.contactLabel}>
-                          {t(label!)}
+                          {label}
                         </Text>
                         <View style={styles.contactValue}>
                           <ContactText
