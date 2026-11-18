@@ -26,7 +26,7 @@ function Section({
   children: ReactNode
 }) {
   const styles = createStyles(appearance.fontSize)
-  const { heading } = usePdfTranslation()
+  const { heading, language } = usePdfTranslation()
   return (
     <View style={styles.section}>
       <View wrap={false} minPresenceAhead={28}>
@@ -36,7 +36,10 @@ function Section({
         <View
           style={[
             styles.underline,
-            { backgroundColor: appearance.colors?.accent ?? appearance.accent },
+            {
+              backgroundColor: appearance.colors?.accent ?? appearance.accent,
+              alignSelf: language === 'ar' ? 'flex-end' : 'flex-start',
+            },
           ]}
         />
         {lead}
