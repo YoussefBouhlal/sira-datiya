@@ -30,6 +30,12 @@ A visual presentation of CV content. Choosing a different template does not chan
 A permanent, zero-padded catalog label for a template, such as 001. The same label identifies the template in every language and is not reassigned when templates are reordered or retired.
 _Avoid_: Template name
 
+**Main column**:
+The primary content area in a sidebar template, distinct from its sidebar. Its sections and position depend on the template and document language.
+
+**Sidebar**:
+The secondary content column in a template, often containing contact details, skills, or languages. It can appear on either side of the main column.
+
 **Appearance**:
 The chosen template, color scheme, text size, paper size, document language, and proficiency display of a CV.
 

@@ -25,7 +25,7 @@ export const createStyles = (fontSize: number) =>
     columns: {
       flexDirection: 'row',
       paddingHorizontal: 40,
-      alignItems: 'flex-start',
+      alignItems: 'stretch',
     },
     main: { width: '69%', paddingRight: 24 },
     sidebar: { width: '31%', paddingLeft: 4 },

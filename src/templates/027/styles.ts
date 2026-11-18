@@ -56,7 +56,7 @@ export const createStyles = (fontSize: number, ruleColor = '#a5b1b8') =>
       lineHeight: 1.4,
       marginTop: 8,
     },
-    columns: { flexDirection: 'row', alignItems: 'flex-start', marginTop: -30 },
+    columns: { flexDirection: 'row', alignItems: 'stretch', marginTop: -30 },
     sidebar: {
       width: '38%',
       paddingHorizontal: 28,

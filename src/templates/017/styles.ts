@@ -40,7 +40,7 @@ export const createStyles = (fontSize: number) =>
       textAlign: 'center',
       marginTop: 18,
     },
-    columns: { flexDirection: 'row', alignItems: 'flex-start' },
+    columns: { flexDirection: 'row', alignItems: 'stretch' },
     sidebar: { width: '26%', paddingRight: 22 },
     main: { width: '74%' },
     section: { marginTop: 15 },

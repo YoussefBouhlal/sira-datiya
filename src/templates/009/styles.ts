@@ -15,7 +15,7 @@ export const createStyles = (fontSize: number) =>
       right: 0,
       width: '32%',
     },
-    columns: { flexDirection: 'row', alignItems: 'flex-start' },
+    columns: { flexDirection: 'row', alignItems: 'stretch' },
     main: { width: '68%', paddingLeft: 42, paddingRight: 30 },
     header: {
       flexDirection: 'row',

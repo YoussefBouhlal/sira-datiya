@@ -56,7 +56,7 @@ export function createStyles(appearance: TemplateProps['appearance']) {
       lineHeight: 1.4,
       marginTop: 6,
     },
-    columns: { flexDirection: 'row', alignItems: 'flex-start' },
+    columns: { flexDirection: 'row', alignItems: 'stretch' },
     sidebar: { width: '39%', paddingHorizontal: 36, paddingTop: 14 },
     main: { width: '61%', paddingLeft: 22, paddingRight: 36 },
     section: { marginTop: 18 },
