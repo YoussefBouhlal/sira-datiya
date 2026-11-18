@@ -41,6 +41,7 @@ export const createStyles = (fontSize: number) =>
       marginBottom: 22,
       width: '65%',
       alignItems: 'stretch',
+      minHeight: 16 + (fontSize - 2) * 1.4,
     },
     website: {
       flexGrow: 1,

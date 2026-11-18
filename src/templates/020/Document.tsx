@@ -223,24 +223,34 @@ export function RibbonDocument({ cv, appearance }: TemplateProps) {
               </View>
             )}
           </View>
-          {cv.personal.website.trim() && (
-            <View wrap={false} style={styles.ribbon} minPresenceAhead={70}>
-              <View style={[styles.website, { backgroundColor: accent }]}>
+          <View
+            wrap={false}
+            style={[
+              styles.ribbon,
+              {
+                alignSelf:
+                  appearance.language === 'ar' ? 'flex-end' : 'flex-start',
+              },
+            ]}
+            minPresenceAhead={70}
+          >
+            <View style={[styles.website, { backgroundColor: accent }]}>
+              {cv.personal.website.trim() && (
                 <ContactText
                   values={[cv.personal.website]}
                   style={styles.websiteText}
                 />
-              </View>
-              <View style={styles.quote}>
-                <Svg width={13} height={12} viewBox="0 0 20 16">
-                  <Path
-                    d="M1 1h7v7l-3 7H2l3-7H1z M12 1h7v7l-3 7h-3l3-7h-4z"
-                    fill="#ffffff"
-                  />
-                </Svg>
-              </View>
+              )}
             </View>
-          )}
+            <View style={styles.quote}>
+              <Svg width={13} height={12} viewBox="0 0 20 16">
+                <Path
+                  d="M1 1h7v7l-3 7H2l3-7H1z M12 1h7v7l-3 7h-3l3-7h-4z"
+                  fill="#ffffff"
+                />
+              </Svg>
+            </View>
+          </View>
           <View style={styles.columns}>
             <View style={styles.sidebar}>
               {cv.personal.location.trim() && (

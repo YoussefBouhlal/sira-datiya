@@ -1,6 +1,6 @@
 import { renderToBuffer } from '@react-pdf/renderer'
 import { PDFDocument } from 'pdf-lib'
-import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { getDocument, OPS, Util } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { describe, expect, it } from 'vitest'
 import { createDocument, createEmptyCv } from '../domain/cv/defaults'
 import { effectiveColors } from '../domain/cv/colors'
@@ -934,6 +934,103 @@ describe('template registry', () => {
             await task.destroy()
           }
         }
+      }
+    },
+  )
+
+  it.each(['en', 'fr', 'ar'] as const)(
+    'ribbon stays visible at the paper edge with or without a website in %s',
+    async (language) => {
+      const render = await templateRegistry.resolve('ribbon').load()
+      for (const pageSize of ['A4', 'LETTER'] as const) {
+        const bounds: number[][] = []
+        for (const website of ['', '   ', 'avery.example.com']) {
+          const cv = createEmptyCv()
+          cv.personal.fullName = 'Avery Example'
+          cv.personal.website = website
+          const task = getDocument({
+            data: new Uint8Array(
+              await renderToBuffer(
+                render({
+                  cv,
+                  appearance: {
+                    ...createDocument('ribbon', language).appearance,
+                    pageSize,
+                    colors: { accent: '#18766c' },
+                  },
+                }),
+              ),
+            ),
+            useSystemFonts: true,
+          })
+          try {
+            const pdf = await task.promise
+            expect(pdf.numPages).toBe(1)
+            const page = await pdf.getPage(1)
+            const operators = await page.getOperatorList()
+            let matrix = [1, 0, 0, 1, 0, 0]
+            let fill = ''
+            const stack: { matrix: number[]; fill: string }[] = []
+            const rectangles = new Map<string, number[]>()
+            operators.fnArray.forEach((operator, index) => {
+              const args = operators.argsArray[index]
+              if (operator === OPS.save) stack.push({ matrix, fill })
+              else if (operator === OPS.restore) {
+                const saved = stack.pop()!
+                matrix = saved.matrix
+                fill = saved.fill
+              } else if (operator === OPS.transform)
+                matrix = Util.transform(matrix, args)
+              else if (operator === OPS.setFillRGBColor) fill = args[0]
+              else if (
+                operator === OPS.constructPath &&
+                args[0] === OPS.fill &&
+                args[2] &&
+                !rectangles.has(fill)
+              ) {
+                const box = args[2]
+                const start = [box[0], box[1]]
+                const end = [box[2], box[3]]
+                Util.applyTransform(start, matrix)
+                Util.applyTransform(end, matrix)
+                rectangles.set(fill, [
+                  Math.min(start[0], end[0]),
+                  Math.min(start[1], end[1]),
+                  Math.max(start[0], end[0]),
+                  Math.max(start[1], end[1]),
+                ])
+              }
+            })
+            const ribbonBounds = rectangles.get('#18766c')!
+            expect(ribbonBounds).toBeDefined()
+            expect(ribbonBounds).toHaveLength(4)
+            expect(ribbonBounds[2]! - ribbonBounds[0]!).toBeGreaterThan(250)
+            expect(ribbonBounds[3]! - ribbonBounds[1]!).toBeGreaterThan(25)
+            if (language === 'ar')
+              expect(ribbonBounds[2]).toBeCloseTo(page.view[2]!, 1)
+            else expect(ribbonBounds[0]).toBeCloseTo(0, 1)
+            const quoteBounds = rectangles.get('#202020')!
+            expect(quoteBounds).toBeDefined()
+            expect(quoteBounds[2]! - quoteBounds[0]!).toBeCloseTo(28, 1)
+            expect(quoteBounds[1]).toBeCloseTo(ribbonBounds[1]!, 1)
+            expect(quoteBounds[3]).toBeCloseTo(ribbonBounds[3]!, 1)
+            if (language === 'ar')
+              expect(quoteBounds[2]).toBeCloseTo(ribbonBounds[0]! - 5, 1)
+            else expect(quoteBounds[0]).toBeCloseTo(ribbonBounds[2]! + 5, 1)
+            bounds.push(ribbonBounds)
+            const items = (await page.getTextContent()).items.filter(
+              (item) => 'str' in item,
+            )
+            const text = items.map((item) => item.str).join(' ')
+            expect(text.includes('avery.example.com')).toBe(
+              Boolean(website.trim()),
+            )
+          } finally {
+            await task.destroy()
+          }
+        }
+        expect(bounds[0]).toEqual(bounds[1])
+        expect(bounds[0]).toEqual(bounds[2])
       }
     },
   )
