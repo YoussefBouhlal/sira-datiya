@@ -2509,7 +2509,7 @@ describe('template registry', () => {
   )
 
   it.each(
-    (['en', 'ar'] as const).flatMap((language) =>
+    (['en', 'fr', 'ar'] as const).flatMap((language) =>
       (['A4', 'LETTER'] as const).map((size) => [language, size] as const),
     ),
   )(
@@ -2600,6 +2600,52 @@ describe('template registry', () => {
         expect(text).not.toContain('\u2022 1.')
         expect(text).not.toContain(translate(language, 'Intermediate'))
         expect(text).toContain('French (conversational)')
+        const operators = await page.getOperatorList()
+        let matrix = [1, 0, 0, 1, 0, 0]
+        const stack: number[][] = []
+        const underlines: number[][] = []
+        operators.fnArray.forEach((operator, index) => {
+          const args = operators.argsArray[index]
+          if (operator === OPS.save) stack.push(matrix)
+          else if (operator === OPS.restore) matrix = stack.pop()!
+          else if (operator === OPS.transform)
+            matrix = Util.transform(matrix, args)
+          else if (
+            operator === OPS.constructPath &&
+            args[0] === OPS.fill &&
+            args[2]
+          ) {
+            const box = args[2]
+            const start = [box[0], box[1]]
+            const end = [box[2], box[3]]
+            Util.applyTransform(start, matrix)
+            Util.applyTransform(end, matrix)
+            if (
+              Math.abs(Math.abs(end[0]! - start[0]!) - 24) < 0.01 &&
+              Math.abs(Math.abs(end[1]! - start[1]!) - 2.5) < 0.01
+            )
+              underlines.push([
+                Math.min(start[0]!, end[0]!),
+                Math.max(start[0]!, end[0]!),
+              ])
+          }
+        })
+        expect(underlines.length).toBeGreaterThanOrEqual(5)
+        const edges =
+          language === 'ar'
+            ? [boundary - 25, page.view[2]! - 44]
+            : [44, boundary + 25]
+        const positions = underlines.map(
+          (bounds) => bounds[language === 'ar' ? 1 : 0]!,
+        )
+        for (const position of positions)
+          expect(
+            Math.min(...edges.map((edge) => Math.abs(position - edge))),
+          ).toBeLessThan(0.1)
+        for (const edge of edges)
+          expect(
+            positions.some((position) => Math.abs(position - edge) < 0.1),
+          ).toBe(true)
       } finally {
         await task.destroy()
       }
