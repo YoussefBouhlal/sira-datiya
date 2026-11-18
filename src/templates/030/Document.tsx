@@ -263,7 +263,6 @@ export function DiagonalDocument({
             style={[styles.background, { backgroundColor: colors.surface }]}
           />
           <Svg
-            fixed
             width={width}
             height={230}
             viewBox={`0 0 ${width} 230`}
