@@ -24,6 +24,7 @@ beforeAll(() => {
   HTMLDialogElement.prototype.close = function () {
     this.removeAttribute('open')
   }
+  HTMLElement.prototype.scrollIntoView = vi.fn()
 })
 
 afterEach(cleanup)
@@ -298,6 +299,8 @@ it('offers the default immediately and selects inline until confirmation', () =>
 })
 
 it('shows all templates without filters or counts and resets tentative selection on reopen', () => {
+  const scrollIntoView = vi.mocked(HTMLElement.prototype.scrollIntoView)
+  scrollIntoView.mockClear()
   const appearance = createDocument('classic').appearance
   appearance.accent = '#8c4255'
   appearance.colors = { headings: '#913355', accent: '#3456a0' }
@@ -323,6 +326,14 @@ it('shows all templates without filters or counts and resets tentative selection
   expect(screen.queryByText('Two columns')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Browse templates' }))
   let gallery = screen.getByRole('dialog')
+  expect(scrollIntoView).toHaveBeenCalledExactlyOnceWith({
+    behavior: 'instant',
+    block: 'center',
+    inline: 'nearest',
+  })
+  expect(scrollIntoView.mock.instances[0]).toBe(
+    within(gallery).getByRole('button', { name: 'Inspect 001' }),
+  )
   expect(within(gallery).queryByRole('searchbox')).not.toBeInTheDocument()
   expect(within(gallery).queryByRole('combobox')).not.toBeInTheDocument()
   expect(
@@ -343,10 +354,15 @@ it('shows all templates without filters or counts and resets tentative selection
     within(gallery).queryByRole('region', { name: 'Template CV preview' }),
   ).not.toBeInTheDocument()
   expect(onChange).not.toHaveBeenCalled()
+  expect(scrollIntoView).toHaveBeenCalledTimes(1)
   fireEvent(gallery, new Event('cancel', { bubbles: true }))
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('button', { name: 'Browse templates' }))
   gallery = screen.getByRole('dialog')
+  expect(scrollIntoView).toHaveBeenCalledTimes(2)
+  expect(scrollIntoView.mock.instances[1]).toBe(
+    within(gallery).getByRole('button', { name: 'Inspect 001' }),
+  )
   expect(
     within(gallery).getByRole('button', { name: 'Inspect 001' }),
   ).toHaveAttribute('aria-pressed', 'true')

@@ -184,6 +184,15 @@ function TemplateGallery({
     const opener = document.activeElement
     element?.showModal()
     closeButton.current?.focus()
+    element
+      ?.querySelector<HTMLButtonElement>(
+        '.template-option[aria-pressed="true"]',
+      )
+      ?.scrollIntoView({
+        behavior: 'instant',
+        block: 'center',
+        inline: 'nearest',
+      })
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
