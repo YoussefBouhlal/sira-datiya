@@ -1606,10 +1606,18 @@ describe('template registry', () => {
             } else {
               expect(JSON.stringify(fills)).not.toContain('#f6eee2')
               expect(operators.fnArray).not.toContain(OPS.paintImageXObject)
+              for (const item of items.filter((item) => item.str.trim())) {
+                expect(item.transform[5] + item.height).toBeLessThanOrEqual(
+                  page.view[3]! - 38 + 1,
+                )
+              }
             }
           }
           const text = texts.join(' ').replace(/\s+/g, ' ')
           expect(text).toContain('Final achievement marker')
+          expect(
+            text.match(/A selectable achievement across page breaks\./g),
+          ).toHaveLength(100)
           expect(text.match(/Avery Example/g)).toHaveLength(1)
           expect(text.replace(/\s/g, '')).toContain(
             translate(language, 'Employment History').replace(/\s/g, ''),
