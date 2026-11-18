@@ -36,6 +36,9 @@ The primary content area in a sidebar template, distinct from its sidebar. Its s
 **Sidebar**:
 The secondary content column in a template, often containing contact details, skills, or languages. It can appear on either side of the main column.
 
+**Website ribbon**:
+A decorative horizontal band that can display the person's website address, distinct from section rules and contact dividers.
+
 **Appearance**:
 The chosen template, color scheme, text size, paper size, document language, and proficiency display of a CV.
 
