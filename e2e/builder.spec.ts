@@ -2649,6 +2649,52 @@ test('editor and template controls have no automated accessibility violations', 
   ).toEqual([])
 })
 
+test('template gallery opens at the applied template after cancelling another candidate', async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Load example' }).click()
+  await page.getByRole('button', { name: /06 Template & style/ }).click()
+  const browse = page.getByRole('button', { name: 'Browse templates' })
+  const gallery = page.getByRole('dialog', { name: /Templates/ })
+  const applied = gallery.getByRole('button', {
+    name: 'Inspect 030',
+    exact: true,
+  })
+  await browse.click()
+  await applied.click()
+  await gallery.getByRole('button', { name: 'Use template' }).click()
+  for (const width of isMobile ? [390, 320] : [1440, 800, 700]) {
+    await page.setViewportSize({ width, height: 900 })
+    await browse.click()
+    await expect(applied).toHaveAttribute('aria-pressed', 'true')
+    await expect(applied).toBeInViewport({ ratio: 1 })
+    await expect(
+      gallery.getByRole('button', { name: 'Close template gallery' }),
+    ).toBeFocused()
+    expect(
+      await gallery
+        .locator('.gallery-browser')
+        .evaluate((element) => element.scrollTop),
+    ).toBeGreaterThan(0)
+    await expect(
+      gallery.getByRole('button', { name: /^Inspect / }).first(),
+    ).toHaveAccessibleName('Inspect 001')
+    await gallery.screenshot({
+      path: test.info().outputPath(`applied-template-${width}.png`),
+    })
+    await gallery
+      .getByRole('button', { name: 'Inspect 001', exact: true })
+      .click()
+    await page.keyboard.press('Escape')
+    await expect(browse).toBeFocused()
+  }
+  await browse.click()
+  await expect(applied).toHaveAttribute('aria-pressed', 'true')
+  await expect(applied).toBeInViewport({ ratio: 1 })
+})
+
 test('template gallery supports thumbnails, cancellation and responsive selection without a preview, filters or totals', async ({
   page,
   isMobile,
