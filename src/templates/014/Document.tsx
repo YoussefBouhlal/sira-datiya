@@ -226,6 +226,11 @@ export function BotanicalDocument({ cv, appearance }: TemplateProps) {
                   <Path
                     fill={colors.surface}
                     fillRule="evenodd"
+                    transform={
+                      appearance.language === 'ar'
+                        ? 'translate(186, 0) scale(-1, 1)'
+                        : undefined
+                    }
                     d="M0 0 H186 V186 H0 Z M25 0 C8 32 0 52 24 75 C56 105 29 129 49 158 C74 194 118 161 147 171 C164 176 178 186 186 174 V0 Z"
                   />
                 </Svg>

@@ -1754,7 +1754,7 @@ describe('template registry', () => {
     }
   })
 
-  it.each(['en', 'ar'] as const)(
+  it.each(['en', 'fr', 'ar'] as const)(
     'botanical keeps profile clear of the organic portrait and repeats its surface in %s',
     async (language) => {
       const template = templateRegistry.resolve('botanical')
@@ -1799,6 +1799,30 @@ describe('template registry', () => {
             expect(JSON.stringify(fills)).toContain('#f7f6ff')
             if (pageNumber === 1) {
               expect(operators.fnArray).toContain(OPS.paintImageXObject)
+              let matrix = [1, 0, 0, 1, 0, 0]
+              const stack: number[][] = []
+              const masks: number[][] = []
+              const images: number[][] = []
+              const artwork: number[][] = []
+              operators.fnArray.forEach((operator, index) => {
+                const args = operators.argsArray[index]
+                if (operator === OPS.save) stack.push(matrix)
+                else if (operator === OPS.restore) matrix = stack.pop()!
+                else if (operator === OPS.transform)
+                  matrix = Util.transform(matrix, args)
+                else if (operator === OPS.paintImageXObject) images.push(matrix)
+                else if (operator === OPS.constructPath) {
+                  if (args[0] === OPS.eoFill) masks.push(matrix)
+                  else if (args[0] === OPS.fill) artwork.push(matrix)
+                }
+              })
+              expect(masks).toHaveLength(1)
+              expect(Math.sign(masks[0]![0]!)).toBe(language === 'ar' ? -1 : 1)
+              expect(images).toHaveLength(1)
+              expect(images[0]![0]).toBeGreaterThan(0)
+              expect(artwork.length).toBeGreaterThan(0)
+              for (const transform of artwork)
+                expect(transform[0]).toBeGreaterThan(0)
               const profile = items.filter((item) =>
                 /Profile|passage|beside|portrait/.test(item.str),
               )
