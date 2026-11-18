@@ -220,11 +220,25 @@ describe('template registry', () => {
               }
               const operators = await page.getOperatorList()
               expect(JSON.stringify(operators.argsArray)).toContain('#f5f5f5')
-              expect(JSON.stringify(operators.argsArray)).toContain('#6189b8')
+              const hasCorner = operators.fnArray.some((operator, index) => {
+                if (operator !== OPS.constructPath) return false
+                const args = operators.argsArray[index]
+                const bounds = args[2]
+                return (
+                  args[0] === OPS.fill &&
+                  bounds &&
+                  Math.abs(bounds[2] - bounds[0] - page.view[2]! * 0.39) < 1 &&
+                  Math.abs(bounds[3] - bounds[1] - (portrait ? 226 : 24)) < 1
+                )
+              })
+              expect(hasCorner, `diagonal corner on page ${number}`).toBe(
+                number === 1,
+              )
               expect(operators.fnArray.includes(OPS.paintImageXObject)).toBe(
                 number === 1 && portrait,
               )
               if (number === 1) {
+                expect(JSON.stringify(operators.argsArray)).toContain('#6189b8')
                 const profile = items.find(
                   (item) => item.str === 'Sidebar profile marker.',
                 )!
