@@ -2,8 +2,18 @@ import { StyleSheet } from '@react-pdf/renderer'
 
 export const createStyles = (fontSize: number) =>
   StyleSheet.create({
-    page: { paddingBottom: 48, fontFamily: 'Helvetica', color: '#242424' },
-    intro: { paddingHorizontal: 54, paddingTop: 38, paddingBottom: 34 },
+    page: {
+      paddingTop: 38,
+      paddingBottom: 48,
+      fontFamily: 'Helvetica',
+      color: '#242424',
+    },
+    intro: {
+      marginTop: -38,
+      paddingHorizontal: 54,
+      paddingTop: 38,
+      paddingBottom: 34,
+    },
     header: { flexDirection: 'row', marginBottom: 34 },
     portrait: { width: 84, height: 84, marginRight: 25, objectFit: 'cover' },
     headerText: { flexBasis: 0, flexGrow: 1, flexShrink: 1, minWidth: 0 },
