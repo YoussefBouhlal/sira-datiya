@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     left: 0,
     width: '32%',
   },
-  columns: { flexDirection: 'row', alignItems: 'flex-start' },
+  columns: { flexDirection: 'row', alignItems: 'stretch' },
   sidebar: {
     width: '32%',
     paddingHorizontal: 26,

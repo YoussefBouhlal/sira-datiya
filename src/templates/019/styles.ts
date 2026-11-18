@@ -20,7 +20,7 @@ export const createStyles = (fontSize: number) =>
       borderBottomRightRadius: 14,
     },
     artwork: { position: 'absolute', top: 0, left: 0 },
-    columns: { flexDirection: 'row', alignItems: 'flex-start' },
+    columns: { flexDirection: 'row', alignItems: 'stretch' },
     sidebar: { width: '35.4%', paddingHorizontal: 12 },
     main: { width: '64.6%', paddingLeft: 18 },
     portraitFrame: {

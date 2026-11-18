@@ -1737,6 +1737,116 @@ describe('template registry', () => {
     },
   )
 
+  for (const template of templateRegistry.templates.filter(
+    (entry) => entry.layout === 'two-column' && entry.id !== 'numbered',
+  )) {
+    it.each(
+      (['en', 'fr', 'ar'] as const).flatMap((language) =>
+        (['A4', 'LETTER'] as const).flatMap((pageSize) =>
+          (['main', 'sidebar'] as const).flatMap((column) =>
+            (['empty', 'short'] as const).map((companion) => ({
+              language,
+              pageSize,
+              column,
+              companion,
+            })),
+          ),
+        ),
+      ),
+    )(
+      `${template.id} keeps $column-column continuation within its original column ($language, $pageSize, $companion companion)`,
+      async ({ language, pageSize, column, companion }) => {
+        const cv = createEmptyCv()
+        cv.personal.fullName = 'Avery Example'
+        const markers = Array.from(
+          { length: 100 },
+          (_, index) => `Column marker ${String(index).padStart(3, '0')}`,
+        )
+        cv.skills = (
+          column === 'sidebar'
+            ? markers
+            : companion === 'short'
+              ? ['Companion skill']
+              : []
+        ).map((name, index) => ({
+          id: `column-skill-${index}`,
+          name,
+          level: null,
+        }))
+        cv.experience =
+          column === 'main' || companion === 'short'
+            ? [
+                {
+                  id: 'column-continuation',
+                  role: 'Engineer',
+                  employer: 'Example Works',
+                  location: '',
+                  startDate: '',
+                  endDate: '',
+                  current: false,
+                  description:
+                    column === 'main'
+                      ? markers.join('\n')
+                      : 'Companion achievement',
+                },
+              ]
+            : []
+        const render = await template.load()
+        const task = getDocument({
+          data: new Uint8Array(
+            await renderToBuffer(
+              render({
+                cv,
+                appearance: {
+                  ...createDocument(template.id, language).appearance,
+                  pageSize,
+                },
+              }),
+            ),
+          ),
+          useSystemFonts: true,
+        })
+        try {
+          const pdf = await task.promise
+          expect(pdf.numPages).toBeGreaterThan(1)
+          let originalLeft = 0
+          let originalRight = 0
+          let markerCount = 0
+          let markerPages = 0
+          for (let number = 1; number <= pdf.numPages; number++) {
+            const page = await pdf.getPage(number)
+            const markers = (await page.getTextContent()).items
+              .filter((item) => 'str' in item)
+              .filter((item) => item.str.includes('Column marker'))
+            if (number === 1) {
+              expect(markers.length).toBeGreaterThan(0)
+              originalLeft = Math.min(
+                ...markers.map((item) => item.transform[4]),
+              )
+              originalRight = Math.max(
+                ...markers.map((item) => item.transform[4] + item.width),
+              )
+            }
+            if (markers.length > 0) markerPages++
+            for (const marker of markers) {
+              expect(marker.transform[4]).toBeGreaterThanOrEqual(
+                originalLeft - 1,
+              )
+              expect(marker.transform[4] + marker.width).toBeLessThanOrEqual(
+                originalRight + 1,
+              )
+            }
+            markerCount += markers.length
+          }
+          expect(markerCount).toBe(100)
+          expect(markerPages).toBeGreaterThan(1)
+        } finally {
+          await task.destroy()
+        }
+      },
+    )
+  }
+
   for (const template of templateRegistry.templates) {
     it(`${template.id} wraps long and mixed-script headings within PDF pages`, async () => {
       const render = await template.load()

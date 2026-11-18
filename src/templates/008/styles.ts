@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   subtitle: { color: '#777777', textAlign: 'center', lineHeight: 1.5 },
-  columns: { flexDirection: 'row', alignItems: 'flex-start' },
+  columns: { flexDirection: 'row', alignItems: 'stretch' },
   sidebar: { width: '29%', paddingRight: 26 },
   main: { width: '71%', paddingLeft: 12 },
   section: { marginBottom: 21 },

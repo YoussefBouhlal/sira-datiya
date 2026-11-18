@@ -144,6 +144,8 @@ Treat CV data as read-only. A renderer must not mutate it, access local storage,
 
 Missing optional sections should produce no empty headings. Preserve text rather than truncating it to one page. Avoid wrapping a long section in an unbreakable container. Check long names, URLs, multiline descriptions, and multiple pages. Bundle new fonts and document coverage/attribution; do not claim support for untested scripts.
 
+Sidebar/main-column layouts reserve both columns at their designed positions and widths on every page, even when one column is empty from the outset or finishes before the other. Keep their flowing column containers stretched to the same row height (`alignItems: 'stretch'`) so pagination retains the empty companion rather than shifting continuing text into its space. Arabic mirrors the same reserved layout. This rule does not apply to paired-entry grids such as 015. Coordinate regression tests cover both overflow directions, empty and short companion columns, all document languages, and both paper sizes.
+
 ## Color roles
 
 `appearance.colors` contains optional six-digit hex overrides for `headings`,

@@ -24,7 +24,7 @@ export const createStyles = (fontSize: number) =>
       height: 115,
       backgroundColor: '#ffffff',
     },
-    columns: { flexDirection: 'row', alignItems: 'flex-start' },
+    columns: { flexDirection: 'row', alignItems: 'stretch' },
     sidebar: { width: '38%', paddingLeft: 25, paddingRight: 19 },
     main: { width: '62%', paddingLeft: 26, paddingRight: 30 },
     portrait: {
