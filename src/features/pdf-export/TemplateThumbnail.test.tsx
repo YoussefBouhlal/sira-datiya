@@ -22,7 +22,7 @@ afterEach(() => {
 })
 
 it.each(['en', 'fr', 'ar'] as const)(
-  'adds a local portrait only to the %s gallery sample',
+  'adds a local portrait and proficiency levels only to the %s gallery sample',
   async (language) => {
     vi.stubGlobal(
       'IntersectionObserver',
@@ -54,13 +54,23 @@ it.each(['en', 'fr', 'ar'] as const)(
     await waitFor(() => expect(generatePdfDocument).toHaveBeenCalledOnce())
     const [sample, appearance, definition] =
       vi.mocked(generatePdfDocument).mock.calls[0]!
+    const example = createExampleCv(language)
     expect(sample.personal.portrait).toMatch(/^data:image\/png;base64,/)
+    expect(sample.skills).toEqual(
+      example.skills.map((skill, index) => ({
+        ...skill,
+        level: [5, 4, 3, 4, 5, null][index],
+      })),
+    )
     expect({
       ...sample,
       personal: { ...sample.personal, portrait: '' },
-    }).toEqual(createExampleCv(language))
-    expect(createExampleCv(language).personal.portrait).toBe('')
+      skills: example.skills,
+    }).toEqual(example)
+    expect(example.personal.portrait).toBe('')
+    expect(example.skills.every((skill) => skill.level === null)).toBe(true)
     expect(appearance.language).toBe(language)
+    expect(appearance).not.toHaveProperty('skillProficiencyDisplay')
     expect(definition).toBe(template)
   },
 )

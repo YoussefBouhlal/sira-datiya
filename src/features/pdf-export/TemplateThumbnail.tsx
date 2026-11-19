@@ -14,6 +14,7 @@ const sampleDocuments = new WeakMap<
   TemplateDefinition,
   Map<string, Promise<Blob>>
 >()
+const sampleSkillLevels = [5, 4, 3, 4, 5, null] as const
 const ignorePageCount = () => {}
 
 export function TemplateThumbnail({
@@ -65,6 +66,10 @@ export function TemplateThumbnail({
       }
       const sample = createExampleCv(language)
       sample.personal.portrait = samplePortrait
+      sample.skills = sample.skills.map((skill, index) => ({
+        ...skill,
+        level: sampleSkillLevels[index] ?? null,
+      }))
       pending = generatePdfDocument(sample, appearance, template)
       documents.set(language, pending)
     }
