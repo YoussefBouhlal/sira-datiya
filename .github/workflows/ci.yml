@@ -15,6 +15,7 @@ jobs:
     env:
       VITE_BASE_PATH: /__pages-e2e__/
       PAGES_PUBLISH: ${{ vars.PAGES_DEPLOY_ENABLED == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+      VITE_GA_MEASUREMENT_ID: ${{ vars.PAGES_DEPLOY_ENABLED == 'true' && github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && vars.VITE_GA_MEASUREMENT_ID || '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

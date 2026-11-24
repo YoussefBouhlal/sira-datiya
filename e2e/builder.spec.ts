@@ -12,6 +12,56 @@ import { createDocument, createEmptyCv } from '../src/domain/cv/defaults'
 import { createExampleCv } from '../src/domain/cv/example'
 
 const storageKey = 'siravuno.cv.v1'
+const measurementId = process.env.VITE_GA_MEASUREMENT_ID?.trim() || ''
+const analyticsEnabled =
+  process.env.PAGES_PUBLISH === 'true' && /^G-[A-Z0-9]+$/.test(measurementId)
+const analyticsScriptURL = analyticsEnabled
+  ? `https://www.googletagmanager.com/gtag/js?id=${measurementId}`
+  : ''
+
+test.beforeEach(async ({ context }) => {
+  await context.route('https://**/*', async (route) => {
+    if (route.request().url() === analyticsScriptURL)
+      await route.fulfill({ contentType: 'application/javascript', body: '' })
+    else await route.abort('blockedbyclient')
+  })
+})
+
+test('analytics is deployment-only and queues a sanitized visit without contacting Google', async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto('./?email=private@example.com#secret')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  const script = page.locator('#google-analytics')
+  if (!analyticsEnabled) {
+    await expect(script).toHaveCount(0)
+    return
+  }
+  await expect(script).toHaveCount(1)
+  await expect(script).toHaveAttribute('src', analyticsScriptURL)
+  const commands = await page.evaluate(() => {
+    const analyticsWindow = window as Window & {
+      dataLayer?: ArrayLike<unknown>[]
+    }
+    return analyticsWindow.dataLayer?.map((entry) => Array.from(entry))
+  })
+  const location = new URL(baseURL!)
+  expect(commands).toEqual([
+    ['js', expect.any(Date)],
+    [
+      'config',
+      measurementId,
+      {
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false,
+        page_location: `${location.origin}${location.pathname}`,
+        page_referrer: '',
+        page_title: 'Siravuno',
+      },
+    ],
+  ])
+})
 
 for (const choice of [
   {
@@ -186,6 +236,7 @@ test('Arabic templates render local fonts and download selectable mixed-script P
   page.on('request', (request) => {
     if (
       /^https?:/.test(request.url()) &&
+      request.url() !== analyticsScriptURL &&
       new URL(request.url()).hostname !== '127.0.0.1'
     )
       externalRequests.push(request.url())
@@ -1551,6 +1602,7 @@ test('edit, reload, choose a template, and download a real text PDF', async ({
   page.on('pageerror', (error) => errors.push(error.message))
   context.on('request', (request) => {
     if (!/^https?:/.test(request.url())) return
+    if (request.url() === analyticsScriptURL) return
     const requestURL = new URL(request.url())
     if (
       requestURL.origin !== expectedURL.origin ||

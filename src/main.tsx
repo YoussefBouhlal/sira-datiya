@@ -9,6 +9,9 @@ import '@fontsource/newsreader/500.css'
 import './styles/app.css'
 import './styles/responsive.css'
 import App from './app/App'
+import { initializeAnalytics } from './lib/analytics'
+
+initializeAnalytics()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
