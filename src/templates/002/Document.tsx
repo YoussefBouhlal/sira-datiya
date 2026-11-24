@@ -19,7 +19,7 @@ export function ModernDocument({ cv, appearance }: TemplateProps) {
     <Document
       title={`${cv.personal.fullName || 'Untitled'} - CV`}
       author={cv.personal.fullName}
-      creator="Sira Datiya CV"
+      creator="Siravuno CV"
       language={appearance.language}
     >
       <PdfLanguage

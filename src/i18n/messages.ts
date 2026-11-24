@@ -73,7 +73,7 @@ export const messages = {
   'Skip to languages': ['Aller aux langues', 'الانتقال إلى اللغات'],
   'Skip to templates': ['Aller aux modèles', 'الانتقال إلى القوالب'],
   'Skip to editor': ['Aller à l’éditeur', 'الانتقال إلى المحرر'],
-  'Sira Datiya home': ['Accueil Sira Datiya', 'الصفحة الرئيسية لسيرة ذاتية'],
+  'Siravuno home': ['Accueil Siravuno', 'الصفحة الرئيسية لـ Siravuno'],
   'Saved on this device': [
     'Enregistré sur cet appareil',
     'محفوظ على هذا الجهاز',
@@ -86,9 +86,9 @@ export const messages = {
     'أنت وخطوتك المهنية القادمة.',
   ],
   'Your data stays here': ['Vos données restent ici', 'بياناتك تبقى هنا'],
-  'SIRA DATIYA / CV BUILDER': [
-    'SIRA DATIYA / CRÉATEUR DE CV',
-    'سيرة ذاتية / منشئ السير الذاتية',
+  'SIRAVUNO / CV BUILDER': [
+    'SIRAVUNO / CRÉATEUR DE CV',
+    'Siravuno / منشئ السير الذاتية',
   ],
   'Choose a template': ['Choisir un modèle', 'اختر قالبًا'],
   'Workspace view': ['Vue de l’espace de travail', 'عرض مساحة العمل'],
@@ -139,10 +139,10 @@ export const messages = {
     'ملف النسخة الاحتياطية للسيرة الذاتية',
   ],
   Dismiss: ['Fermer', 'إغلاق'],
-  'This backup could not be opened. Choose a valid Sira Datiya JSON backup smaller than 2 MB.':
+  'This backup could not be opened. Choose a valid Siravuno JSON backup smaller than 2 MB.':
     [
-      'Impossible d’ouvrir cette sauvegarde. Choisissez une sauvegarde JSON Sira Datiya valide de moins de 2 Mo.',
-      'تعذّر فتح هذه النسخة الاحتياطية. اختر نسخة JSON صالحة من سيرة ذاتية بحجم أقل من 2 ميغابايت.',
+      'Impossible d’ouvrir cette sauvegarde. Choisissez une sauvegarde JSON Siravuno valide de moins de 2 Mo.',
+      'تعذّر فتح هذه النسخة الاحتياطية. اختر نسخة JSON صالحة من Siravuno بحجم أقل من 2 ميغابايت.',
     ],
   'Personal details': ['Informations personnelles', 'المعلومات الشخصية'],
   'About you': ['À propos de vous', 'معلوماتك'],

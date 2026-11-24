@@ -3,6 +3,22 @@ import { createExampleCv } from '../domain/cv/example'
 import { dateRange, formatMonth, messages, translate } from './messages'
 
 describe('document language', () => {
+  it.each(['en', 'fr', 'ar'] as const)(
+    'uses Siravuno branding in %s',
+    (language) => {
+      expect(translate(language, 'Siravuno home')).toContain('Siravuno')
+      expect(
+        translate(language, 'SIRAVUNO / CV BUILDER').toLowerCase(),
+      ).toContain('siravuno')
+      expect(
+        translate(
+          language,
+          'This backup could not be opened. Choose a valid Siravuno JSON backup smaller than 2 MB.',
+        ),
+      ).toContain('Siravuno')
+    },
+  )
+
   it('supplies French and Arabic text with the same interpolation placeholders', () => {
     const placeholders = (value: string) =>
       [...value.matchAll(/\{\w+\}/g)].map(([key]) => key).sort()

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createDocument } from '../../domain/cv/defaults'
 import {
   clearDocument,
+  LANGUAGE_PREFERENCE_KEY,
   loadDocument,
   parseBackup,
   saveDocument,
@@ -24,6 +25,21 @@ function memoryStorage(): StoragePort {
 }
 
 describe('CV persistence', () => {
+  it('uses Siravuno storage keys without migrating old drafts', () => {
+    expect(STORAGE_KEY).toBe('siravuno.cv.v1')
+    expect(LANGUAGE_PREFERENCE_KEY).toBe('siravuno.language.v1')
+    const storage = memoryStorage()
+    const previousDraft = serializeBackup(createDocument('classic'))
+    storage.setItem('sira-datiya.cv.v1', previousDraft)
+    expect(loadDocument(storage)).toEqual({ status: 'empty' })
+    expect(storage.getItem(STORAGE_KEY)).toBeNull()
+    const document = createDocument('modern')
+    expect(saveDocument(storage, document)).toEqual({ ok: true })
+    expect(loadDocument(storage)).toEqual({ status: 'ready', document })
+    expect(clearDocument(storage)).toEqual({ ok: true })
+    expect(storage.getItem('sira-datiya.cv.v1')).toBe(previousDraft)
+  })
+
   it('round trips contact labels in drafts and backups with Unicode-aware trimming', () => {
     const storage = memoryStorage()
     const document = createDocument('confetti')

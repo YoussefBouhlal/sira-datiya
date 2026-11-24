@@ -70,7 +70,7 @@ export default function App() {
   useEffect(() => {
     window.document.documentElement.lang = language
     window.document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'
-    window.document.title = `Sira Datiya | ${translate(language, 'SIRA DATIYA / CV BUILDER')}`
+    window.document.title = `Siravuno | ${translate(language, 'SIRAVUNO / CV BUILDER')}`
   }, [language])
   const [step, setStep] = useState<EditorStep>('personal')
   const [view, setView] = useState<'edit' | 'preview'>('edit')
@@ -145,11 +145,11 @@ export default function App() {
           )}
         </a>
         <header className="app-header">
-          <a className="brand" href="./" aria-label={t('Sira Datiya home')}>
+          <a className="brand" href="./" aria-label={t('Siravuno home')}>
             <span className="brand-symbol">
               <FileText size={21} strokeWidth={1.7} />
             </span>
-            Sira Datiya
+            Siravuno
           </a>
           <div className="header-actions">
             <label className="language-control">
@@ -242,7 +242,7 @@ export default function App() {
                 {t('Your data stays here')} <ArrowRight size={13} />
               </button>
               <div className="sidebar-footer-bottom">
-                <span>{t('SIRA DATIYA / CV BUILDER')}</span>
+                <span>{t('SIRAVUNO / CV BUILDER')}</span>
                 <span className="tiny-dot" />
               </div>
             </div>
@@ -271,7 +271,7 @@ export default function App() {
                   [
                     { language: 'en', label: 'English', flag: '🇬🇧' },
                     { language: 'fr', label: 'Français', flag: '🇫🇷' },
-                    { language: 'ar', label: 'العربية', flag: '🇲🇦' },
+                    { language: 'ar', label: 'العربية', flag: '🇸🇦' },
                   ] as const
                 ).map((option) => (
                   <button

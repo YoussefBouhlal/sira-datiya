@@ -1,8 +1,8 @@
-# Sira Datiya
+# Siravuno
 
 A local-first CV builder made with React, TypeScript, and Vite. No login, backend, analytics, or remote font requests. Create a CV through six sections, switch between independently registered templates, and export a PDF.
 
-**Live app:** [Open Sira Datiya](https://youssefbouhlal.github.io/sira-datiya/)
+**Live app:** [Open Siravuno](http://siravuno.com/)
 
 ## Get started
 
@@ -60,9 +60,11 @@ The [Quality workflow](.github/workflows/ci.yml) verifies every push and pull re
 
 Only pushes to the actual default branch can publish. On those runs, the workflow reads the base path from GitHub Pages settings, builds, runs all quality and desktop/mobile browser checks, then uploads the exact tested `dist/` directory. A dependent deployment job publishes that artifact with restricted Pages permissions. Pull requests, other branches, and runs with publishing disabled test a synthetic repository subpath and never deploy. No `gh-pages` branch or separate build is needed. Unsetting the variable stops future publishing; it does not take an existing site offline.
 
-The usual repository URL is `https://USERNAME.github.io/REPOSITORY/`. An empty Pages base path is treated as `/`, so root sites also work without changing source. After deployment, use fictional data to check first load and reload, both templates, fonts, PDF preview and download, autosave, and JSON backup/restore on desktop and mobile. Confirm the browser console and network panel show no asset failures or unintended remote requests.
+The public app URL is `http://siravuno.com/`, hosted at the domain root. An empty Pages base path is treated as `/`, so this root site works without changing source. The custom domain and DNS remain owner-managed hosting settings. After deployment, use fictional data to check first load and reload, both templates, fonts, PDF preview and download, autosave, and JSON backup/restore on desktop and mobile. Confirm the browser console and network panel show no asset failures or unintended remote requests.
 
-Localhost drafts do not transfer to the deployed site. Download a JSON backup locally and restore it on Pages when needed. Browser storage is origin-scoped, not path-scoped: other project sites under the same `USERNAME.github.io` origin share its storage area. This is not an isolation boundary; use only trusted sibling sites and keep backups.
+Drafts from localhost or the previous GitHub Pages address do not transfer automatically to `http://siravuno.com/`. Download a JSON backup from the old site and restore it on the new site when needed. Browser storage is origin-scoped, not path-scoped: changing the scheme, hostname, or port uses a separate storage area, while paths on the same origin share storage. Keep backups before moving between origins, including any later move from HTTP to HTTPS.
+
+The Siravuno rename also starts a new browser storage namespace for drafts and language preferences, with no automatic migration from the previous keys even on the same origin. Export a JSON backup from the previous app before updating, then restore it in Siravuno. Existing JSON backups remain compatible.
 
 ## Architecture and contributions
 

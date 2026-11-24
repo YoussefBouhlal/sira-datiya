@@ -44,7 +44,7 @@ export function SidebarDocument({ cv, appearance }: TemplateProps) {
     <Document
       title={`${personal.fullName || 'Untitled'} - CV`}
       author={personal.fullName}
-      creator="Sira Datiya CV"
+      creator="Siravuno CV"
       language={appearance.language}
     >
       <PdfLanguage

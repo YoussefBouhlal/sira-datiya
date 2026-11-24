@@ -17,6 +17,28 @@ afterEach(() => {
 })
 
 describe('document orchestration', () => {
+  it('ignores previous-brand drafts and language preferences without migrating them', () => {
+    vi.stubGlobal('navigator', { languages: ['en-US'] })
+    const previousDraft = JSON.stringify({
+      version: 2,
+      ...createDocument('classic', 'ar'),
+    })
+    localStorage.setItem('sira-datiya.cv.v1', previousDraft)
+    localStorage.setItem('sira-datiya.language.v1', 'ar')
+    const { result } = renderHook(() => useCvDocument())
+    expect(result.current.choosingLanguage).toBe(true)
+    expect(result.current.document.appearance.language).toBe('en')
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    expect(localStorage.getItem(LANGUAGE_PREFERENCE_KEY)).toBeNull()
+    act(() => result.current.chooseLanguage('fr'))
+    expect(localStorage.getItem(LANGUAGE_PREFERENCE_KEY)).toBe('fr')
+    expect(
+      JSON.parse(localStorage.getItem(STORAGE_KEY)!).appearance.language,
+    ).toBe('fr')
+    expect(localStorage.getItem('sira-datiya.cv.v1')).toBe(previousDraft)
+    expect(localStorage.getItem('sira-datiya.language.v1')).toBe('ar')
+  })
+
   it('does not save an untouched visit before the initial language choice', () => {
     vi.useFakeTimers()
     const { result, unmount } = renderHook(() => useCvDocument())

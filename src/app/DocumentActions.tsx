@@ -86,7 +86,7 @@ export function DocumentActions({
             onRestore(parseBackup(await file.text()))
           } catch {
             setError(
-              'This backup could not be opened. Choose a valid Sira Datiya JSON backup smaller than 2 MB.',
+              'This backup could not be opened. Choose a valid Siravuno JSON backup smaller than 2 MB.',
             )
           }
         }}
