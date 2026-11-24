@@ -11,7 +11,7 @@ import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { createDocument, createEmptyCv } from '../src/domain/cv/defaults'
 import { createExampleCv } from '../src/domain/cv/example'
 
-const storageKey = 'sira-datiya.cv.v1'
+const storageKey = 'siravuno.cv.v1'
 
 for (const choice of [
   {
@@ -1196,8 +1196,14 @@ test('brand stays on one line without crowding header actions', async ({
 }) => {
   await page.goto('./')
   await page.evaluate(() => document.fonts.ready)
-  const brand = page.getByRole('link', { name: 'Sira Datiya home' })
+  const brand = page.getByRole('link', { name: 'Siravuno home' })
   const actions = page.locator('.header-actions')
+
+  await expect(page).toHaveTitle(/Siravuno/)
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    /Siravuno/,
+  )
 
   for (const width of [
     1440, 1200, 1199, 960, 959, 800, 700, 699, 390, 360, 359, 320,
@@ -1207,7 +1213,7 @@ test('brand stays on one line without crowding header actions', async ({
       const text = Array.from(element.childNodes).find(
         (node) =>
           node.nodeType === Node.TEXT_NODE &&
-          node.textContent?.includes('Sira'),
+          node.textContent?.includes('Siravuno'),
       )
       if (!text) throw new Error('Brand text must be present')
       const range = document.createRange()

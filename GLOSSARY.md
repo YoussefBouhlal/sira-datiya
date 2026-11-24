@@ -1,4 +1,4 @@
-# Sira Datiya
+# Siravuno
 
 A CV presents a person's professional background. Its content is independent of the chosen presentation.
 
