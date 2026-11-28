@@ -8,7 +8,11 @@ import {
 import AxeBuilder from '@axe-core/playwright'
 import { PDFDocument } from 'pdf-lib'
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
-import { createDocument, createEmptyCv } from '../src/domain/cv/defaults'
+import {
+  createDocument,
+  createEmptyCv,
+  selectTemplateAppearance,
+} from '../src/domain/cv/defaults'
 import { createExampleCv } from '../src/domain/cv/example'
 import { translate } from '../src/i18n/messages'
 import {
@@ -517,7 +521,9 @@ for (const language of publicLanguages) {
           }
         } else {
           await expect(page.locator('main')).toContainText(
-            galleryCopy[language].entryNote,
+            path === 'templates/'
+              ? galleryCopy[language].entryNote
+              : galleryCopy[language].applyNote,
           )
         }
       }
@@ -744,6 +750,175 @@ for (const language of publicLanguages) {
     ).toEqual(expected)
   })
 }
+
+for (const language of publicLanguages) {
+  test(`public ${language} direct template entry keeps Arabic content through history and reload`, async ({
+    page,
+  }) => {
+    const document = createDocument('classic', 'ar')
+    document.cv = createExampleCv('ar')
+    document.appearance.colors = { headings: '#215b45' }
+    document.appearance.pageSize = 'LETTER'
+    document.appearance.fontSize = 12
+    await page.addInitScript(
+      ({ key, value }) => {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, value)
+      },
+      { key: storageKey, value: JSON.stringify({ version: 2, ...document }) },
+    )
+    await page.goto(`./${language}/templates/003/`)
+    await page
+      .getByRole('link', {
+        name: galleryCopy[language].useTemplate,
+        exact: true,
+      })
+      .click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      translate('ar', 'Personal details'),
+    )
+    await expect(
+      page.getByLabel(translate('ar', 'Full name'), { exact: true }),
+    ).toHaveValue(document.cv.personal.fullName)
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
+    await expect(page).not.toHaveURL(/template=/)
+    const expected = {
+      version: 2,
+      ...document,
+      appearance: selectTemplateAppearance(document.appearance, 'sidebar'),
+    }
+    await expect
+      .poll(() =>
+        page.evaluate(
+          (key) => JSON.parse(localStorage.getItem(key)!),
+          storageKey,
+        ),
+      )
+      .toEqual(expected)
+    await page.goBack()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      galleryCopy[language].templates['003'].name,
+    )
+    await page.goForward()
+    await expect(
+      page.getByLabel(translate('ar', 'Full name'), { exact: true }),
+    ).toHaveValue(document.cv.personal.fullName)
+    await page.reload()
+    expect(
+      await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)!),
+        storageKey,
+      ),
+    ).toEqual(expected)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      translate('ar', 'Personal details'),
+    )
+  })
+}
+
+test('public direct template entry waits for language and skips template selection for a fresh visitor', async ({
+  page,
+}) => {
+  await page.goto('./ar/templates/005/')
+  await page
+    .getByRole('link', { name: galleryCopy.ar.useTemplate, exact: true })
+    .click()
+  await expect(
+    page.getByRole('button', { name: 'Français', exact: true }),
+  ).toBeVisible()
+  await expect(page).toHaveURL(/template=005/)
+  expect(
+    await page.evaluate((key) => localStorage.getItem(key), storageKey),
+  ).toBeNull()
+  await page.reload()
+  await page.getByRole('button', { name: 'Français', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+    translate('fr', 'Personal details'),
+  )
+  await expect(
+    page.getByLabel(translate('fr', 'Full name'), { exact: true }),
+  ).toHaveValue('')
+  await expect(page).not.toHaveURL(/template=/)
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key)!),
+      storageKey,
+    ),
+  ).toEqual({ version: 2, ...createDocument('prime-ats', 'fr') })
+})
+
+for (const failure of ['unreadable', 'quota'] as const) {
+  test(`public direct template entry preserves saved data when storage is ${failure}`, async ({
+    page,
+  }) => {
+    const document = createDocument('modern', 'en')
+    document.cv.personal.fullName = 'Fictional saved person'
+    const saved =
+      failure === 'unreadable'
+        ? '{"version":99}'
+        : JSON.stringify({ version: 2, ...document })
+    await page.addInitScript(
+      ({ key, value, failure }) => {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, value)
+        if (failure === 'quota') {
+          const original = Storage.prototype.setItem
+          Storage.prototype.setItem = function (key, value) {
+            if (key === 'siravuno.cv.v1')
+              throw new DOMException('Quota exceeded', 'QuotaExceededError')
+            return original.call(this, key, value)
+          }
+        }
+      },
+      { key: storageKey, value: saved, failure },
+    )
+    await page.goto('./en/templates/001/')
+    await page
+      .getByRole('link', { name: galleryCopy.en.useTemplate, exact: true })
+      .click()
+    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(page.getByLabel('Full name', { exact: true })).toHaveValue(
+      failure === 'quota' ? document.cv.personal.fullName : '',
+    )
+    await expect(page).not.toHaveURL(/template=/)
+    expect(
+      await page.evaluate((key) => localStorage.getItem(key), storageKey),
+    ).toBe(saved)
+    await page.getByLabel('Full name', { exact: true }).fill('Still editable')
+    await expect(page.getByLabel('Full name', { exact: true })).toHaveValue(
+      'Still editable',
+    )
+  })
+}
+
+test('public direct template entry rejects invalid numbers without changing a saved CV', async ({
+  page,
+}) => {
+  const document = createDocument('classic', 'en')
+  document.cv.personal.fullName = 'Fictional unchanged person'
+  const saved = { version: 2, ...document }
+  await page.addInitScript(
+    ({ key, value }) => {
+      localStorage.setItem(key, value)
+    },
+    { key: storageKey, value: JSON.stringify(saved) },
+  )
+  await page.goto('./?template=999&keep=1#editor')
+  await expect(
+    page.getByText(
+      'Template unavailable. Choose another template in the builder.',
+      { exact: true },
+    ),
+  ).toBeVisible()
+  await expect(page).toHaveURL(/\?keep=1#editor$/)
+  await expect(page.getByLabel('Full name', { exact: true })).toHaveValue(
+    document.cv.personal.fullName,
+  )
+  expect(
+    await page.evaluate(
+      (key) => JSON.parse(localStorage.getItem(key)!),
+      storageKey,
+    ),
+  ).toEqual(saved)
+})
 
 for (const failure of ['unreadable', 'quota'] as const) {
   test(`public navigation stays in the editor when storage is ${failure}`, async ({

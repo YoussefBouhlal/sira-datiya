@@ -7,9 +7,11 @@ import {
   within,
 } from '@testing-library/react'
 import { afterEach, beforeAll, expect, it, vi } from 'vitest'
+import { StrictMode } from 'react'
 import { createDocument, createEmptyCv } from '../domain/cv/defaults'
 import { createExampleCv } from '../domain/cv/example'
 import type { CvData } from '../domain/cv/types'
+import { translate } from '../i18n/messages'
 import { STORAGE_KEY } from '../lib/storage/cv-storage'
 import App from './App'
 
@@ -34,6 +36,73 @@ afterEach(() => {
   cleanup()
   localStorage.clear()
   vi.unstubAllGlobals()
+  window.history.replaceState(null, '', '/')
+})
+
+it('applies public entry after explicit language choice and skips template selection in StrictMode', () => {
+  window.history.replaceState(null, '', '/?template=003')
+  render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+  expect(
+    screen.getByRole('heading', { name: 'Choose your language' }),
+  ).toHaveFocus()
+  expect(window.location.search).toBe('?template=003')
+  fireEvent.click(screen.getByRole('button', { name: 'English' }))
+  expect(
+    screen.getByRole('heading', { name: 'Personal details' }),
+  ).toHaveFocus()
+  expect(screen.getByLabelText('Full name')).toHaveValue('')
+  expect(
+    screen.queryByRole('heading', { name: 'Choose a template' }),
+  ).not.toBeInTheDocument()
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
+  expect(saved.appearance.templateId).toBe('sidebar')
+  expect(saved.cv).toEqual(createEmptyCv())
+  expect(window.location.search).toBe('')
+})
+
+it('opens an appearance-only draft directly without another language or template choice', () => {
+  const document = createDocument('modern', 'fr')
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, ...document }))
+  window.history.replaceState(null, '', '/?template=005')
+  render(<App />)
+  expect(screen.getByLabelText('Langue')).toHaveValue('fr')
+  expect(screen.getByLabelText(translate('fr', 'Full name'))).toHaveValue('')
+  expect(
+    screen.queryByRole('heading', { name: 'Choisir un modèle' }),
+  ).not.toBeInTheDocument()
+})
+
+it('announces unavailable public templates without skipping normal first-visit entry', () => {
+  window.history.replaceState(null, '', '/?template=999')
+  render(<App />)
+  expect(
+    screen.getByText(
+      'Template unavailable. Choose another template in the builder.',
+    ),
+  ).toBeInTheDocument()
+  expect(
+    screen.getByRole('heading', { name: 'Choose your language' }),
+  ).toBeInTheDocument()
+})
+
+it('keeps the initial public-entry language screen full-width without editor navigation', () => {
+  window.history.replaceState(null, '', '/?template=001')
+  const { container } = render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+  expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+  expect(container.querySelector('.app-shell')).toHaveClass(
+    'is-choosing-template',
+  )
+  expect(
+    screen.getByRole('heading', { name: 'Choose your language' }),
+  ).toHaveFocus()
 })
 
 it('keeps public links in document actions without creating a draft on first visits', () => {

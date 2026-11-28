@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { createDocument } from '../domain/cv/defaults'
+import { createDocument, selectTemplateAppearance } from '../domain/cv/defaults'
 import type { CvDocument } from '../domain/cv/types'
 import type { Language } from '../i18n/messages'
 import {
@@ -77,8 +77,34 @@ function persistDocument(
   }
 }
 
+function initializeTemplateEntry(storage?: StoragePort) {
+  const initial = initialize(storage)
+  const numbers = new URL(window.location.href).searchParams.getAll('template')
+  const template =
+    numbers.length === 1
+      ? templateRegistry.templates.find((item) => item.name === numbers[0])
+      : undefined
+  const entryTemplateId = initial.blocked ? undefined : template?.id
+  return {
+    ...initial,
+    document:
+      entryTemplateId && !initial.choosingLanguage
+        ? {
+            ...initial.document,
+            appearance: selectTemplateAppearance(
+              initial.document.appearance,
+              entryTemplateId,
+            ),
+          }
+        : initial.document,
+    entryTemplateId,
+    entryRequested: numbers.length > 0,
+    templateUnavailable: numbers.length > 0 && !template,
+  }
+}
+
 export function useCvDocument(storage?: StoragePort) {
-  const [initial] = useState(() => initialize(storage))
+  const [initial] = useState(() => initializeTemplateEntry(storage))
   const [document, setDocument] = useState(initial.document)
   const [blocked, setBlocked] = useState(initial.blocked)
   const [message, setMessage] = useState(initial.message)
@@ -88,6 +114,17 @@ export function useCvDocument(storage?: StoragePort) {
   const [saveStatus, setSaveStatus] = useState<'saving' | 'saved' | 'error'>(
     initial.blocked ? 'error' : 'saving',
   )
+
+  useEffect(() => {
+    if (
+      !initial.entryRequested ||
+      (initial.entryTemplateId && choosingLanguage)
+    )
+      return
+    const url = new URL(window.location.href)
+    url.searchParams.delete('template')
+    window.history.replaceState(window.history.state, '', url)
+  }, [initial, choosingLanguage])
 
   useEffect(() => {
     if (blocked || choosingLanguage) return
@@ -124,9 +161,13 @@ export function useCvDocument(storage?: StoragePort) {
   }
 
   function chooseLanguage(language: Language) {
+    const appearance =
+      initial.entryTemplateId && choosingLanguage
+        ? selectTemplateAppearance(document.appearance, initial.entryTemplateId)
+        : document.appearance
     const next = {
       ...document,
-      appearance: { ...document.appearance, language },
+      appearance: { ...appearance, language },
     }
     setDocument(next)
     setChoosingLanguage(false)
@@ -193,5 +234,7 @@ export function useCvDocument(storage?: StoragePort) {
     choosingLanguage,
     chooseLanguage,
     saveBeforeNavigation,
+    enteredWithTemplate: Boolean(initial.entryTemplateId),
+    templateUnavailable: initial.templateUnavailable,
   }
 }
