@@ -33,9 +33,26 @@ engagement data and receives request metadata; this is not anonymous or zero-dat
 collection. No application code can guarantee that a third-party script never
 inspects the page. This implementation assumes a trusted GA property configuration.
 
-The README and in-app privacy dialog currently still claim there is no analytics.
-They were intentionally not changed as part of this implementation. Resolve that
-disclosure mismatch before enabling Analytics on the public site.
+On November 27, 2026, the owner chose to retain the existing immediate loading
+without adding an opt-in prompt. The README and in-app CV storage dialog no
+longer claim there is no analytics. Their wording describes CV storage and is
+not a complete website privacy disclosure. On November 28, 2026, dedicated
+technical privacy pages were implemented at `/en/privacy/`, `/fr/privacy/`, and
+`/ar/privacy/`, with links from public pages, the builder workspace, and its CV
+storage dialog. Builder links flush pending edits and block leaving on save
+failure. The privacy pages contain no client scripts or storage access.
+
+The disclosure explains immediate analytics loading without opt-in, possible
+cookies and technical/session collection, sanitized application configuration,
+and the limits of third-party isolation. It does not invent operator identity,
+contact information, hosting-log practices, or provider retention periods. The
+owner must supply those details and verify the live Google property and hosting
+behavior before treating the page as a complete privacy notice. No legal
+compliance claim is made and no analytics or consent behavior was changed.
+
+Google's collection documentation is at
+<https://support.google.com/analytics/answer/11593727> and
+<https://support.google.com/analytics/answer/6004245>.
 
 ## Validation
 

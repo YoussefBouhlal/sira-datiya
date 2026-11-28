@@ -64,6 +64,7 @@ export default function App() {
     blocked,
     choosingLanguage,
     chooseLanguage,
+    saveBeforeNavigation,
   } = useCvDocument()
   const language = document.appearance.language
   const t = (text: string) => translate(language, text)
@@ -217,6 +218,7 @@ export default function App() {
             </button>
             <DocumentActions
               document={document}
+              onBeforeNavigate={saveBeforeNavigation}
               onRestore={(next) =>
                 setConfirmation({ kind: 'restore', document: next })
               }
@@ -239,7 +241,7 @@ export default function App() {
                 className="privacy-button"
                 onClick={() => setShowPrivacy(true)}
               >
-                {t('Your data stays here')} <ArrowRight size={13} />
+                {t('CV storage')} <ArrowRight size={13} />
               </button>
               <div className="sidebar-footer-bottom">
                 <span>{t('SIRAVUNO / CV BUILDER')}</span>
@@ -472,20 +474,30 @@ export default function App() {
         )}
         {showPrivacy && (
           <ConfirmDialog
-            title={t('Only on this device')}
+            title={t('Your CV in this browser')}
             confirmLabel={t('Got it')}
             onCancel={() => setShowPrivacy(false)}
             onConfirm={() => setShowPrivacy(false)}
           >
             <p>
               {t(
-                'Your CV is saved in this browser, not uploaded to a server. There are no accounts, analytics, or remote font requests.',
+                'Your CV is saved in this browser. No account is required, and fonts are bundled with the app.',
               )}
             </p>
             <p>
               {t(
                 'Browser storage is not encrypted. Clearing site data or using private browsing can remove your CV. Download a JSON backup to keep a copy.',
               )}
+            </p>
+            <p>
+              <a
+                href={`${import.meta.env.BASE_URL}${document.appearance.language}/privacy/`}
+                onClick={(event) => {
+                  if (!saveBeforeNavigation()) event.preventDefault()
+                }}
+              >
+                {t('Privacy and analytics')}
+              </a>
             </p>
           </ConfirmDialog>
         )}

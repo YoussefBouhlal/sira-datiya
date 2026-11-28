@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "generate:public-preview": "node scripts/generate-public-preview.mjs",
     "lint": "oxlint --deny-warnings",
     "typecheck": "tsc -b",
     "test": "vitest run",

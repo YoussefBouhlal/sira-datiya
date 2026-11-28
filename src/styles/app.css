@@ -287,7 +287,8 @@ button {
   box-shadow: 0 8px 24px #223b281a;
   z-index: 25;
 }
-.document-menu-items button {
+.document-menu-items button,
+.document-menu-items a {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -299,7 +300,20 @@ button {
   text-align: start;
   border-radius: 3px;
 }
-.document-menu-items button:hover {
+.document-menu-items a {
+  color: inherit;
+  text-decoration: none;
+}
+.document-menu-items a svg {
+  flex-shrink: 0;
+}
+.document-menu-links {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.document-menu-items button:hover,
+.document-menu-items a:hover {
   background: var(--surface);
 }
 .import-error {

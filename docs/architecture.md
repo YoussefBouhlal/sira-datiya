@@ -66,6 +66,165 @@ Domain schema/defaults/types do not import React, browser storage, features, or 
 
 Each template and feature exposes one public entry. Internal files use direct relative imports. A TypeScript-AST architecture test enforces cross-module import boundaries, including dynamic template imports. No alias configuration or dependency-injection framework is necessary for the current size.
 
+## Public rendering boundary
+
+Agreed November 27, 2026, for step 1 of the
+[SEO and GEO implementation order](seo-geo-todo.md#recommended-implementation-order).
+The `/en/`, `/fr/`, and `/ar/` overviews, translated template galleries, and
+detail pages for templates 001, 003, and 005, and translated help pages are
+implemented locally, along with translated technical privacy pages; deployment
+verification remains pending. Public candidate-template entry is future work.
+The builder remains client-side at `/`.
+
+### Rendering and ownership
+
+Keep React and the single package. Generate public product, template, help, and
+privacy HTML at build time through a separate rendering entry. Their essential
+content and links must work without JavaScript. Request-time server rendering and
+a framework migration are outside this scope.
+
+Keep the builder client-side at `/` on the existing origin. Preserve
+`siravuno.cv.v1`, `siravuno.language.v1`, the document and backup formats, and the
+existing editor workflow. Do not redirect returning visitors through public pages.
+The translated overviews share a separate build-time React entry in `src/public`.
+Its generated HTML and local CSS/fonts contain no client JavaScript or analytics.
+`src/public/content.ts` owns the public language list and translated copy without
+importing editor messages or document state. Each route selects its content,
+metadata, direction, and fictional preview explicitly. Ordinary language links
+connect equivalents without redirects or storage preferences. Self-canonicals,
+reciprocal `hreflang` links, and sitemap URLs use that same language list.
+There is no `x-default`: no separate public language selector or fallback route
+has been designated. The builder is not a public language equivalent.
+`src/public/template-content.ts` owns the selected permanent template numbers,
+public page paths, and translated layout descriptions. Public code does not
+import the template registry or PDF renderers. Gallery routes use
+`/<language>/templates/` and detail routes use `/<language>/templates/<number>/`.
+`src/public/Help.tsx` renders `/<language>/help/` using independent translated
+content in `src/public/help-content.ts`. Help covers storage limits, JSON
+backup/restore, PDF review, document language, and recovery without mounting the
+editor. Overviews and template pages link to their matching help language.
+The same renderer accepts `page: 'privacy'` for `/<language>/privacy/`, with
+independent translated disclosures in `src/public/privacy-content.ts`. Privacy
+describes the actual analytics boundary, local deletion, and outstanding owner
+details without promising legal compliance or third-party isolation.
+`src/public/build.ts` emits all twenty-one pages and a sitemap containing only those public URLs.
+The same assets are served in development. Vite uses multi-page mode, not an SPA
+fallback, so unknown paths return 404 in development and production preview.
+Production hosting must be checked separately. Arabic HTML is RTL and uses the
+bundled Amiri fonts; English and French retain local DM Sans and Newsreader.
+
+`src/public/NotFound.tsx` renders one script-free, trilingual error document,
+emitted as `404.html` for GitHub Pages. Post-static middleware in development and
+preview returns it with HTTP 404 for unmatched HTML GET/HEAD requests, without
+redirecting or mounting the editor. Its base-prefixed assets and recovery links
+work at arbitrary missing paths. The document is `noindex`, has no canonical or
+`hreflang` metadata, and is not included in the public sitemap. Missing asset
+requests retain ordinary 404 handling. No language or draft storage is consulted.
+
+On November 28, 2026, the owner approved allowing search and AI-training crawlers.
+The build plugin emits `robots.txt` alongside the sitemap and serves it during
+development, with a wildcard allow rule and an absolute, base-aware sitemap URL.
+There are no crawler-specific blocks. A subpath build emits the file inside that
+subpath, but crawlers require a policy at the host root; the host owner must
+configure that separately without replacing unrelated shared-site policies.
+Robots rules are not access controls and expose no private browser drafts.
+HTTP checks cover the exact plain-text policy and the complete canonical sitemap
+URL set. Production redirects, host-root availability, firewall behavior, and
+webmaster-tool ownership/submission remain separate deployment checks.
+
+The builder's About Siravuno and Privacy and analytics links call
+`saveBeforeNavigation` synchronously. Privacy links in the workspace and CV storage
+dialog use the current document language without changing it.
+Failed or blocked saves cancel navigation and preserve the in-memory draft;
+untouched first visits leave without creating a draft or language preference.
+The public page links back to the unchanged builder without language or template
+parameters. It never changes a saved document's appearance or language.
+
+`npm run generate:public-preview` regenerates the committed English, French, and
+Arabic bitmaps for templates 001, 003, and 005 using their registered real renderers
+and fictional example data. The offline generator verifies that each public number
+is registered. Images show only the first A4 page, not a promise of a one-page CV.
+It does not inspect storage.
+No PDF engine is shipped with the public page.
+
+Public rendering and any browser enhancement must not mount `App` or
+`useCvDocument`, initialize document storage, read or write private drafts or saved
+language preferences, or trigger autosave. Hiding a mounted editor is not
+isolation. Public metadata, HTML language, and direction belong to the public
+entry, not editor effects. Build inputs, previews, metadata, and URLs may contain
+only public facts and fictional samples, never CV fields or backups.
+
+### Language precedence
+
+Public page language and document language are separate concepts:
+
+| Situation                                                             | Required behavior                                                                                                                     |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A public page is opened                                               | Its own language determines content, metadata, HTML language, and direction; no saved document or preference is consulted or changed. |
+| A visitor with a saved draft enters the builder                       | Preserve the saved document language, regardless of the referring public page.                                                        |
+| A visitor enters the builder without a draft or saved language choice | Keep the explicit initial language choice; the existing browser-language suggestion and English fallback remain unchanged.            |
+| A visitor has a saved language choice but no draft                    | Preserve the existing saved-preference behavior; public page language does not override it.                                           |
+| Storage is unreadable or unavailable                                  | Preserve the existing recovery and blocked-save behavior; do not treat a public link as permission to replace data.                   |
+
+### Non-destructive template entry
+
+The public gallery and detail pages currently use ordinary Open CV builder links
+to the unchanged builder URL with no template or language parameters. They explain
+that the visitor must choose a template in the builder. No public page proposes
+or applies a candidate, loads a sample, or changes the document. This pages-first
+increment does not implement the future candidate workflow below.
+
+A future public Use this template link proposes a candidate template in the
+builder. Opening the link does not apply it, load a sample, or replace content.
+Keep canonical appearance unchanged until explicit confirmation; cancellation
+retains the draft and appearance. First-time visitors still complete the initial
+language choice before confirming a template.
+
+Confirmation follows the existing template-selection rule: a different template
+changes its ID, clears color overrides, and restores its default legacy accent;
+confirming the active template preserves colors. CV content, document language,
+text size, paper size, and other appearance preferences remain unchanged. Public
+template entry never invokes Load example or reset. Unknown or retired candidate
+IDs must not mutate the draft; retain the normal builder entry and allow a valid
+selection.
+
+### Pilot verification gates
+
+The pilot has focused unit, architecture, and desktop/mobile browser checks that:
+
+- Fetch generated public HTML without JavaScript and find meaningful content and
+  working builder links.
+- Render a public page with storage access monitored, including after
+  350 ms and lifecycle events, and observe no private storage reads or writes.
+- Enforce the public/editor import boundary and keep public metadata, language,
+  and direction independent of saved editor state.
+- Preserve a populated draft through public navigation, reload, and Back/Forward,
+  including navigation before the 350 ms autosave delay expires. Navigation must
+  flush pending edits; if saving fails, keep the in-memory draft and show an
+  actionable warning rather than silently discarding it.
+- Verify first visits, returning visits, corrupt storage, quota failures, local
+  fonts and preview assets, metadata, accessibility, and genuine unknown-path 404s.
+- Verify all three public languages without JavaScript, crawlable language links,
+  reciprocal alternatives and sitemap consistency, RTL typography, narrow layouts,
+  and return to an unchanged saved Arabic document from any public language.
+- Verify all translated gallery/detail routes, matching local preview images,
+  page-specific metadata, language links, nested unknown-route 404s, and accessible
+  layouts at 1440, 390, and 320 pixels. Pending edits and existing appearance survive
+  gallery/detail navigation and return to the builder; a fresh detail-page visitor
+  still makes an explicit document-language choice.
+- Verify all three help routes without JavaScript, their contents links, reciprocal
+  language alternatives, sitemap entries, storage isolation, accessible narrow
+  layouts, unknown nested-route 404s, and preservation of pending edits and the
+  saved document through help navigation and reload.
+
+Candidate opening, cancellation, confirmation, and invalid-ID checks are required
+when public candidate-template links are introduced; current public links do not
+carry candidates.
+
+Run the existing release checks for that workflow change. Do not expand public
+routes until the pilot passes; deployed HTTP behavior requires separate checks.
+No deployment or live indexing result is implied by local verification.
+
 ## Data flow
 
 `useCvDocument` hydrates a validated document once and owns the canonical `CvDocument`. Controlled editor inputs patch that document immediately, so changing steps cannot discard unsent form state. Transient state such as the selected step, dialogs, and preview page stays local.

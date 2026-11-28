@@ -19,6 +19,30 @@ describe('document language', () => {
     },
   )
 
+  it.each([
+    ['en', 'CV storage', 'Your CV in this browser'],
+    ['fr', 'Stockage du CV', 'Votre CV dans ce navigateur'],
+    ['ar', 'تخزين السيرة الذاتية', 'سيرتك الذاتية في هذا المتصفح'],
+  ] as const)(
+    'keeps storage wording specific to the CV in %s',
+    (language, label, title) => {
+      expect(translate(language, 'CV storage')).toBe(label)
+      expect(translate(language, 'Your CV in this browser')).toBe(title)
+      const storageMessage =
+        'Your CV is saved in this browser. No account is required, and fonts are bundled with the app.'
+      expect(messages).toHaveProperty(storageMessage)
+      expect(translate(language, storageMessage)).not.toMatch(
+        /analytics|analyse|تحليلات/i,
+      )
+      expect(
+        translate(
+          language,
+          'Browser storage is not encrypted. Clearing site data or using private browsing can remove your CV. Download a JSON backup to keep a copy.',
+        ),
+      ).toContain('JSON')
+    },
+  )
+
   it('supplies French and Arabic text with the same interpolation placeholders', () => {
     const placeholders = (value: string) =>
       [...value.matchAll(/\{\w+\}/g)].map(([key]) => key).sort()

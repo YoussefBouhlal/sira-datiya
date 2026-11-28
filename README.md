@@ -1,6 +1,6 @@
 # Siravuno
 
-A local-first CV builder made with React, TypeScript, and Vite. No login, backend, analytics, or remote font requests. Create a CV through six sections, switch between independently registered templates, and export a PDF.
+A local-first CV builder made with React, TypeScript, and Vite. No login or CV backend is required, and fonts are bundled with the app. Create a CV through six sections, switch between independently registered templates, and export a PDF.
 
 **Live app:** [Open Siravuno](http://siravuno.com/)
 
@@ -14,6 +14,69 @@ npm run dev
 ```
 
 Open the local address printed by Vite. For an example document, choose **Load example**.
+
+The builder stays at `/`. Product overviews are available at `/en/`, `/fr/`,
+and `/ar/`, with ordinary language links between them. **About Siravuno** above
+the builder workspace opens the English overview. That link saves pending
+edits before leaving and stays in the editor if saving fails. The overview is
+static HTML with local fonts and a matching fictional template image; it contains no
+client JavaScript and never reads the saved CV. It links directly back to the
+builder without changing the document language. Arabic uses right-to-left layout
+and bundled Amiri fonts. Each overview links to a public template gallery at
+`/<language>/templates/`, with detail pages for `001`, `003`, and `005`, such as
+`/en/templates/003/`. All three languages have distinct layout descriptions,
+use cases, limitations, and matching fictional previews. Builder links do not
+preselect a template or load an example; choose a template inside the builder.
+Help pages at `/<language>/help/` explain autosave limits, editable JSON backups,
+confirmed restore, PDF review, language behavior, and recovery from saving problems.
+They are linked from overviews and template pages and remain script-free and
+independent of private storage. Privacy pages at `/<language>/privacy/` describe
+local data, backups, deletion, immediate builder analytics without opt-in, and
+third-party collection limits. The workspace and CV storage dialog link to the
+document-language privacy page with the same pending-save guard. Public pages
+remain analytics-free. Operator/contact details, provider retention settings,
+and deployed behavior still need owner verification; the technical disclosure
+is not a legal-compliance claim. Candidate-template entry remains unimplemented.
+
+The build generates twenty-one public pages, self-canonicals, reciprocal language
+alternatives, and their sitemap entries. Vite's multi-page mode
+preserves 404 responses for unknown paths locally; verify production hosting
+separately. Regenerate the nine committed fictional template images after relevant
+renderer changes with `npm run generate:public-preview`. The generator resolves
+the permanent template numbers through the registry and renders the first A4 page;
+it never reads a private draft or ships the PDF engine to public pages.
+
+### Missing pages
+
+The build emits a script-free `404.html` for GitHub Pages with English, French,
+and Arabic recovery messages. It links to the unchanged builder and translated
+overviews without reading storage or redirecting automatically. The error document
+uses `noindex`, has no canonical or language-alternative metadata, and is excluded
+from the sitemap. Development and production preview serve it for unmatched HTML
+GET/HEAD requests with HTTP 404 after normal routes and assets are resolved.
+Missing non-HTML assets retain ordinary 404 handling. Base-prefixed stylesheet,
+font, and recovery URLs work from deeply nested missing paths. Verify the deployed
+host's custom error response separately; generating the file is not deployment.
+
+### Crawler policy
+
+The owner approved allowing search and AI-training crawlers on November 28, 2026.
+The build emits `robots.txt` with `User-agent: *`, `Allow: /`, and an absolute
+sitemap reference using the configured base path. Development serves the same
+policy. This introduces no crawler-specific restrictions and changes no editor
+storage or analytics behavior. It is not a privacy or access-control boundary.
+
+For the root-hosted Siravuno site, publish it at `/robots.txt`. On repository-path
+hosting, the emitted file inside that path is not a host-wide robots policy:
+crawlers look for `/robots.txt` at the host root. The host owner must manage that
+root file and reference the repository-path sitemap if needed. Do not overwrite
+a shared host policy with this project's file without reviewing other sites.
+
+After deployment, verify the root policy, sitemap, representative translated
+pages, local assets, redirects, and genuine unknown-route 404s. Check intended
+crawler access at the hosting/firewall layer separately, then submit the sitemap
+using verified Google Search Console and Bing Webmaster Tools properties. Local
+tests do not establish deployment, indexing, or AI citation results.
 
 ## Available workflows
 

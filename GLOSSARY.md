@@ -53,6 +53,12 @@ _Avoid_: Primary color, secondary color, third color
 The single language used for the builder interface and default CV labels. It does not determine or translate the person's written CV content or custom section headings.
 _Avoid_: Interface language, CV language
 
+**Public page**:
+Product, template, or help information available independently of a person's CV. Any CV examples on a public page are fictional template samples, not personal drafts.
+
+**Public page language**:
+The language of a public page's information and navigation, independent of the person's document language.
+
 **Initial language choice**:
 The selection of document language that precedes a person's first template selection.
 
