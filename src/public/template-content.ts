@@ -28,6 +28,8 @@ type GalleryCopy = {
   limitationHeading: string
   previewHeading: string
   entryNote: string
+  useTemplate: string
+  applyNote: string
   availability: string
   templates: Record<PublicTemplateNumber, TemplateCopy>
 }
@@ -43,6 +45,9 @@ export const galleryCopy: Record<PublicLanguage, GalleryCopy> = {
     useHeading: 'When this layout fits',
     limitationHeading: 'What to consider',
     previewHeading: 'Fictional PDF preview',
+    useTemplate: 'Use this template',
+    applyNote:
+      'Applying this template keeps your CV content and document language. Switching templates resets custom colors, but keeps other appearance settings. The fictional example is not loaded.',
     entryNote:
       'Opening the builder does not select this template or load the example. Choose your template inside the builder; your existing CV content and document language stay unchanged.',
     availability:
@@ -90,6 +95,9 @@ export const galleryCopy: Record<PublicLanguage, GalleryCopy> = {
     useHeading: 'Quand choisir cette présentation',
     limitationHeading: 'Points à vérifier',
     previewHeading: 'Aperçu PDF fictif',
+    useTemplate: 'Utiliser ce modèle',
+    applyNote:
+      'Appliquer ce modèle conserve le contenu du CV et la langue du document. Changer de modèle réinitialise les couleurs personnalisées, mais conserve les autres réglages de présentation. L’exemple fictif n’est pas chargé.',
     entryNote:
       'Ouvrir l’éditeur ne sélectionne pas ce modèle et ne charge pas l’exemple. Choisissez votre modèle dans l’éditeur ; le contenu de votre CV existant et la langue du document sont conservés.',
     availability:
@@ -137,6 +145,9 @@ export const galleryCopy: Record<PublicLanguage, GalleryCopy> = {
     useHeading: 'متى يناسبك هذا التخطيط',
     limitationHeading: 'ما ينبغي مراجعته',
     previewHeading: 'معاينة PDF خيالية',
+    useTemplate: 'استخدم هذا القالب',
+    applyNote:
+      'يحافظ تطبيق هذا القالب على محتوى سيرتك ولغة المستند. يزيل تغيير القالب الألوان المخصصة مع الاحتفاظ بإعدادات المظهر الأخرى. لا يتم تحميل المثال الخيالي.',
     entryNote:
       'فتح المحرر لا يختار هذا القالب ولا يحمّل المثال. اختر القالب داخل المحرر؛ يبقى محتوى سيرتك الذاتية الحالية ولغة المستند دون تغيير.',
     availability:

@@ -72,8 +72,9 @@ Agreed November 27, 2026, for step 1 of the
 [SEO and GEO implementation order](seo-geo-todo.md#recommended-implementation-order).
 The `/en/`, `/fr/`, and `/ar/` overviews, translated template galleries, and
 detail pages for templates 001, 003, and 005, and translated help pages are
-implemented locally, along with translated technical privacy pages; deployment
-verification remains pending. Public candidate-template entry is future work.
+implemented, along with translated technical privacy pages; live public-page
+checks passed November 28, 2026. Public template entry is implemented locally;
+its deployment verification remains pending.
 The builder remains client-side at `/`.
 
 ### Rendering and ownership
@@ -137,8 +138,10 @@ The builder's About Siravuno and Privacy and analytics links call
 dialog use the current document language without changing it.
 Failed or blocked saves cancel navigation and preserve the in-memory draft;
 untouched first visits leave without creating a draft or language preference.
-The public page links back to the unchanged builder without language or template
-parameters. It never changes a saved document's appearance or language.
+Generic public links return to the unchanged builder without language or template
+parameters. They never change a saved document's appearance or language. The
+explicit template-detail action described below is the only public action that
+requests an appearance change.
 
 `npm run generate:public-preview` regenerates the committed English, French, and
 Arabic bitmaps for templates 001, 003, and 005 using their registered real renderers
@@ -168,25 +171,49 @@ Public page language and document language are separate concepts:
 
 ### Non-destructive template entry
 
-The public gallery and detail pages currently use ordinary Open CV builder links
-to the unchanged builder URL with no template or language parameters. They explain
-that the visitor must choose a template in the builder. No public page proposes
-or applies a candidate, loads a sample, or changes the document. This pages-first
-increment does not implement the future candidate workflow below.
+Agreed November 28, 2026: the explicit Use this template action on each translated
+template-detail page directly applies the chosen template in the builder. This
+supersedes the earlier proposal-only rule: clicking the action is confirmation;
+there is no second Apply dialog. Public gallery cards still open detail pages,
+and generic Open CV builder links remain parameter-free. Public rendering stays
+script-free and never reads or writes a draft.
 
-A future public Use this template link proposes a candidate template in the
-builder. Opening the link does not apply it, load a sample, or replace content.
-Keep canonical appearance unchanged until explicit confirmation; cancellation
-retains the draft and appearance. First-time visitors still complete the initial
-language choice before confirming a template.
+The action links to the base-prefixed builder with `?template=<number>`. The
+builder validates one exact permanent catalog number against the registry, not
+the fallback resolver, before applying anything. Registry IDs, private CV data,
+and document language are not carried in the link. Duplicate, unknown, malformed,
+or retired numbers show a translated Template unavailable notice and retain the
+normal builder entry without applying a fallback as the requested template.
 
-Confirmation follows the existing template-selection rule: a different template
+Application follows the existing template-selection rule: a different template
 changes its ID, clears color overrides, and restores its default legacy accent;
-confirming the active template preserves colors. CV content, document language,
+applying the active template preserves colors. CV content, document language,
 text size, paper size, and other appearance preferences remain unchanged. Public
 template entry never invokes Load example or reset. Unknown or retired candidate
-IDs must not mutate the draft; retain the normal builder entry and allow a valid
-selection.
+numbers must not mutate the draft; retain the normal builder entry and allow a
+valid selection.
+
+Saved drafts and saved language preferences retain their existing precedence.
+Fresh visitors first complete the explicit initial language choice; until then,
+the entry remains in the URL and no template change is saved. Language and
+template are applied together when that choice is made. Valid entry opens
+Personal details rather than the template-selection screen, including for empty
+or appearance-only drafts. Plain builder entry retains its existing behavior.
+
+The hook applies the entry during initialization or explicit initial language
+choice, not a replayable update effect. Once accepted in memory, only the
+`template` query parameter is removed with `history.replaceState`, preserving
+other parameters, the fragment, and history state. Reload or Back/Forward does
+not reapply a consumed command; deliberately following the public action again
+does. Reloading an empty saved draft through a consumed, ordinary builder URL
+retains the existing template-selection rule. Normal debounced and lifecycle
+saving persists the applied document; initial language choice saves immediately.
+
+Unreadable or unavailable storage takes the existing recovery path without
+applying the entry, including after a later reset or restore. Rejected entries
+are consumed too. Write failures retain the applied in-memory document and the
+existing Not saved warning and backup actions, without restoring a replayable
+command in the URL. No storage key or document/backup format changes are needed.
 
 ### Pilot verification gates
 
@@ -217,9 +244,11 @@ The pilot has focused unit, architecture, and desktop/mobile browser checks that
   layouts, unknown nested-route 404s, and preservation of pending edits and the
   saved document through help navigation and reload.
 
-Candidate opening, cancellation, confirmation, and invalid-ID checks are required
-when public candidate-template links are introduced; current public links do not
-carry candidates.
+Public template-entry checks cover direct application, same-template color
+preservation, different-template color reset, fresh and saved language precedence,
+content and other appearance preservation, one-time URL consumption, history and
+reload, invalid/duplicate numbers, unreadable data, and failed persistence. The
+builder gallery retains its separate tentative selection and cancellation rules.
 
 Run the existing release checks for that workflow change. Do not expand public
 routes until the pilot passes; deployed HTTP behavior requires separate checks.

@@ -2,6 +2,10 @@ export const languages = ['en', 'fr', 'ar'] as const
 export type Language = (typeof languages)[number]
 
 export const messages = {
+  'Template unavailable. Choose another template in the builder.': [
+    'Modèle indisponible. Choisissez un autre modèle dans le créateur.',
+    'القالب غير متاح. اختر قالبًا آخر في المنشئ.',
+  ],
   'Edit contact label: {label}': [
     'Modifier le libell\u00e9 : {label}',
     '\u062a\u0639\u062f\u064a\u0644 \u062a\u0633\u0645\u064a\u0629 \u0627\u0644\u0627\u062a\u0635\u0627\u0644: {label}',

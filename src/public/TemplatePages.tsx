@@ -156,9 +156,12 @@ export function TemplatePages({
             <p>{copy.availability}</p>
             <h2 id="export-heading">{common.exportHeading}</h2>
             <p>{common.exportNote}</p>
-            <p>{copy.entryNote}</p>
-            <a className="builder-link" href={base}>
-              {common.builder}
+            <p>{number ? copy.applyNote : copy.entryNote}</p>
+            <a
+              className="builder-link"
+              href={number ? `${base}?template=${number}` : base}
+            >
+              {number ? copy.useTemplate : common.builder}
               <ArrowRight size={17} aria-hidden="true" />
             </a>
           </section>

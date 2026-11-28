@@ -75,10 +75,23 @@ describe('public template pages', () => {
                 .querySelector('link[rel="stylesheet"]')
                 ?.getAttribute('href'),
             ).toBe(`${base}${language}/overview.css`)
-            for (const link of parsed.querySelectorAll('.builder-link'))
-              expect(link.getAttribute('href')).toBe(base)
+            expect(
+              parsed
+                .querySelector('header .builder-link')
+                ?.getAttribute('href'),
+            ).toBe(base)
+            const action = parsed.querySelector('main .builder-link')
+            expect(action?.getAttribute('href')).toBe(
+              number ? `${base}?template=${number}` : base,
+            )
+            if (number)
+              expect(action?.textContent).toContain(
+                galleryCopy[language].useTemplate,
+              )
             expect(parsed.querySelector('main')?.textContent).toContain(
-              galleryCopy[language].entryNote,
+              number
+                ? galleryCopy[language].applyNote
+                : galleryCopy[language].entryNote,
             )
             expect(
               Array.from(parsed.querySelectorAll('img')).map((image) =>

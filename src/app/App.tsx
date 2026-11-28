@@ -65,6 +65,8 @@ export default function App() {
     choosingLanguage,
     chooseLanguage,
     saveBeforeNavigation,
+    enteredWithTemplate,
+    templateUnavailable,
   } = useCvDocument()
   const language = document.appearance.language
   const t = (text: string) => translate(language, text)
@@ -83,7 +85,7 @@ export default function App() {
   const template = templateRegistry.resolve(document.appearance.templateId)
   const hasContent = hasCvContent(document.cv)
   const [choosingTemplate, setChoosingTemplate] = useState(
-    !hasContent && !blocked,
+    !hasContent && !blocked && !enteredWithTemplate,
   )
 
   useEffect(() => {
@@ -134,7 +136,7 @@ export default function App() {
   return (
     <LanguageProvider language={language}>
       <div
-        className={`app-shell view-${view}${choosingTemplate ? ' is-choosing-template' : ''}`}
+        className={`app-shell view-${view}${choosingTemplate || choosingLanguage ? ' is-choosing-template' : ''}`}
       >
         <a className="skip-link" href="#editor-heading">
           {t(
@@ -226,7 +228,7 @@ export default function App() {
             />
           </div>
         </header>
-        {!choosingTemplate && (
+        {!choosingTemplate && !choosingLanguage && (
           <aside className="sidebar">
             <StepNavigation
               step={step}
@@ -251,6 +253,16 @@ export default function App() {
           </aside>
         )}
         <main className="workspace">
+          {templateUnavailable && (
+            <div className="storage-warning" role="status">
+              <CircleHelp size={17} aria-hidden="true" />
+              <span>
+                {t(
+                  'Template unavailable. Choose another template in the builder.',
+                )}
+              </span>
+            </div>
+          )}
           {message && (
             <div className="storage-warning" role="alert">
               <LockKeyhole size={17} />

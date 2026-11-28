@@ -71,6 +71,9 @@ The collection of available templates presented for browsing and comparison.
 **Candidate template**:
 A template highlighted for consideration but not yet confirmed as the CV's chosen appearance.
 
+**Public template entry**:
+An explicit choice to use a template from its public detail page, applying its presentation to the person's CV without replacing their content. This differs from an unconfirmed candidate template in the builder gallery.
+
 **Template sample**:
 A representation of a template populated with fictional CV content, separate from the person's own CV.
 
