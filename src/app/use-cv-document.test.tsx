@@ -144,6 +144,58 @@ describe('document orchestration', () => {
     expect(result.current.saveStatus).toBe('saved')
   })
 
+  it('saves the latest edit before navigation without waiting for autosave', () => {
+    vi.useFakeTimers()
+    const { result } = renderHook(() => useCvDocument())
+    act(() => result.current.chooseLanguage('ar'))
+    act(() =>
+      result.current.update({
+        ...result.current.document,
+        cv: { ...result.current.document.cv, summary: 'Immediate edit' },
+      }),
+    )
+    act(() => expect(result.current.saveBeforeNavigation()).toBe(true))
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
+    expect(saved.cv.summary).toBe('Immediate edit')
+    expect(saved.appearance.language).toBe('ar')
+  })
+
+  it('allows an untouched visitor to leave without creating a draft or preference', () => {
+    const { result } = renderHook(() => useCvDocument())
+    act(() => expect(result.current.saveBeforeNavigation()).toBe(true))
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    expect(localStorage.getItem(LANGUAGE_PREFERENCE_KEY)).toBeNull()
+  })
+
+  it('blocks navigation over unreadable storage without replacing it', () => {
+    localStorage.setItem(STORAGE_KEY, '{"version":99}')
+    const { result } = renderHook(() => useCvDocument())
+    act(() => expect(result.current.saveBeforeNavigation()).toBe(false))
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('{"version":99}')
+    expect(result.current.message).toContain('backup before leaving')
+  })
+
+  it('blocks navigation after a failed save and retains the edited draft', () => {
+    const storage: StoragePort = {
+      getItem: (key) => (key === LANGUAGE_PREFERENCE_KEY ? 'en' : null),
+      setItem: () => {
+        throw new Error('quota')
+      },
+      removeItem: () => {},
+    }
+    const { result } = renderHook(() => useCvDocument(storage))
+    act(() =>
+      result.current.update({
+        ...result.current.document,
+        cv: { ...result.current.document.cv, summary: 'Keep this edit' },
+      }),
+    )
+    act(() => expect(result.current.saveBeforeNavigation()).toBe(false))
+    expect(result.current.document.cv.summary).toBe('Keep this edit')
+    expect(result.current.saveStatus).toBe('error')
+    expect(result.current.message).toContain('backup')
+  })
+
   it('never autosaves over unreadable data and allows an explicit reset', () => {
     vi.useFakeTimers()
     localStorage.setItem(STORAGE_KEY, '{"version":99}')

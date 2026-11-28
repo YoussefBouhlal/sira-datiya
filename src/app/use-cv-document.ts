@@ -109,6 +109,20 @@ export function useCvDocument(storage?: StoragePort) {
     }
   }, [document, blocked, choosingLanguage, storage])
 
+  function saveBeforeNavigation(): boolean {
+    if (choosingLanguage) return true
+    if (blocked) {
+      setMessage(
+        'Your CV could not be saved. Download a JSON backup before leaving this page.',
+      )
+      return false
+    }
+    const result = persistDocument(storage, document)
+    setSaveStatus(result.ok ? 'saved' : 'error')
+    setMessage(result.ok ? '' : result.message)
+    return result.ok
+  }
+
   function chooseLanguage(language: Language) {
     const next = {
       ...document,
@@ -178,5 +192,6 @@ export function useCvDocument(storage?: StoragePort) {
     blocked,
     choosingLanguage,
     chooseLanguage,
+    saveBeforeNavigation,
   }
 }

@@ -10,6 +10,20 @@ import { PDFDocument } from 'pdf-lib'
 import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { createDocument, createEmptyCv } from '../src/domain/cv/defaults'
 import { createExampleCv } from '../src/domain/cv/example'
+import { translate } from '../src/i18n/messages'
+import {
+  languageNames,
+  overviewCopy,
+  previewFilename,
+  publicLanguages,
+} from '../src/public/content'
+import {
+  galleryCopy,
+  publicPagePaths,
+  publicTemplateNumbers,
+} from '../src/public/template-content'
+import { helpCopy } from '../src/public/help-content'
+import { privacyCopy } from '../src/public/privacy-content'
 
 const storageKey = 'siravuno.cv.v1'
 const measurementId = process.env.VITE_GA_MEASUREMENT_ID?.trim() || ''
@@ -62,6 +76,745 @@ test('analytics is deployment-only and queues a sanitized visit without contacti
     ],
   ])
 })
+
+test('public crawler policy allows all crawlers and references the canonical sitemap', async ({
+  request,
+  baseURL,
+}) => {
+  const base = new URL(baseURL!).pathname
+  const response = await request.get(new URL('robots.txt', baseURL).href)
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toMatch(/^text\/plain\b/)
+  expect(await response.text()).toBe(
+    `User-agent: *\nAllow: /\n\nSitemap: https://siravuno.com${base}sitemap.xml\n`,
+  )
+  const sitemap = await request.get(new URL('sitemap.xml', baseURL).href)
+  expect(sitemap.status()).toBe(200)
+  const document = await sitemap.text()
+  const expected = publicLanguages.flatMap((language) =>
+    publicPagePaths.map(
+      (path) => `https://siravuno.com${base}${language}/${path}`,
+    ),
+  )
+  expect(
+    Array.from(document.matchAll(/<loc>([^<]+)<\/loc>/g), (match) => match[1]),
+  ).toEqual(expected)
+})
+
+test('custom 404 preserves status, storage and accessible recovery without scripts', async ({
+  browser,
+  request,
+  baseURL,
+}, testInfo) => {
+  const base = new URL(baseURL!).pathname
+  for (const path of ['missing/', 'ar/templates/999/', 'fr/help/missing/']) {
+    const response = await request.get(new URL(path, baseURL).href, {
+      headers: { Accept: 'text/html' },
+    })
+    expect(response.status()).toBe(404)
+    expect(await response.text()).toContain('404 - Page not found | Siravuno')
+  }
+  expect(
+    (
+      await request.head(new URL('missing/', baseURL).href, {
+        headers: { Accept: 'text/html' },
+      })
+    ).status(),
+  ).toBe(404)
+  const missingAsset = await request.get(
+    new URL('assets/missing.js', baseURL).href,
+  )
+  expect(missingAsset.status()).toBe(404)
+  expect(await missingAsset.text()).not.toContain('Page not found | Siravuno')
+  expect(
+    await (await request.get(new URL('sitemap.xml', baseURL).href)).text(),
+  ).not.toContain('404.html')
+  for (const javaScriptEnabled of [false, true]) {
+    const context = await browser.newContext({
+      ...testInfo.project.use,
+      baseURL,
+      javaScriptEnabled,
+    })
+    try {
+      await context.addInitScript(() => {
+        localStorage.setItem('siravuno.cv.v1', 'PRIVATE-404-SENTINEL')
+        localStorage.setItem('siravuno.language.v1', 'ar')
+        for (const method of [
+          'getItem',
+          'setItem',
+          'removeItem',
+          'clear',
+        ] as const)
+          Storage.prototype[method] = () => {
+            throw new Error('Private storage accessed')
+          }
+      })
+      const page = await context.newPage()
+      const errors: string[] = []
+      const remote: string[] = []
+      const failedAssets: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      page.on('response', (response) => {
+        if (
+          ['stylesheet', 'font', 'image'].includes(
+            response.request().resourceType(),
+          ) &&
+          response.status() >= 400
+        )
+          failedAssets.push(response.url())
+      })
+      page.on('request', (event) => {
+        if (new URL(event.url()).origin !== new URL(baseURL!).origin)
+          remote.push(event.url())
+      })
+      expect((await page.goto('./en/privacy/deep/missing/'))?.status()).toBe(
+        404,
+      )
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        '404 Page not found',
+      )
+      await expect(page.locator('script')).toHaveCount(0)
+      await expect(
+        page.locator('link[rel="canonical"], link[rel="alternate"]'),
+      ).toHaveCount(0)
+      await expect(page.locator('section[lang="ar"]')).toHaveAttribute(
+        'dir',
+        'rtl',
+      )
+      for (const language of publicLanguages) {
+        await expect(
+          page.locator(`section[lang="${language}"] .builder-link`),
+        ).toHaveAttribute('href', base)
+        await expect(
+          page.locator(`section[lang="${language}"] .not-found-overview`),
+        ).toHaveAttribute('href', `${base}${language}/`)
+      }
+      if (javaScriptEnabled) {
+        await page.evaluate(() => document.fonts.ready)
+        for (const width of [1440, 390, 320]) {
+          await page.setViewportSize({ width, height: 1000 })
+          expect(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          ).toBe(true)
+          await testInfo.attach(`404-${width}`, {
+            body: await page.screenshot({ fullPage: true }),
+            contentType: 'image/png',
+          })
+        }
+        expect(
+          (
+            await new AxeBuilder({ page })
+              .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+              .analyze()
+          ).violations,
+        ).toEqual([])
+        await page.keyboard.press('Tab')
+        await expect(page.locator('.skip-link')).toBeFocused()
+        await page.keyboard.press('Enter')
+        await page.keyboard.press('Tab')
+        await expect(
+          page.locator('section[lang="en"] .builder-link'),
+        ).toBeFocused()
+        expect(await page.evaluate(() => ({ ...localStorage }))).toEqual({
+          'siravuno.cv.v1': 'PRIVATE-404-SENTINEL',
+          'siravuno.language.v1': 'ar',
+        })
+      }
+      expect(errors).toEqual([])
+      expect(remote).toEqual([])
+      expect(failedAssets).toEqual([])
+      await page.locator('section[lang="fr"] .not-found-overview').click()
+      await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
+    } finally {
+      await context.close()
+    }
+  }
+})
+
+for (const language of publicLanguages) {
+  const copy = overviewCopy[language]
+  test(`public ${language} overview is readable without JavaScript and unknown routes remain 404`, async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    const context = await browser.newContext({
+      ...testInfo.project.use,
+      baseURL,
+      javaScriptEnabled: false,
+    })
+    try {
+      const page = await context.newPage()
+      const response = await page.goto(`./${language}/`)
+      expect(response?.status()).toBe(200)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        copy.heading,
+      )
+      await expect(
+        page.getByRole('link', { name: copy.builder }).first(),
+      ).toHaveAttribute('href', new URL(baseURL!).pathname)
+      await expect(page.locator('html')).toHaveAttribute('lang', language)
+      await expect(page.locator('html')).toHaveAttribute(
+        'dir',
+        language === 'ar' ? 'rtl' : 'ltr',
+      )
+      await expect(page.locator('script')).toHaveCount(0)
+      const source = await response!.text()
+      expect(source).toContain('JSON')
+      expect(source).not.toMatch(/siravuno\.cv|gtag|dataLayer/)
+      const image = page.locator('.sample-stage img')
+      await expect(image).toBeVisible()
+      for (const path of [
+        `${language}/overview.css`,
+        `${language}/dm-sans.woff2`,
+        `${language}/newsreader.woff2`,
+        `public-preview/${previewFilename(language)}`,
+        'fonts/amiri/Amiri-Regular.ttf',
+        'fonts/amiri/Amiri-Bold.ttf',
+        'sitemap.xml',
+      ]) {
+        expect(
+          (await request.get(new URL(path, baseURL).href)).status(),
+          path,
+        ).toBe(200)
+      }
+      const sitemap = await (
+        await request.get(new URL('sitemap.xml', baseURL).href)
+      ).text()
+      expect((sitemap.match(/<loc>/g) || []).length).toBe(
+        publicLanguages.length * publicPagePaths.length,
+      )
+      for (const alternative of publicLanguages) {
+        const canonical = `https://siravuno.com${new URL(baseURL!).pathname}${alternative}/`
+        expect(sitemap).toContain(`<loc>${canonical}</loc>`)
+        await expect(
+          page.locator(`link[rel="alternate"][hreflang="${alternative}"]`),
+        ).toHaveAttribute('href', canonical)
+        await expect(
+          page.getByRole('navigation').getByRole('link', {
+            name: languageNames[alternative],
+            exact: true,
+          }),
+        ).toHaveAttribute(
+          'href',
+          `${new URL(baseURL!).pathname}${alternative}/`,
+        )
+      }
+      await page
+        .getByRole('navigation')
+        .getByRole('link', { name: 'Français', exact: true })
+        .click()
+      await expect(page.locator('html')).toHaveAttribute('lang', 'fr')
+      await page
+        .getByRole('navigation')
+        .getByRole('link', { name: 'العربية', exact: true })
+        .click()
+      await expect(page.locator('html')).toHaveAttribute('dir', 'rtl')
+      for (const path of [
+        'missing-public-route/',
+        `${language}/missing-public-route/`,
+      ]) {
+        expect(
+          (await request.get(new URL(path, baseURL).href)).status(),
+          path,
+        ).toBe(404)
+      }
+    } finally {
+      await context.close()
+    }
+  })
+
+  test(`public ${language} overview never touches private storage or loads scripts and renders accessibly`, async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    const saved = { version: 2, ...createDocument('classic', 'ar') }
+    saved.cv.personal.fullName = 'Private fictional candidate'
+    saved.cv.summary = 'PRIVATE-DRAFT-NOT-PUBLIC'
+    await page.addInitScript(
+      ({ key, value }) => {
+        localStorage.setItem(key, value)
+        localStorage.setItem('siravuno.language.v1', 'ar')
+        const calls: string[] = []
+        Object.assign(window, { publicStorageCalls: calls })
+        for (const method of [
+          'getItem',
+          'setItem',
+          'removeItem',
+          'clear',
+        ] as const) {
+          const original = Storage.prototype[method]
+          Object.defineProperty(Storage.prototype, method, {
+            value: function (...parameters: string[]) {
+              calls.push(`${method}:${parameters[0] || ''}`)
+              return Reflect.apply(original, this, parameters)
+            },
+          })
+        }
+      },
+      { key: storageKey, value: JSON.stringify(saved) },
+    )
+    const remoteRequests: string[] = []
+    page.on('request', (request) => {
+      if (new URL(request.url()).origin !== new URL(baseURL!).origin)
+        remoteRequests.push(request.url())
+    })
+    await page.clock.install()
+    await page.goto(`./${language}/`)
+    await page.clock.fastForward(1000)
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('pagehide'))
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    expect(
+      await page.evaluate(
+        () =>
+          (window as Window & { publicStorageCalls?: string[] })
+            .publicStorageCalls,
+      ),
+    ).toEqual([])
+    expect(await page.content()).not.toContain(saved.cv.summary)
+    await expect(page).toHaveTitle(copy.title)
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      `https://siravuno.com${new URL(baseURL!).pathname}${language}/`,
+    )
+    const image = page.locator('.sample-stage img')
+    expect(
+      await image.evaluate((element: HTMLImageElement) => ({
+        width: element.naturalWidth,
+        height: element.naturalHeight,
+      })),
+    ).toEqual({ width: 900, height: 1273 })
+    await page.evaluate(() => document.fonts.ready)
+    expect(
+      await page.evaluate(() => document.fonts.check('16px Amiri', 'العربية')),
+    ).toBe(true)
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 })
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth),
+      ).toBeLessThanOrEqual(width)
+      await page.screenshot({
+        path: testInfo.outputPath(`public-${language}-${width}.png`),
+        fullPage: true,
+      })
+    }
+    await page.getByRole('link', { name: copy.skip }).focus()
+    await expect(page.getByRole('link', { name: copy.skip })).toBeInViewport()
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(await page.evaluate(() => innerWidth))
+    await page.screenshot({
+      path: testInfo.outputPath('public-overview.png'),
+      fullPage: true,
+    })
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+          .analyze()
+      ).violations,
+    ).toEqual([])
+    expect(remoteRequests).toEqual([])
+  })
+}
+
+for (const language of publicLanguages) {
+  test(`public ${language} template and help routes work without JavaScript with matching metadata and assets`, async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    const context = await browser.newContext({
+      ...testInfo.project.use,
+      baseURL,
+      javaScriptEnabled: false,
+    })
+    try {
+      const page = await context.newPage()
+      const base = new URL(baseURL!).pathname
+      const sitemap = await (
+        await request.get(new URL('sitemap.xml', baseURL).href)
+      ).text()
+      for (const path of publicPagePaths.filter(Boolean)) {
+        const response = await page.goto(`./${language}/${path}`)
+        expect(response?.status()).toBe(200)
+        const canonical = `https://siravuno.com${base}${language}/${path}`
+        expect(sitemap).toContain(`<loc>${canonical}</loc>`)
+        await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+          'href',
+          canonical,
+        )
+        await expect(page.locator('script')).toHaveCount(0)
+        await expect(page.locator('html')).toHaveAttribute('lang', language)
+        await expect(page.locator('html')).toHaveAttribute(
+          'dir',
+          language === 'ar' ? 'rtl' : 'ltr',
+        )
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+        await expect(page.locator('.builder-link').first()).toHaveAttribute(
+          'href',
+          base,
+        )
+        for (const alternative of publicLanguages) {
+          await expect(
+            page.locator(`link[rel="alternate"][hreflang="${alternative}"]`),
+          ).toHaveAttribute(
+            'href',
+            `https://siravuno.com${base}${alternative}/${path}`,
+          )
+          await page
+            .getByRole('navigation')
+            .getByRole('link', {
+              name: languageNames[alternative],
+              exact: true,
+            })
+            .click()
+          await expect(page).toHaveURL(
+            new URL(`${alternative}/${path}`, baseURL).href,
+          )
+          await expect(page.locator('html')).toHaveAttribute(
+            'lang',
+            alternative,
+          )
+        }
+        await page.goto(`./${language}/${path}`)
+        for (const image of await page.locator('main img').all()) {
+          await image.scrollIntoViewIfNeeded()
+          await expect(image).toBeVisible()
+          await expect
+            .poll(() =>
+              image.evaluate((element: HTMLImageElement) => [
+                element.naturalWidth,
+                element.naturalHeight,
+              ]),
+            )
+            .toEqual([900, 1273])
+          expect(
+            (
+              await request.get(
+                new URL((await image.getAttribute('src'))!, baseURL).href,
+              )
+            ).status(),
+          ).toBe(200)
+        }
+        if (path === 'help/' || path === 'privacy/') {
+          const copy =
+            path === 'privacy/' ? privacyCopy[language] : helpCopy[language]
+          await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+            copy.heading,
+          )
+          for (const section of copy.sections) {
+            await page
+              .locator(`.help-contents a[href="#${section.id}"]`)
+              .click()
+            await expect(page.locator(`#${section.id}`)).toBeInViewport()
+            for (const paragraph of section.paragraphs)
+              await expect(page.locator('main')).toContainText(paragraph)
+          }
+        } else {
+          await expect(page.locator('main')).toContainText(
+            galleryCopy[language].entryNote,
+          )
+        }
+      }
+      for (const path of [
+        'templates/999/',
+        'templates/003/missing/',
+        'templates/missing/',
+        'help/missing/',
+        'privacy/missing/',
+      ])
+        expect(
+          (
+            await request.get(new URL(`${language}/${path}`, baseURL).href)
+          ).status(),
+        ).toBe(404)
+    } finally {
+      await context.close()
+    }
+  })
+
+  test(`public ${language} template and help pages isolate storage and render accessibly on narrow screens`, async ({
+    page,
+    baseURL,
+  }, testInfo) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('siravuno.cv.v1', 'PRIVATE-TEMPLATE-PAGE-SENTINEL')
+      const calls: string[] = []
+      Object.assign(window, { publicStorageCalls: calls })
+      for (const method of [
+        'getItem',
+        'setItem',
+        'removeItem',
+        'clear',
+      ] as const) {
+        const original = Storage.prototype[method]
+        Storage.prototype[method] = function (...parameters: string[]) {
+          calls.push(method)
+          return Reflect.apply(original, this, parameters)
+        }
+      }
+    })
+    const remoteRequests: string[] = []
+    page.on('request', (request) => {
+      if (new URL(request.url()).origin !== new URL(baseURL!).origin)
+        remoteRequests.push(request.url())
+    })
+    await page.clock.install()
+    for (const path of publicPagePaths.filter(Boolean)) {
+      await page.goto(`./${language}/${path}`)
+      await page.clock.fastForward(1000)
+      await page.evaluate(() => {
+        window.dispatchEvent(new Event('pagehide'))
+        document.dispatchEvent(new Event('visibilitychange'))
+      })
+      expect(
+        await page.evaluate(
+          () =>
+            (window as Window & { publicStorageCalls?: string[] })
+              .publicStorageCalls,
+        ),
+      ).toEqual([])
+      expect(await page.content()).not.toContain(
+        'PRIVATE-TEMPLATE-PAGE-SENTINEL',
+      )
+      await page.evaluate(() => document.fonts.ready)
+      for (const width of [1440, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 })
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth),
+        ).toBeLessThanOrEqual(width)
+        await page.screenshot({
+          path: testInfo.outputPath(
+            `${language}-${path.replaceAll('/', '-')}-${width}.png`,
+          ),
+          fullPage: true,
+        })
+      }
+      await page
+        .getByRole('link', { name: overviewCopy[language].skip })
+        .focus()
+      await expect(
+        page.getByRole('link', { name: overviewCopy[language].skip }),
+      ).toBeInViewport()
+      expect(
+        (
+          await new AxeBuilder({ page })
+            .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
+            .analyze()
+        ).violations,
+      ).toEqual([])
+    }
+    expect(remoteRequests).toEqual([])
+  })
+}
+
+for (const language of publicLanguages) {
+  test(`public ${language} navigation preserves pending edits, appearance and Arabic language through history and reload`, async ({
+    page,
+  }) => {
+    const document = createDocument('classic', 'ar')
+    document.cv.personal.fullName = 'Fictional saved candidate'
+    document.appearance.colors = { headings: '#215b45' }
+    await page.addInitScript(
+      ({ key, value }) => {
+        if (!localStorage.getItem(key)) localStorage.setItem(key, value)
+      },
+      { key: storageKey, value: JSON.stringify({ version: 2, ...document }) },
+    )
+    await page.goto('./')
+    const fullName = page.getByLabel(translate('ar', 'Full name'), {
+      exact: true,
+    })
+    await expect(fullName).toHaveValue(document.cv.personal.fullName)
+    await page.clock.install()
+    await page.clock.pauseAt(new Date(Date.now() + 1000))
+    await fullName.fill('Latest private edit before autosave')
+    await page.getByLabel(translate('ar', 'Document actions')).click()
+    await page
+      .getByRole('link', { name: translate('ar', 'About Siravuno') })
+      .click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Siravuno CV Builder',
+    )
+    if (language !== 'en')
+      await page
+        .getByRole('navigation')
+        .getByRole('link', { name: languageNames[language], exact: true })
+        .click()
+    await expect(page.locator('html')).toHaveAttribute('lang', language)
+    const expected = {
+      version: 2,
+      ...document,
+      cv: {
+        ...document.cv,
+        personal: {
+          ...document.cv.personal,
+          fullName: 'Latest private edit before autosave',
+        },
+      },
+    }
+    expect(
+      await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)!),
+        storageKey,
+      ),
+    ).toEqual(expected)
+    if (language !== 'en') await page.goBack()
+    await page.goBack()
+    await expect(fullName).toHaveValue('Latest private edit before autosave')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar')
+    await page.goForward()
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+    if (language !== 'en') await page.goForward()
+    await page
+      .getByRole('link', { name: galleryCopy[language].heading, exact: true })
+      .click()
+    for (const number of publicTemplateNumbers) {
+      await page
+        .getByRole('heading', {
+          level: 2,
+          name: galleryCopy[language].templates[number].name,
+          exact: true,
+        })
+        .getByRole('link')
+        .click()
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        galleryCopy[language].templates[number].name,
+      )
+      expect(
+        await page.evaluate(
+          (key) => JSON.parse(localStorage.getItem(key)!),
+          storageKey,
+        ),
+      ).toEqual(expected)
+      if (number !== '005') await page.goBack()
+    }
+    await page
+      .getByRole('link', { name: helpCopy[language].heading, exact: true })
+      .click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      helpCopy[language].heading,
+    )
+    await page
+      .getByRole('link', { name: privacyCopy[language].heading, exact: true })
+      .click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      privacyCopy[language].heading,
+    )
+    await page.reload()
+    expect(
+      await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)!),
+        storageKey,
+      ),
+    ).toEqual(expected)
+    await page
+      .getByRole('link', { name: overviewCopy[language].builder })
+      .first()
+      .click()
+    await page.reload()
+    await expect(fullName).toHaveValue('Latest private edit before autosave')
+    await fullName.fill('Latest edit before privacy disclosure')
+    await page.getByLabel(translate('ar', 'Document actions')).click()
+    await page
+      .getByRole('link', {
+        name: translate('ar', 'Privacy and analytics'),
+        exact: true,
+      })
+      .click()
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      privacyCopy.ar.heading,
+    )
+    await page
+      .getByRole('link', { name: overviewCopy.ar.builder })
+      .first()
+      .click()
+    await expect(fullName).toHaveValue('Latest edit before privacy disclosure')
+    expected.cv.personal.fullName = 'Latest edit before privacy disclosure'
+    expect(
+      await page.evaluate(
+        (key) => JSON.parse(localStorage.getItem(key)!),
+        storageKey,
+      ),
+    ).toEqual(expected)
+  })
+}
+
+for (const failure of ['unreadable', 'quota'] as const) {
+  test(`public navigation stays in the editor when storage is ${failure}`, async ({
+    page,
+  }) => {
+    const document = createDocument('classic', 'en')
+    document.cv.personal.fullName = 'Keep this fictional draft'
+    await page.addInitScript(
+      ({ key, value, failure }) => {
+        localStorage.setItem(key, value)
+        if (failure === 'quota') {
+          const original = Storage.prototype.setItem
+          Storage.prototype.setItem = function (key, value) {
+            if (key === 'siravuno.cv.v1')
+              throw new DOMException('Quota exceeded', 'QuotaExceededError')
+            return original.call(this, key, value)
+          }
+        }
+      },
+      {
+        key: storageKey,
+        value:
+          failure === 'unreadable'
+            ? '{"version":99}'
+            : JSON.stringify({ version: 2, ...document }),
+        failure,
+      },
+    )
+    await page.goto('./')
+    const before = page.url()
+    await page.getByLabel('Document actions').click()
+    await page.getByRole('link', { name: 'About Siravuno' }).click()
+    await expect(page).toHaveURL(before)
+    await expect(page.getByRole('alert')).toContainText(/backup/i)
+    await page.getByLabel('Document actions').click()
+    await page
+      .getByRole('link', { name: 'Privacy and analytics', exact: true })
+      .click()
+    await expect(page).toHaveURL(before)
+    await expect(page.getByRole('alert')).toContainText(/backup/i)
+    if (failure === 'unreadable')
+      expect(
+        await page.evaluate((key) => localStorage.getItem(key), storageKey),
+      ).toBe('{"version":99}')
+    else
+      await expect(page.getByLabel('Full name', { exact: true })).toHaveValue(
+        document.cv.personal.fullName,
+      )
+  })
+}
+
+for (const language of publicLanguages) {
+  test(`a fresh public ${language} visitor still chooses a document language in the builder`, async ({
+    page,
+  }) => {
+    await page.goto(`./${language}/templates/005/`)
+    expect(
+      await page.evaluate(() => localStorage.getItem('siravuno.language.v1')),
+    ).toBeNull()
+    await page
+      .getByRole('link', { name: overviewCopy[language].builder })
+      .first()
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Choose your language' }),
+    ).toBeVisible()
+    expect(
+      await page.evaluate((key) => localStorage.getItem(key), storageKey),
+    ).toBeNull()
+  })
+}
 
 for (const choice of [
   {

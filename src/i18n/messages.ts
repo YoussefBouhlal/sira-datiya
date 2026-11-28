@@ -74,6 +74,12 @@ export const messages = {
   'Skip to templates': ['Aller aux modèles', 'الانتقال إلى القوالب'],
   'Skip to editor': ['Aller à l’éditeur', 'الانتقال إلى المحرر'],
   'Siravuno home': ['Accueil Siravuno', 'الصفحة الرئيسية لـ Siravuno'],
+  'About Siravuno': ['À propos de Siravuno', 'حول Siravuno'],
+  'Your CV could not be saved. Download a JSON backup before leaving this page.':
+    [
+      'Votre CV n’a pas pu être enregistré. Téléchargez une sauvegarde JSON avant de quitter cette page.',
+      'تعذّر حفظ سيرتك الذاتية. نزّل نسخة احتياطية بصيغة JSON قبل مغادرة هذه الصفحة.',
+    ],
   'Saved on this device': [
     'Enregistré sur cet appareil',
     'محفوظ على هذا الجهاز',
@@ -85,7 +91,11 @@ export const messages = {
     'Votre parcours, votre prochain chapitre.',
     'أنت وخطوتك المهنية القادمة.',
   ],
-  'Your data stays here': ['Vos données restent ici', 'بياناتك تبقى هنا'],
+  'CV storage': ['Stockage du CV', 'تخزين السيرة الذاتية'],
+  'Privacy and analytics': [
+    'Confidentialité et analyse d’audience',
+    'الخصوصية والتحليلات',
+  ],
   'SIRAVUNO / CV BUILDER': [
     'SIRAVUNO / CRÉATEUR DE CV',
     'Siravuno / منشئ السير الذاتية',
@@ -118,12 +128,15 @@ export const messages = {
       'Votre CV actuel sur cet appareil sera remplacé. Téléchargez d’abord une sauvegarde JSON pour en conserver une copie.',
       'سيحل هذا محل سيرتك الذاتية الحالية على هذا الجهاز. نزّل نسخة احتياطية بصيغة JSON أولًا للاحتفاظ بنسخة.',
     ],
-  'Only on this device': ['Uniquement sur cet appareil', 'على هذا الجهاز فقط'],
+  'Your CV in this browser': [
+    'Votre CV dans ce navigateur',
+    'سيرتك الذاتية في هذا المتصفح',
+  ],
   'Got it': ['Compris', 'فهمت'],
-  'Your CV is saved in this browser, not uploaded to a server. There are no accounts, analytics, or remote font requests.':
+  'Your CV is saved in this browser. No account is required, and fonts are bundled with the app.':
     [
-      'Votre CV est enregistré dans ce navigateur, sans envoi à un serveur. Aucun compte, outil d’analyse ou chargement distant de polices.',
-      'تُحفظ سيرتك الذاتية في هذا المتصفح ولا تُرفع إلى خادم. لا توجد حسابات أو تحليلات أو طلبات خطوط خارجية.',
+      'Votre CV est enregistré dans ce navigateur. Aucun compte n’est nécessaire et les polices sont incluses dans l’application.',
+      'تُحفظ سيرتك الذاتية في هذا المتصفح. لا تحتاج إلى حساب، والخطوط مضمّنة في التطبيق.',
     ],
   'Browser storage is not encrypted. Clearing site data or using private browsing can remove your CV. Download a JSON backup to keep a copy.':
     [

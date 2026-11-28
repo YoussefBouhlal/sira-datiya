@@ -49,6 +49,19 @@ it('keeps domain, feature and template ownership boundaries intact', () => {
         const fail = () =>
           violations.push(`${relative(sourceRoot, path)} -> ${specifier}`)
         if (
+          from[0] === 'public' &&
+          [
+            'app',
+            'domain',
+            'features',
+            'templates',
+            'lib',
+            'components',
+            'i18n',
+          ].includes(target[0] ?? '')
+        )
+          fail()
+        if (
           from[0] === 'domain' &&
           [
             'app',

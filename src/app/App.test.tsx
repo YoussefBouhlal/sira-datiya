@@ -36,6 +36,39 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+it('keeps public links in document actions without creating a draft on first visits', () => {
+  render(<App />)
+  expect(within(screen.getByRole('main')).queryByRole('link')).toBeNull()
+  const menu = screen.getByLabelText('Document actions').closest('details')!
+  expect(menu).not.toHaveAttribute('open')
+  fireEvent.click(screen.getByLabelText('Document actions'))
+  expect(menu).toHaveAttribute('open')
+  expect(screen.getByRole('link', { name: 'About Siravuno' })).toHaveAttribute(
+    'href',
+    `${import.meta.env.BASE_URL}en/`,
+  )
+  expect(
+    screen.getByRole('link', { name: 'Privacy and analytics' }),
+  ).toHaveAttribute('href', `${import.meta.env.BASE_URL}en/privacy/`)
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+})
+
+it.each(['About Siravuno', 'Privacy and analytics'])(
+  'cancels %s navigation when the saved draft is unreadable',
+  (name) => {
+    localStorage.setItem(STORAGE_KEY, '{"version":99}')
+    render(<App />)
+    fireEvent.click(screen.getByLabelText('Document actions'))
+    const link = screen.getByRole('link', { name })
+    expect(fireEvent.click(link)).toBe(false)
+    expect(link.closest('details')).not.toHaveAttribute('open')
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Download a JSON backup before leaving this page.',
+    )
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('{"version":99}')
+  },
+)
+
 it('asks first-time visitors for a language before templates and remembers the choice', () => {
   const { unmount } = render(<App />)
   expect(

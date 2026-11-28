@@ -1,4 +1,11 @@
-import { Download, Ellipsis, FileUp, RotateCcw } from 'lucide-react'
+import {
+  CircleHelp,
+  Download,
+  Ellipsis,
+  FileUp,
+  RotateCcw,
+  ShieldCheck,
+} from 'lucide-react'
 import { useRef, useState } from 'react'
 import type { CvDocument } from '../domain/cv/types'
 import { documentFilename, downloadBlob } from '../lib/download'
@@ -7,10 +14,12 @@ import { useTranslation } from '../i18n/context'
 
 export function DocumentActions({
   document,
+  onBeforeNavigate,
   onRestore,
   onReset,
 }: {
   document: CvDocument
+  onBeforeNavigate: () => boolean
   onRestore: (document: CvDocument) => void
   onReset: () => void
 }) {
@@ -67,6 +76,28 @@ export function DocumentActions({
             <RotateCcw size={16} />
             {t('Start over')}
           </button>
+          <div className="document-menu-links">
+            <a
+              href={`${import.meta.env.BASE_URL}en/`}
+              onClick={(event) => {
+                if (!onBeforeNavigate()) event.preventDefault()
+                closeMenu()
+              }}
+            >
+              <CircleHelp size={16} aria-hidden="true" />
+              {t('About Siravuno')}
+            </a>
+            <a
+              href={`${import.meta.env.BASE_URL}${document.appearance.language}/privacy/`}
+              onClick={(event) => {
+                if (!onBeforeNavigate()) event.preventDefault()
+                closeMenu()
+              }}
+            >
+              <ShieldCheck size={16} aria-hidden="true" />
+              {t('Privacy and analytics')}
+            </a>
+          </div>
         </div>
       </details>
       <input
